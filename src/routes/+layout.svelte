@@ -9,7 +9,7 @@
    */
   $authStore;
 
-  if (dev) console.log($authStore);
+  if (dev && typeof window !== 'undefined') console.log($authStore);
 </script>
 
 <div
