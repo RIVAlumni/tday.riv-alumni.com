@@ -15,11 +15,11 @@ import { docStore, docUserRef } from '$lib/firebase/firestore';
  * If the user is authenticated, it will be the Firebase `AuthUser` object.
  */
 export const authState = readable<FBUser | null>(undefined, (set) => {
-	// Prevents running on the server
-	if (typeof window === 'undefined') return;
+  // Prevents running on the server
+  if (typeof window === 'undefined') return;
 
-	const unsubscribe = onAuthStateChanged(auth, set);
-	return unsubscribe;
+  const unsubscribe = onAuthStateChanged(auth, set);
+  return unsubscribe;
 });
 
 /**
@@ -29,12 +29,15 @@ export const authState = readable<FBUser | null>(undefined, (set) => {
  * If the user is not authenticated, it will be `null`.
  * If the user is authenticated, it will be the `FSUser` object.
  */
-export const authStore = derived<typeof authState, FSUser | null>(authState, ($user, set) => {
-	// Prevents running on the server
-	if (typeof window === 'undefined') return;
+export const authStore = derived<typeof authState, FSUser | null>(
+  authState,
+  ($user, set) => {
+    // Prevents running on the server
+    if (typeof window === 'undefined') return;
 
-	if (!$user) return set(null);
+    if (!$user) return set(null);
 
-	const ref = docUserRef($user.uid);
-	return docStore<FSUser>(ref).subscribe(set);
-});
+    const ref = docUserRef($user.uid);
+    return docStore<FSUser>(ref).subscribe(set);
+  },
+);

@@ -1,20 +1,19 @@
 <script lang="ts">
-	import '../app.css';
+  import '../app.css';
 
-	import { dev } from '$app/environment';
-	import { authStore } from '$lib/stores';
+  import { dev } from '$app/environment';
+  import { authStore } from '$lib/stores';
 
-	/**
-	 * Pre-load authentication state
-	 */
-	$authStore;
+  /**
+   * Pre-load authentication state
+   */
+  $authStore;
 
-	if (dev) console.log($authStore);
+  if (dev) console.log($authStore);
 </script>
 
 <div
-	class="bg-background h-screen min-h-screen
-					w-full text-white"
->
-	<slot></slot>
+  class="bg-background h-screen min-h-screen
+					w-full text-white">
+  <slot></slot>
 </div>
