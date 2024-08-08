@@ -1,3 +1,10 @@
+<script lang="ts">
+  import { authStore } from '$lib/stores';
+  import { goto } from '$app/navigation';
+
+  $: if (!$authStore) goto('/auth/continue', { replaceState: true });
+</script>
+
 <svelte:head>
   <title>RIVA Teachers' Day System</title>
 </svelte:head>

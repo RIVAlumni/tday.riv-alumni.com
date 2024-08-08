@@ -13,10 +13,17 @@
           flex flex-col justify-center items-center">
   <Card.Root class="m-6 max-w-md">
     <Card.Header>
-      <Card.Title>Continue with your RIVA Identity</Card.Title>
-      <Card.Description>
-        Use your RIVA account to login and gain access to the system.
-      </Card.Description>
+      <Card.Title class="flex flex-row align-middle gap-2">
+        <img
+          src="/favicon.png"
+          alt="RIVAlumni Logo"
+          class="w-8 h-8" />
+
+        <h1 class="text-2xl font-normal">
+          RIVAlumni <span class="font-bold">Internal Systems</span>
+        </h1>
+      </Card.Title>
+      <Card.Description>Use your RIVA account to continue.</Card.Description>
     </Card.Header>
 
     <Card.Content class="space-y-6">
@@ -24,7 +31,8 @@
         type="button"
         variant="outline"
         class="w-full">
-        Google
+        <i class="fa-brands fa-google mr-2"></i>
+        Google (@riv-alumni.com)
       </Button>
 
       <p class="px-8 text-center text-sm text-muted-foreground">
