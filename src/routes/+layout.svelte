@@ -13,7 +13,7 @@
 </script>
 
 <div
-  class="bg-background h-screen min-h-screen
-					w-full text-white">
+  class="w-full h-screen min-h-screen
+				   text-white bg-background">
   <slot></slot>
 </div>
