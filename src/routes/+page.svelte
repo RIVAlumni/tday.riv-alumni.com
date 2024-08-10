@@ -2,7 +2,10 @@
   import { authStore } from '$lib/stores';
   import { goto } from '$app/navigation';
 
-  $: if (!$authStore) goto('/auth/continue', { replaceState: true });
+  $: (async () => {
+    if (typeof window === 'undefined') return;
+    if (!$authStore) await goto('/auth/continue', { replaceState: true });
+  })();
 </script>
 
 <svelte:head>
