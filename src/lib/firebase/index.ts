@@ -10,7 +10,7 @@ import { getFunctions } from 'firebase/functions';
  */
 const firebaseConfig = Object.freeze({
   apiKey: 'AIzaSyAC4vxJzKGJhX8qKlMPOmkGsyu9hc0lFWA',
-  authDomain: 'rivalumniops-tday.firebaseapp.com',
+  authDomain: 'auth.tday.riv-alumni.com',
   projectId: 'rivalumniops-tday',
   storageBucket: 'rivalumniops-tday.appspot.com',
   messagingSenderId: '188108228168',

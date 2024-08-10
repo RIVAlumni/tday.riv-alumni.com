@@ -1,8 +1,7 @@
 import { dev } from '$app/environment';
 
 import { auth } from '$lib/firebase';
-import { signInWithPopup } from 'firebase/auth';
-import { GoogleAuthProvider } from 'firebase/auth/web-extension';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 
 /**
  * Signs in the user using the Google provider.
