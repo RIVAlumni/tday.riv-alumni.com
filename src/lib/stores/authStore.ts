@@ -35,7 +35,8 @@ export const authStore = derived<typeof authState, FSUser | null>(
     // Prevents running on the server
     if (typeof window === 'undefined') return;
 
-    if (!$user) return set(null);
+    if ($user === undefined) return;
+    if ($user === null) return set(null);
 
     const ref = docUserRef($user.uid);
     return docStore<FSUser>(ref).subscribe(set);
