@@ -2269,7 +2269,7 @@ depd@2.0.0, depd@~2.0.0:
   resolved "https://registry.yarnpkg.com/depd/-/depd-2.0.0.tgz#b696163cc757560d09cf22cc8fad1571b79e76df"
   integrity sha512-g7nH6P6dyDioJogAAGprGpCtVImJhpPk/roCzdb3fIh61/s/nPsfR6onyMwkCAR/OlC3yBC0lESvUoQEAssIrw==
 
-dequal@^2.0.3:
+dequal@^2.0.2, dequal@^2.0.3:
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/dequal/-/dequal-2.0.3.tgz#2644214f1997d39ed0ee0ece72335490a7ac67be"
   integrity sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA==
@@ -5722,6 +5722,13 @@ svelte-eslint-parser@^0.41.0:
     espree "^9.6.1"
     postcss "^8.4.39"
     postcss-scss "^4.0.9"
+
+svelte-forms-lib@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/svelte-forms-lib/-/svelte-forms-lib-2.0.1.tgz#64895abacda4a98822d2ae52842a6b8f9aeebcb1"
+  integrity sha512-kwbJ3ynsepsrrJyAMrvSc0Lj/myc9vfI2DL8OKxgArZimrNYsRh1gENYhvrcKEI3BiZrv8q3VFfmGo/GMyk7Zg==
+  dependencies:
+    dequal "^2.0.2"
 
 svelte-hmr@^0.16.0:
   version "0.16.0"

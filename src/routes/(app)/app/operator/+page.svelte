@@ -1,8 +1,51 @@
 <script lang="ts">
+  import type { FSRegistration } from '$lib/models';
+
+  import { createForm } from 'svelte-forms-lib';
+  import { query, where, limit, getDocs, orderBy } from 'firebase/firestore';
+
+  import * as Card from '$lib/components/ui/card';
+
   import { Input } from '$lib/components/ui/input';
   import { Textarea } from '$lib/components/ui/textarea';
-  import * as Card from '$lib/components/ui/card';
   import { Button } from '$lib/components/ui/button';
+  import SearchIcon from 'lucide-svelte/icons/search';
+
+  import { colRegistrationsRef } from '$lib/firebase/firestore';
+
+  interface FormValues {
+    search: string;
+    registrations: FSRegistration[];
+  }
+
+  let cursor = {} as FSRegistration;
+  const { form, handleChange, handleSubmit } = createForm<FormValues>({
+    initialValues: {
+      search: '',
+      registrations: [],
+    },
+    onSubmit: async ({ search }) => {
+      const currentYear = new Date().getFullYear().toString();
+      const registrationQuery = query(
+        colRegistrationsRef(currentYear),
+        where('nric', '==', search.substring(0, 4)),
+        where('contact_number_short', '==', search.substring(4, 8)),
+        orderBy('registration_id', 'desc'),
+        limit(5),
+      );
+
+      const registrationsSnapshot = getDocs(registrationQuery);
+      const registrationsDocs = (await registrationsSnapshot).docs;
+      const registrations = registrationsDocs.map(
+        (doc) => doc.data() as FSRegistration,
+      );
+
+      $form.search = '';
+      $form.registrations = registrations;
+
+      cursor = $form.registrations.shift() ?? ({} as FSRegistration);
+    },
+  });
 </script>
 
 <svelte:head>
@@ -17,14 +60,22 @@
     <Card.Header class="text-sm font-normal">
       Search by Partials or QR
     </Card.Header>
-    <Card.Content class="flex flex-row items-center">
+    <Card.Content class="flex flex-row items-center gap-2">
       <Input
         id="search"
         type="text"
-        value=""
+        name="search"
+        bind:value="{$form.search}"
+        on:change="{handleChange}"
         placeholder="Search by Partials or QR"
         class="border-0 text-2xl md:text-3xl font-bold
-                          focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
+                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
+
+      <Button
+        variant="ghost"
+        on:click="{handleSubmit}">
+        <SearchIcon />
+      </Button>
     </Card.Content>
   </Card.Root>
 
@@ -34,7 +85,7 @@
       <Input
         id="full_name"
         type="text"
-        value=""
+        value="{cursor.full_name}"
         placeholder="No Record"
         class="border-0 text-2xl md:text-3xl font-bold
                   focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
@@ -47,7 +98,7 @@
       <Input
         id="nric"
         type="text"
-        value=""
+        value="{cursor.nric}"
         placeholder="No Record"
         class="border-0 text-2xl md:text-3xl font-bold
                   focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
@@ -60,7 +111,7 @@
       <Input
         id="gender"
         type="text"
-        value=""
+        value="{cursor.gender}"
         placeholder="No Record"
         class="border-0 text-2xl md:text-3xl font-bold
                   focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
@@ -73,7 +124,7 @@
       <Input
         id="graduating_class"
         type="text"
-        value=""
+        value="{cursor.graduating_class}"
         placeholder="No Record"
         class="border-0 text-2xl md:text-3xl font-bold
                   focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
@@ -86,7 +137,7 @@
       <Input
         id="graduating_year"
         type="text"
-        value=""
+        value="{cursor.graduating_year}"
         placeholder="No Record"
         class="border-0 text-2xl md:text-3xl font-bold
                   focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
@@ -101,7 +152,7 @@
       <Input
         id="current_school_institution"
         type="text"
-        value=""
+        value="{cursor.current_school_institution}"
         placeholder="No Record"
         class="border-0 text-2xl md:text-3xl font-bold
                   focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
@@ -114,7 +165,7 @@
       <Input
         id="contact_number"
         type="text"
-        value=""
+        value="{cursor.contact_number}"
         placeholder="No Record"
         class="border-0 text-2xl md:text-3xl font-bold
                   focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
@@ -127,7 +178,7 @@
       <Input
         id="name_of_nok"
         type="text"
-        value=""
+        value="{cursor.name_of_nok}"
         placeholder="No Record"
         class="border-0 text-2xl md:text-3xl font-bold
                   focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
@@ -142,7 +193,7 @@
       <Input
         id="relationship_with_nok"
         type="text"
-        value=""
+        value="{cursor.relationship_with_nok}"
         placeholder="No Record"
         class="border-0 text-2xl md:text-3xl font-bold
                   focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
@@ -157,7 +208,7 @@
       <Input
         id="emergency_contact_nok"
         type="text"
-        value=""
+        value="{cursor.emergency_contact_nok}"
         placeholder="No Record"
         class="border-0 text-2xl md:text-3xl font-bold
                   focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
@@ -170,7 +221,7 @@
       <Input
         id="form_teachers"
         type="text"
-        value=""
+        value="{cursor.form_teachers}"
         placeholder="No Record"
         class="border-0 text-2xl md:text-3xl font-bold
                   focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
@@ -185,7 +236,8 @@
       <Input
         id="total_teachers_visiting"
         type="text"
-        value=""
+        value="{cursor.visiting_teachers &&
+          cursor.visiting_teachers.split(', ').length}"
         placeholder="No Record"
         class="border-0 text-2xl md:text-3xl font-bold
                   focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
@@ -198,7 +250,7 @@
       <Input
         id="status"
         type="text"
-        value=""
+        value="{cursor.status}"
         placeholder="No Record"
         class="border-0 text-2xl md:text-3xl font-bold
                   focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
@@ -210,7 +262,7 @@
     <Card.Content class="flex flex-row items-center">
       <Textarea
         id="comments"
-        value=""
+        value="{cursor.comments}"
         placeholder="No Record"
         class="border-0 font-mono h-full max-h-full
                   focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
@@ -221,14 +273,12 @@
     <Card.Header class="text-sm font-normal">
       Previous Registration Records
     </Card.Header>
-    <Card.Content class="flex flex-row items-center">
-      <Input
-        id="prev"
-        type="text"
-        value=""
-        placeholder="No Record"
-        class="border-0 text-2xl md:text-3xl font-bold
-                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
+    <Card.Content>
+      {#each $form.registrations as registration}
+        <p class="whitespace-pre-line">{registration.comments}</p>
+      {:else}
+        <p>No previous registration records found</p>
+      {/each}
     </Card.Content>
   </Card.Root>
 
