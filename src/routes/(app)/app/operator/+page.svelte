@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { FSRegistration } from '$lib/models';
+  import type { FormInputEvent } from '$lib/components/ui/input';
 
-  import { createForm } from 'svelte-forms-lib';
-  import { query, where, limit, getDocs, orderBy } from 'firebase/firestore';
+  import { writable, derived } from 'svelte/store';
 
   import * as Card from '$lib/components/ui/card';
 
@@ -11,41 +11,34 @@
   import { Button } from '$lib/components/ui/button';
   import SearchIcon from 'lucide-svelte/icons/search';
 
-  import { colRegistrationsRef } from '$lib/firebase/firestore';
+  import { authStore } from '$lib/stores';
+  import { querySearchMask } from '$lib/firebase/query';
 
-  interface FormValues {
-    search: string;
-    registrations: FSRegistration[];
-  }
+  let searchMaskOrQr = '';
+  let searchMaskOrQrError = '';
 
-  let cursor = {} as FSRegistration;
-  const { form, handleChange, handleSubmit } = createForm<FormValues>({
-    initialValues: {
-      search: '',
-      registrations: [],
-    },
-    onSubmit: async ({ search }) => {
-      const currentYear = new Date().getFullYear().toString();
-      const registrationQuery = query(
-        colRegistrationsRef(currentYear),
-        where('nric', '==', search.substring(0, 4)),
-        where('contact_number_short', '==', search.substring(4, 8)),
-        orderBy('registration_id', 'desc'),
-        limit(5),
-      );
+  const records = writable<FSRegistration[]>([]);
+  const cursor = derived(
+    records,
+    ($records) => $records.shift() ?? ({} as FSRegistration),
+  );
 
-      const registrationsSnapshot = getDocs(registrationQuery);
-      const registrationsDocs = (await registrationsSnapshot).docs;
-      const registrations = registrationsDocs.map(
-        (doc) => doc.data() as FSRegistration,
-      );
+  const onKeyInput = async (event: FormInputEvent<KeyboardEvent>) => {
+    if (event.key !== 'Enter') return;
+    handleMaskQuery();
+  };
 
-      $form.search = '';
-      $form.registrations = registrations;
+  const handleMaskQuery = async () => {
+    if (searchMaskOrQr.toUpperCase().match(/^[STFGM]\d{7}.$/))
+      return (searchMaskOrQr = searchMaskOrQr.substring(5, 9).toUpperCase());
 
-      cursor = $form.registrations.shift() ?? ({} as FSRegistration);
-    },
-  });
+    if (searchMaskOrQr.length < 8)
+      return (searchMaskOrQrError = 'Minimum 8 characters required');
+
+    const registrations = await querySearchMask(searchMaskOrQr.toUpperCase());
+    records.set(registrations);
+    searchMaskOrQr = '';
+  };
 </script>
 
 <svelte:head>
@@ -65,18 +58,23 @@
         id="search"
         type="text"
         name="search"
-        bind:value="{$form.search}"
-        on:change="{handleChange}"
+        on:keydown="{onKeyInput}"
+        bind:value="{searchMaskOrQr}"
         placeholder="Search by Partials or QR"
         class="border-0 text-2xl md:text-3xl font-bold
                 focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
 
       <Button
         variant="ghost"
-        on:click="{handleSubmit}">
+        on:click="{handleMaskQuery}">
         <SearchIcon />
       </Button>
     </Card.Content>
+    {#if searchMaskOrQrError}
+      <Card.Footer class="text-xs text-red-600">
+        {searchMaskOrQrError}
+      </Card.Footer>
+    {/if}
   </Card.Root>
 
   <Card.Root class="col-span-2 sm:order-1">
@@ -85,10 +83,11 @@
       <Input
         id="full_name"
         type="text"
-        value="{cursor.full_name}"
+        value="{$cursor.full_name}"
         placeholder="No Record"
+        disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
-                  focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
+                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
   </Card.Root>
 
@@ -98,10 +97,11 @@
       <Input
         id="nric"
         type="text"
-        value="{cursor.nric}"
+        value="{$cursor.nric}"
         placeholder="No Record"
+        disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
-                  focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
+                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
   </Card.Root>
 
@@ -111,10 +111,11 @@
       <Input
         id="gender"
         type="text"
-        value="{cursor.gender}"
+        value="{$cursor.gender}"
         placeholder="No Record"
+        disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
-                  focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
+                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
   </Card.Root>
 
@@ -124,10 +125,11 @@
       <Input
         id="graduating_class"
         type="text"
-        value="{cursor.graduating_class}"
+        value="{$cursor.graduating_class}"
         placeholder="No Record"
+        disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
-                  focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
+                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
   </Card.Root>
 
@@ -137,10 +139,11 @@
       <Input
         id="graduating_year"
         type="text"
-        value="{cursor.graduating_year}"
+        value="{$cursor.graduating_year}"
         placeholder="No Record"
+        disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
-                  focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
+                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
   </Card.Root>
 
@@ -152,10 +155,11 @@
       <Input
         id="current_school_institution"
         type="text"
-        value="{cursor.current_school_institution}"
+        value="{$cursor.current_school_institution}"
         placeholder="No Record"
+        disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
-                  focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
+                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
   </Card.Root>
 
@@ -165,10 +169,11 @@
       <Input
         id="contact_number"
         type="text"
-        value="{cursor.contact_number}"
+        value="{$cursor.contact_number}"
         placeholder="No Record"
+        disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
-                  focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
+                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
   </Card.Root>
 
@@ -178,10 +183,11 @@
       <Input
         id="name_of_nok"
         type="text"
-        value="{cursor.name_of_nok}"
+        value="{$cursor.name_of_nok}"
         placeholder="No Record"
+        disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
-                  focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
+                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
   </Card.Root>
 
@@ -193,10 +199,11 @@
       <Input
         id="relationship_with_nok"
         type="text"
-        value="{cursor.relationship_with_nok}"
+        value="{$cursor.relationship_with_nok}"
         placeholder="No Record"
+        disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
-                  focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
+                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
   </Card.Root>
 
@@ -208,10 +215,11 @@
       <Input
         id="emergency_contact_nok"
         type="text"
-        value="{cursor.emergency_contact_nok}"
+        value="{$cursor.emergency_contact_nok}"
         placeholder="No Record"
+        disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
-                  focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
+                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
   </Card.Root>
 
@@ -221,10 +229,11 @@
       <Input
         id="form_teachers"
         type="text"
-        value="{cursor.form_teachers}"
+        value="{$cursor.form_teachers}"
         placeholder="No Record"
+        disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
-                  focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
+                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
   </Card.Root>
 
@@ -236,11 +245,12 @@
       <Input
         id="total_teachers_visiting"
         type="text"
-        value="{cursor.visiting_teachers &&
-          cursor.visiting_teachers.split(', ').length}"
+        value="{$cursor.visiting_teachers &&
+          $cursor.visiting_teachers.split(', ').length}"
         placeholder="No Record"
+        disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
-                  focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
+                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
   </Card.Root>
 
@@ -250,10 +260,11 @@
       <Input
         id="status"
         type="text"
-        value="{cursor.status}"
+        value="{$cursor.status}"
         placeholder="No Record"
+        disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
-                  focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
+                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
   </Card.Root>
 
@@ -262,10 +273,11 @@
     <Card.Content class="flex flex-row items-center">
       <Textarea
         id="comments"
-        value="{cursor.comments}"
+        value="{$cursor.comments}"
         placeholder="No Record"
+        disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 font-mono h-full max-h-full
-                  focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
+                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
   </Card.Root>
 
@@ -274,8 +286,8 @@
       Previous Registration Records
     </Card.Header>
     <Card.Content>
-      {#each $form.registrations as registration}
-        <p class="whitespace-pre-line">{registration.comments}</p>
+      {#each $records as record}
+        <p class="whitespace-pre-line">{record.comments}</p>
       {:else}
         <p>No previous registration records found</p>
       {/each}
