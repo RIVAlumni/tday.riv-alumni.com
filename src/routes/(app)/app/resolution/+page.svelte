@@ -1,20 +1,39 @@
 <script lang="ts">
+  import type { FSRegistration } from '$lib/models';
+
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
+  import { createForm } from 'svelte-forms-lib';
   import { createTable, Render, Subscribe } from 'svelte-headless-table';
 
   import * as Table from '$lib/components/ui/table';
-  import Input from '$lib/components/ui/input/input.svelte';
+  import { Button } from '$lib/components/ui/button';
+  import { Input } from '$lib/components/ui/input';
 
   import { queryAllWithFilter } from '$lib/firebase/query';
-  import type { FSRegistration } from '$lib/models';
+
+  const records = writable<FSRegistration[]>([]);
 
   onMount(async () => {
     const registrations = await queryAllWithFilter({});
     records.set(registrations);
   });
 
-  const records = writable<FSRegistration[]>([]);
+  const { form, handleChange, handleSubmit } = createForm<
+    Partial<Pick<FSRegistration, 'full_name' | 'nric' | 'contact_number'>>
+  >({
+    initialValues: {},
+    onSubmit: async ({ full_name, nric, contact_number }) => {
+      const filters = {
+        full_name: full_name?.toUpperCase(),
+        nric: nric?.toUpperCase(),
+        contact_number: contact_number?.toUpperCase(),
+      };
+
+      const registrations = await queryAllWithFilter(filters);
+      records.set(registrations);
+    },
+  });
 
   const table = createTable(records);
   const columns = table.createColumns([
@@ -92,12 +111,42 @@
 </svelte:head>
 
 <div class="p-4 w-full h-min">
-  <div class="flex flex-row items-center py-4">
+  <form
+    on:submit|preventDefault="{handleSubmit}"
+    class="flex flex-row items-center pb-4 gap-4">
     <Input
       type="text"
-      class="max-w-sm"
-      placeholder="Search by Full Name" />
-  </div>
+      id="full_name"
+      name="full_name"
+      class="px-3 py-1 max-w-xs"
+      placeholder="Filter by Full Name"
+      on:change="{handleChange}"
+      bind:value="{$form.full_name}" />
+
+    <Input
+      type="text"
+      id="nric"
+      name="nric"
+      class="px-3 py-1 max-w-xs"
+      placeholder="Filter by NRIC"
+      on:change="{handleChange}"
+      bind:value="{$form.nric}" />
+
+    <Input
+      type="text"
+      id="contact_number"
+      name="contact_number"
+      class="px-3 py-1 max-w-xs"
+      placeholder="Filter by Contact Number"
+      on:change="{handleChange}"
+      bind:value="{$form.contact_number}" />
+
+    <Button
+      type="submit"
+      variant="outline">
+      Search
+    </Button>
+  </form>
 
   <Table.Root {...$tableAttrs}>
     <Table.Header>
