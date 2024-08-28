@@ -4,7 +4,7 @@
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
   import { createForm } from 'svelte-forms-lib';
-  import { createTable, Render, Subscribe } from 'svelte-headless-table';
+  import { Render, Subscribe } from 'svelte-headless-table';
 
   import * as Table from '$lib/components/ui/table';
   import { Button } from '$lib/components/ui/button';
@@ -12,7 +12,13 @@
 
   import { queryAllWithFilter } from '$lib/firebase/query';
 
-  const records = writable<FSRegistration[]>([]);
+  import {
+    records,
+    headerRows,
+    pageRows,
+    tableAttrs,
+    tableBodyAttrs,
+  } from './table';
 
   onMount(async () => {
     const registrations = await queryAllWithFilter({});
@@ -34,76 +40,6 @@
       records.set(registrations);
     },
   });
-
-  const table = createTable(records);
-  const columns = table.createColumns([
-    table.group({
-      header: 'Personal Info',
-      columns: [
-        table.column({
-          accessor: 'registration_id',
-          header: 'Registration ID',
-        }),
-        table.column({
-          accessor: 'full_name',
-          header: 'Full Name',
-        }),
-        table.column({
-          accessor: 'status',
-          header: 'Status',
-        }),
-        table.column({
-          accessor: 'nric',
-          header: 'NRIC',
-        }),
-        table.column({
-          accessor: 'gender',
-          header: 'Gender',
-        }),
-        table.column({
-          accessor: 'current_school_institution',
-          header: 'Current School',
-        }),
-        table.column({
-          accessor: 'contact_number',
-          header: 'Contact',
-        }),
-      ],
-    }),
-    table.group({
-      header: 'Graduating',
-      columns: [
-        table.column({
-          accessor: 'graduating_class',
-          header: 'Class',
-        }),
-        table.column({
-          accessor: 'graduating_year',
-          header: 'Year',
-        }),
-      ],
-    }),
-    table.group({
-      header: 'Next-of-Kin',
-      columns: [
-        table.column({
-          accessor: 'name_of_nok',
-          header: 'Name',
-        }),
-        table.column({
-          accessor: 'relationship_with_nok',
-          header: 'Relationship',
-        }),
-        table.column({
-          accessor: 'emergency_contact_nok',
-          header: 'Emergency Contact',
-        }),
-      ],
-    }),
-  ]);
-
-  const { headerRows, pageRows, tableAttrs, tableBodyAttrs } =
-    table.createViewModel(columns);
 </script>
 
 <svelte:head>
