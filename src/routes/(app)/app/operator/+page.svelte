@@ -15,24 +15,30 @@
   import { authStore } from '$lib/stores';
   import { querySearchMask } from '$lib/firebase/query';
 
-  let currentTime = new Date();
-  $: currentTimeHours = currentTime.getHours().toString().padStart(2, '0');
-  $: currentTimeMinutes = currentTime.getMinutes().toString().padStart(2, '0');
-  $: currenttimeSeconds = currentTime.getSeconds().toString().padStart(2, '0');
+  import { actionCheckIn, actionRefuseEntry } from '$lib/firebase/actions';
 
   onMount(() => {
     const interval = setInterval(() => (currentTime = new Date()), 500);
     return () => clearInterval(interval);
   });
 
+  let currentTime = new Date();
+  $: currentTimeHours = currentTime.getHours().toString().padStart(2, '0');
+  $: currentTimeMinutes = currentTime.getMinutes().toString().padStart(2, '0');
+  $: currenttimeSeconds = currentTime.getSeconds().toString().padStart(2, '0');
+
   let searchMaskOrQr = '';
   let searchMaskOrQrError = '';
 
+  let actionButtonSuccess = '';
+  let actionButtonError = '';
+
   const records = writable<FSRegistration[]>([]);
-  const cursor = derived(
+  const recordCursor = derived(
     records,
     ($records) => $records.shift() ?? ({} as FSRegistration),
   );
+  $: recordCursorWritable = writable<FSRegistration>($recordCursor);
 
   const onKeyInput = async (event: FormInputEvent<KeyboardEvent>) => {
     if (event.key !== 'Enter') return;
@@ -46,9 +52,48 @@
     if (searchMaskOrQr.length < 8)
       return (searchMaskOrQrError = 'Minimum 8 characters required');
 
+    searchMaskOrQrError = '';
+    actionButtonSuccess = '';
+    actionButtonError = '';
+
     const registrations = await querySearchMask(searchMaskOrQr.toUpperCase());
     records.set(registrations);
     searchMaskOrQr = '';
+  };
+
+  const handleCheckIn = () => {
+    actionButtonSuccess = '';
+    actionButtonError = '';
+
+    if (!$authStore) return;
+    if (!$recordCursorWritable.registration_id) return;
+
+    actionCheckIn($authStore, $recordCursorWritable)
+      .then(() => {
+        actionButtonSuccess = 'Check-in successful.';
+        records.set([]);
+      })
+      .catch((err) => {
+        actionButtonError = err.message;
+      });
+  };
+
+  const handleRefuseEntry = () => {
+    actionButtonSuccess = '';
+    actionButtonError = '';
+
+    if (!$authStore) return;
+    if (!$recordCursorWritable.registration_id) return;
+
+    actionRefuseEntry($authStore, $recordCursorWritable)
+      .then(() => {
+        actionButtonSuccess =
+          'Refusal of entry successful. Please turn them away from the school now.';
+        records.set([]);
+      })
+      .catch((err) => {
+        actionButtonError = err.message;
+      });
   };
 </script>
 
@@ -117,12 +162,18 @@
       <Input
         id="full_name"
         type="text"
-        value="{$cursor.full_name}"
+        bind:value="{$recordCursorWritable.full_name}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
                 focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
+    <Card.Footer>
+      <p class="text-xs text-yellow-600">
+        Ensure that the name matches the EZ-Link/NRIC/SingPass exactly. All
+        spaces, commas, and special characters are important.
+      </p>
+    </Card.Footer>
   </Card.Root>
 
   <Card.Root class="col-span-1 sm:order-3">
@@ -131,7 +182,7 @@
       <Input
         id="nric"
         type="text"
-        value="{$cursor.nric}"
+        bind:value="{$recordCursorWritable.nric}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
@@ -145,7 +196,7 @@
       <Input
         id="gender"
         type="text"
-        value="{$cursor.gender}"
+        bind:value="{$recordCursorWritable.gender}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
@@ -159,7 +210,7 @@
       <Input
         id="graduating_class"
         type="text"
-        value="{$cursor.graduating_class}"
+        bind:value="{$recordCursorWritable.graduating_class}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
@@ -173,7 +224,7 @@
       <Input
         id="graduating_year"
         type="text"
-        value="{$cursor.graduating_year}"
+        bind:value="{$recordCursorWritable.graduating_year}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
@@ -189,7 +240,7 @@
       <Input
         id="current_school_institution"
         type="text"
-        value="{$cursor.current_school_institution}"
+        bind:value="{$recordCursorWritable.current_school_institution}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
@@ -203,7 +254,7 @@
       <Input
         id="contact_number"
         type="text"
-        value="{$cursor.contact_number}"
+        bind:value="{$recordCursorWritable.contact_number}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
@@ -217,7 +268,7 @@
       <Input
         id="name_of_nok"
         type="text"
-        value="{$cursor.name_of_nok}"
+        bind:value="{$recordCursorWritable.name_of_nok}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
@@ -233,7 +284,7 @@
       <Input
         id="relationship_with_nok"
         type="text"
-        value="{$cursor.relationship_with_nok}"
+        bind:value="{$recordCursorWritable.relationship_with_nok}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
@@ -249,7 +300,7 @@
       <Input
         id="emergency_contact_nok"
         type="text"
-        value="{$cursor.emergency_contact_nok}"
+        bind:value="{$recordCursorWritable.emergency_contact_nok}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
@@ -263,12 +314,15 @@
       <Input
         id="form_teachers"
         type="text"
-        value="{$cursor.form_teachers}"
+        bind:value="{$recordCursorWritable.form_teachers}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
                 focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
+    <Card.Footer>
+      <p class="text-xs text-yellow-600">Consensus from cohort:</p>
+    </Card.Footer>
   </Card.Root>
 
   <Card.Root class="col-span-2 sm:col-span-1 sm:order-[16]">
@@ -279,8 +333,8 @@
       <Input
         id="total_teachers_visiting"
         type="text"
-        value="{$cursor.visiting_teachers &&
-          $cursor.visiting_teachers.split(', ').length}"
+        value="{$recordCursorWritable.visiting_teachers &&
+          $recordCursorWritable.visiting_teachers.split(', ').length}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
@@ -294,7 +348,7 @@
       <Input
         id="status"
         type="text"
-        value="{$cursor.status}"
+        bind:value="{$recordCursorWritable.status}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
@@ -307,7 +361,7 @@
     <Card.Content class="flex flex-row items-center">
       <Textarea
         id="comments"
-        value="{$cursor.comments}"
+        bind:value="{$recordCursorWritable.comments}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 font-mono h-full max-h-full
@@ -341,17 +395,28 @@
         <div class="flex flex-row gap-2">
           <Button
             type="button"
+            on:click="{() => handleCheckIn()}"
             class="w-full text-white bg-emerald-600 hover:bg-emerald-600/90 shadow">
             Check-In
           </Button>
 
           <Button
             type="button"
+            on:click="{() => handleRefuseEntry()}"
             class="w-full text-white bg-red-600 hover:bg-red-600/90 shadow">
             Refuse Entry
           </Button>
         </div>
       </div>
     </Card.Content>
+    <Card.Footer class="text-xs">
+      <p class="text-green-600">
+        {actionButtonSuccess}
+      </p>
+
+      <p class="text-red-600">
+        {actionButtonError}
+      </p>
+    </Card.Footer>
   </Card.Root>
 </div>
