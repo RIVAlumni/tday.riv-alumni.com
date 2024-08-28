@@ -202,10 +202,10 @@
       <Input
         id="full_name"
         type="text"
+        bind:value="{$recordCursorWritable.full_name}"
         on:keyup="{() =>
           ($recordCursorWritable.full_name =
             $recordCursorWritable.full_name.toUpperCase())}"
-        bind:value="{$recordCursorWritable.full_name}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
@@ -226,6 +226,9 @@
         id="nric"
         type="text"
         bind:value="{$recordCursorWritable.nric}"
+        on:keyup="{() =>
+          ($recordCursorWritable.nric =
+            $recordCursorWritable.nric.toUpperCase())}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold uppercase placeholder:normal-case
@@ -240,6 +243,9 @@
         id="gender"
         type="text"
         bind:value="{$recordCursorWritable.gender}"
+        on:keyup="{() =>
+          ($recordCursorWritable.gender =
+            $recordCursorWritable.gender.toUpperCase())}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
@@ -284,6 +290,9 @@
         id="current_school_institution"
         type="text"
         bind:value="{$recordCursorWritable.current_school_institution}"
+        on:keyup="{() =>
+          ($recordCursorWritable.current_school_institution =
+            $recordCursorWritable.current_school_institution.toUpperCase())}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold uppercase placeholder:normal-case
@@ -312,6 +321,9 @@
         id="name_of_nok"
         type="text"
         bind:value="{$recordCursorWritable.name_of_nok}"
+        on:keyup="{() =>
+          ($recordCursorWritable.name_of_nok =
+            $recordCursorWritable.name_of_nok.toUpperCase())}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold uppercase placeholder:normal-case
@@ -358,6 +370,9 @@
         id="form_teachers"
         type="text"
         bind:value="{$recordCursorWritable.form_teachers}"
+        on:keyup="{() =>
+          ($recordCursorWritable.form_teachers =
+            $recordCursorWritable.form_teachers.toUpperCase())}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold uppercase placeholder:normal-case
