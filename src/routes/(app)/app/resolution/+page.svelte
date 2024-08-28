@@ -1,9 +1,12 @@
 <script lang="ts">
+  import type { Timestamp } from 'firebase/firestore';
   import type { FSRegistration } from '$lib/models';
 
   import { onMount } from 'svelte';
   import { createForm } from 'svelte-forms-lib';
   import { Render, Subscribe } from 'svelte-headless-table';
+
+  import { authStore } from '$lib/stores/';
 
   import * as Table from '$lib/components/ui/table';
   import { Button } from '$lib/components/ui/button';
@@ -19,9 +22,16 @@
     tableBodyAttrs,
   } from './table';
 
-  onMount(async () => {
-    const registrations = await queryAllWithFilter({});
-    records.set(registrations);
+  let currentTime = new Date();
+  $: currentTimeHours = currentTime.getHours().toString().padStart(2, '0');
+  $: currentTimeMinutes = currentTime.getMinutes().toString().padStart(2, '0');
+  $: currenttimeSeconds = currentTime.getSeconds().toString().padStart(2, '0');
+
+  onMount(() => {
+    const interval = setInterval(() => (currentTime = new Date()), 500);
+    queryAllWithFilter({}).then(records.set);
+
+    return () => clearInterval(interval);
   });
 
   const { form, handleChange, handleSubmit } = createForm<
@@ -46,43 +56,68 @@
 </svelte:head>
 
 <div class="px-4 w-full h-min">
-  <form
-    on:submit|preventDefault="{handleSubmit}"
-    class="p-4 top-0 sticky z-50 bg-background
-            flex flex-row items-center pb-4 gap-4">
-    <Input
-      type="text"
-      id="full_name"
-      name="full_name"
-      class="px-3 py-1 max-w-xs"
-      placeholder="Filter by Full Name"
-      on:change="{handleChange}"
-      bind:value="{$form.full_name}" />
+  <div
+    class="top-0 sticky bg-background z-50
+            py-4 flex flex-col justify-start">
+    <div class="flex flex-row items-center gap-4">
+      <p class="text-sm">
+        Currently logged in as
+        <span class="font-bold">
+          {$authStore?.display_name}
+        </span>
+      </p>
 
-    <Input
-      type="text"
-      id="nric"
-      name="nric"
-      class="px-3 py-1 max-w-xs"
-      placeholder="Filter by NRIC"
-      on:change="{handleChange}"
-      bind:value="{$form.nric}" />
+      <p class="text-sm">Access Level - {$authStore?.access_level}</p>
 
-    <Input
-      type="text"
-      id="contact_number"
-      name="contact_number"
-      class="px-3 py-1 max-w-xs"
-      placeholder="Filter by Contact Number"
-      on:change="{handleChange}"
-      bind:value="{$form.contact_number}" />
+      <p class="text-sm">
+        Time now is {currentTimeHours}:{currentTimeMinutes}:{currenttimeSeconds}
+      </p>
 
-    <Button
-      type="submit"
-      variant="outline">
-      Search
-    </Button>
-  </form>
+      <Button
+        variant="link"
+        href="/app/operator">
+        Switch to Operator View
+      </Button>
+    </div>
+
+    <form
+      on:submit|preventDefault="{handleSubmit}"
+      class="top-0 sticky z-50 bg-background
+            flex flex-row items-center gap-4">
+      <Input
+        type="text"
+        id="full_name"
+        name="full_name"
+        class="px-3 py-1 max-w-xs"
+        placeholder="Filter by Full Name"
+        on:change="{handleChange}"
+        bind:value="{$form.full_name}" />
+
+      <Input
+        type="text"
+        id="nric"
+        name="nric"
+        class="px-3 py-1 max-w-xs"
+        placeholder="Filter by NRIC"
+        on:change="{handleChange}"
+        bind:value="{$form.nric}" />
+
+      <Input
+        type="text"
+        id="contact_number"
+        name="contact_number"
+        class="px-3 py-1 max-w-xs"
+        placeholder="Filter by Contact Number"
+        on:change="{handleChange}"
+        bind:value="{$form.contact_number}" />
+
+      <Button
+        type="submit"
+        variant="outline">
+        Search
+      </Button>
+    </form>
+  </div>
 
   <Table.Root {...$tableAttrs}>
     <Table.Header>

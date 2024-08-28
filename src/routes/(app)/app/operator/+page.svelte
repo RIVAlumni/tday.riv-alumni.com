@@ -2,6 +2,7 @@
   import type { FSRegistration } from '$lib/models';
   import type { FormInputEvent } from '$lib/components/ui/input';
 
+  import { onMount } from 'svelte';
   import { writable, derived } from 'svelte/store';
 
   import * as Card from '$lib/components/ui/card';
@@ -13,6 +14,16 @@
 
   import { authStore } from '$lib/stores';
   import { querySearchMask } from '$lib/firebase/query';
+
+  let currentTime = new Date();
+  $: currentTimeHours = currentTime.getHours().toString().padStart(2, '0');
+  $: currentTimeMinutes = currentTime.getMinutes().toString().padStart(2, '0');
+  $: currenttimeSeconds = currentTime.getSeconds().toString().padStart(2, '0');
+
+  onMount(() => {
+    const interval = setInterval(() => (currentTime = new Date()), 500);
+    return () => clearInterval(interval);
+  });
 
   let searchMaskOrQr = '';
   let searchMaskOrQrError = '';
@@ -44,6 +55,29 @@
 <svelte:head>
   <title>Reception Station | Operator</title>
 </svelte:head>
+
+<div
+  class="px-4 pt-4 top-0 sticky bg-background shadow
+          flex flex-row items-center gap-4">
+  <p class="text-sm">
+    Currently logged in as
+    <span class="font-bold">
+      {$authStore?.display_name}
+    </span>
+  </p>
+
+  <p class="text-sm">Access Level - {$authStore?.access_level}</p>
+
+  <p class="text-sm">
+    Time now is {currentTimeHours}:{currentTimeMinutes}:{currenttimeSeconds}
+  </p>
+
+  <Button
+    variant="link"
+    href="/app/resolution">
+    Switch to Resolution View
+  </Button>
+</div>
 
 <div
   class="p-4 w-full h-min
