@@ -368,11 +368,11 @@
     <Card.Header class="text-sm font-normal">Status</Card.Header>
     <Card.Content class="flex flex-row items-center">
       <Input
+        disabled
         id="status"
         type="text"
-        bind:value="{$recordCursorWritable.status}"
+        value="{$recordCursorWritable.status}"
         placeholder="No Record"
-        disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold uppercase placeholder:normal-case
                 focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
