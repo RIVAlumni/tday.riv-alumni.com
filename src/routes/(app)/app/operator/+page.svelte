@@ -140,7 +140,7 @@
         on:keydown="{onKeyInput}"
         bind:value="{searchMaskOrQr}"
         placeholder="Search by Partials or QR"
-        class="border-0 text-2xl md:text-3xl font-bold
+        class="border-0 text-2xl md:text-3xl font-bold uppercase placeholder:normal-case
                 focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
 
       <Button
@@ -165,7 +165,7 @@
         bind:value="{$recordCursorWritable.full_name}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
-        class="border-0 text-2xl md:text-3xl font-bold
+        class="border-0 text-2xl md:text-3xl font-bold uppercase placeholder:normal-case
                 focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
     <Card.Footer>
@@ -185,7 +185,7 @@
         bind:value="{$recordCursorWritable.nric}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
-        class="border-0 text-2xl md:text-3xl font-bold
+        class="border-0 text-2xl md:text-3xl font-bold uppercase placeholder:normal-case
                 focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
   </Card.Root>
@@ -243,7 +243,7 @@
         bind:value="{$recordCursorWritable.current_school_institution}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
-        class="border-0 text-2xl md:text-3xl font-bold
+        class="border-0 text-2xl md:text-3xl font-bold uppercase placeholder:normal-case
                 focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
   </Card.Root>
@@ -271,7 +271,7 @@
         bind:value="{$recordCursorWritable.name_of_nok}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
-        class="border-0 text-2xl md:text-3xl font-bold
+        class="border-0 text-2xl md:text-3xl font-bold uppercase placeholder:normal-case
                 focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
   </Card.Root>
@@ -317,7 +317,7 @@
         bind:value="{$recordCursorWritable.form_teachers}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
-        class="border-0 text-2xl md:text-3xl font-bold
+        class="border-0 text-2xl md:text-3xl font-bold uppercase placeholder:normal-case
                 focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
     <Card.Footer>
@@ -351,7 +351,7 @@
         bind:value="{$recordCursorWritable.status}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
-        class="border-0 text-2xl md:text-3xl font-bold
+        class="border-0 text-2xl md:text-3xl font-bold uppercase placeholder:normal-case
                 focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
   </Card.Root>
@@ -361,10 +361,11 @@
     <Card.Content class="flex flex-row items-center">
       <Textarea
         id="comments"
+        rows="{7}"
         bind:value="{$recordCursorWritable.comments}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
-        class="border-0 font-mono h-full max-h-full
+        class="border-0 font-mono h-full max-h-full uppercase placeholder:normal-case
                 focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
   </Card.Root>
@@ -375,9 +376,12 @@
     </Card.Header>
     <Card.Content>
       {#each $records as record}
-        <p class="whitespace-pre-line">{record.comments}</p>
+        <p
+          class="text-xs uppercase whitespace-pre-line placeholder:normal-case">
+          {record.comments}
+        </p>
       {:else}
-        <p>No previous registration records found</p>
+        <p class="text-xs">No previous registration records found</p>
       {/each}
     </Card.Content>
   </Card.Root>
