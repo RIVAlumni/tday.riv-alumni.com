@@ -5,16 +5,17 @@
   import { onMount } from 'svelte';
   import { writable, derived } from 'svelte/store';
 
-  import * as Card from '$lib/components/ui/card';
+  import SearchIcon from 'lucide-svelte/icons/search';
 
+  import { page } from '$app/stores';
+
+  import * as Card from '$lib/components/ui/card';
   import { Input } from '$lib/components/ui/input';
   import { Textarea } from '$lib/components/ui/textarea';
   import { Button } from '$lib/components/ui/button';
-  import SearchIcon from 'lucide-svelte/icons/search';
 
   import { authStore } from '$lib/stores';
   import { querySearchMask } from '$lib/firebase/query';
-
   import {
     actionSetConflict,
     actionCheckIn,
@@ -22,6 +23,9 @@
   } from '$lib/firebase/actions';
 
   onMount(() => {
+    searchMaskOrQr = $page.url.searchParams.get('search') ?? '';
+    if (searchMaskOrQr) handleMaskQuery();
+
     const interval = setInterval(() => (currentTime = new Date()), 500);
     return () => clearInterval(interval);
   });
