@@ -7,6 +7,8 @@ import { doc, collection, onSnapshot } from 'firebase/firestore';
 
 export const docUserRef = (uid: string) => doc(firestore, 'users', uid);
 export const docEventsRef = (year: string) => doc(firestore, 'events', year);
+export const colConsensusRef = (year: string) =>
+  collection(firestore, 'events', year, 'consensus');
 export const colRegistrationsRef = (year: string) =>
   collection(firestore, 'events', year, 'registrations');
 

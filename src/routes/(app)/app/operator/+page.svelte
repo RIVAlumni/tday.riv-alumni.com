@@ -15,7 +15,7 @@
   import { Button } from '$lib/components/ui/button';
 
   import { authStore } from '$lib/stores';
-  import { querySearchMask } from '$lib/firebase/query';
+  import { queryConsensus, querySearchMask } from '$lib/firebase/query';
   import {
     actionSetConflict,
     actionCheckIn,
@@ -35,6 +35,8 @@
   $: currentTimeMinutes = currentTime.getMinutes().toString().padStart(2, '0');
   $: currenttimeSeconds = currentTime.getSeconds().toString().padStart(2, '0');
 
+  let consensus = '';
+
   let searchMaskOrQr = '';
   let searchMaskOrQrError = '';
 
@@ -47,6 +49,14 @@
     ($records) => $records.shift() ?? ({} as FSRegistration),
   );
   $: recordCursorWritable = writable<FSRegistration>($recordCursor);
+  $: (async () => {
+    if (!$recordCursor) return;
+
+    consensus = await queryConsensus(
+      $recordCursor.graduating_year,
+      $recordCursor.graduating_class,
+    );
+  })();
 
   const onKeyInput = async (event: FormInputEvent<KeyboardEvent>) => {
     if (event.key !== 'Enter') return;
@@ -347,7 +357,9 @@
                 focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
     <Card.Footer>
-      <p class="text-xs text-yellow-600">Consensus from cohort:</p>
+      <p class="text-xs text-yellow-600">
+        Consensus from cohort: {consensus}
+      </p>
     </Card.Footer>
   </Card.Root>
 

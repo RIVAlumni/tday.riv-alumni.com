@@ -1,10 +1,33 @@
-import type { FSRegistration } from '$lib/models';
+import type { FSConsensus, FSRegistration } from '$lib/models';
 
-import { query, where, orderBy, limit, getDocs, or } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs,
+  or,
+} from 'firebase/firestore';
 
-import { colRegistrationsRef } from '$lib/firebase/firestore';
+import { colConsensusRef, colRegistrationsRef } from '$lib/firebase/firestore';
 
 const currentYear = new Date().getFullYear().toString();
+
+export async function queryConsensus(
+  graduating_year: string,
+  graduating_class: string,
+) {
+  const consensusRef = doc(
+    colConsensusRef(currentYear),
+    `${graduating_year}${graduating_class}`,
+  );
+  const consensusSnapshot = getDoc(consensusRef);
+  const consensusDoc = (await consensusSnapshot).data() as FSConsensus;
+
+  return consensusDoc.form_teachers;
+}
 
 export async function querySearchMask(mask: string) {
   const registrationQuery = query(
