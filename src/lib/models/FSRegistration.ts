@@ -1,3 +1,4 @@
+import type { FieldValue } from 'firebase/firestore';
 import type { FSMetadata } from './FSMetadata';
 
 interface FSRegistration extends FSMetadata {
@@ -17,6 +18,7 @@ interface FSRegistration extends FSMetadata {
   emergency_contact_nok: string;
   form_teachers: string;
   visiting_teachers: string;
+  arrived_at: FieldValue;
 }
 
 export type { FSRegistration };
