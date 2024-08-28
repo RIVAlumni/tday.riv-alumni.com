@@ -3,7 +3,11 @@ import type { FSRegistration } from '$lib/models';
 import { writable } from 'svelte/store';
 import { createTable } from 'svelte-headless-table';
 
-const records = writable<FSRegistration[]>([]);
+type SearchableFSRegistration = FSRegistration & {
+  search: string;
+};
+
+const records = writable<SearchableFSRegistration[]>([]);
 
 const viewTable = createTable(records);
 const viewColumns = viewTable.createColumns([
@@ -70,9 +74,14 @@ const viewColumns = viewTable.createColumns([
       }),
     ],
   }),
+  viewTable.column({
+    accessor: 'search',
+    header: 'Investigate',
+  }),
 ]);
 
 const { headerRows, pageRows, tableAttrs, tableBodyAttrs } =
   viewTable.createViewModel(viewColumns);
 
+export type { SearchableFSRegistration };
 export { records, headerRows, pageRows, tableAttrs, tableBodyAttrs };

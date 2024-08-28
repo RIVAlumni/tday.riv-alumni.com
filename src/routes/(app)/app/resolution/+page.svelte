@@ -21,6 +21,7 @@
     pageRows,
     tableAttrs,
     tableBodyAttrs,
+    type SearchableFSRegistration,
   } from './table';
 
   let currentTime = new Date();
@@ -33,7 +34,18 @@
       goto('/app/operator', { replaceState: true });
 
     const interval = setInterval(() => (currentTime = new Date()), 500);
-    queryAllWithFilter({}).then(records.set);
+    queryAllWithFilter({})
+      .then((records) =>
+        records.map((record) => {
+          const newRecord: SearchableFSRegistration = {
+            ...record,
+            search: `${record.nric}${record.contact_number.substring(4, 8)}`,
+          };
+
+          return newRecord;
+        }),
+      )
+      .then(records.set);
 
     return () => clearInterval(interval);
   });
@@ -50,7 +62,15 @@
       };
 
       const registrations = await queryAllWithFilter(filters);
-      records.set(registrations);
+      const searchableRegistrations = registrations.map((record) => {
+        const newRecord: SearchableFSRegistration = {
+          ...record,
+          search: `${record.nric}${record.contact_number.substring(4, 8)}`,
+        };
+
+        return newRecord;
+      });
+      records.set(searchableRegistrations);
     },
   });
 </script>
@@ -155,7 +175,15 @@
                   attrs="{cell.attrs()}"
                   let:attrs>
                   <Table.Cell {...attrs}>
-                    <Render of="{cell.render()}" />
+                    {#if cell.id === 'search'}
+                      <Button
+                        variant="link"
+                        href="/app/operator?search={cell.render()}">
+                        Investigate
+                      </Button>
+                    {:else}
+                      <Render of="{cell.render()}" />
+                    {/if}
                   </Table.Cell>
                 </Subscribe>
               {/each}
