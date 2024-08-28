@@ -50,7 +50,7 @@
   );
   $: recordCursorWritable = writable<FSRegistration>($recordCursor);
   $: (async () => {
-    if (!$recordCursor) return;
+    if (!$recordCursor.registration_id) return;
 
     consensus = await queryConsensus(
       $recordCursor.graduating_year,
@@ -102,6 +102,9 @@
 
     if (!$authStore) return;
     if (!$recordCursorWritable.registration_id) return;
+    if ($authStore.access_level < 2)
+      return (actionButtonError =
+        'Access denied. Please call the Conflict Resolution Team for assistance.');
 
     actionRefuseEntry($authStore, $recordCursorWritable)
       .then(() => {
@@ -174,9 +177,10 @@
         type="text"
         name="search"
         on:keydown="{onKeyInput}"
+        on:change="{(e) => e.currentTarget.value.toUpperCase()}"
         bind:value="{searchMaskOrQr}"
         placeholder="Search by Partials or QR"
-        class="border-0 text-2xl md:text-3xl font-bold uppercase placeholder:normal-case
+        class="border-0 text-2xl md:text-3xl font-bold
                 focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
 
       <Button
@@ -198,10 +202,13 @@
       <Input
         id="full_name"
         type="text"
+        on:keyup="{() =>
+          ($recordCursorWritable.full_name =
+            $recordCursorWritable.full_name.toUpperCase())}"
         bind:value="{$recordCursorWritable.full_name}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
-        class="border-0 text-2xl md:text-3xl font-bold uppercase placeholder:normal-case
+        class="border-0 text-2xl md:text-3xl font-bold
                 focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
     <Card.Footer>
@@ -358,7 +365,7 @@
     </Card.Content>
     <Card.Footer>
       <p class="text-xs text-yellow-600">
-        Consensus from cohort: {consensus}
+        Consensus from classmates: {consensus}
       </p>
     </Card.Footer>
   </Card.Root>

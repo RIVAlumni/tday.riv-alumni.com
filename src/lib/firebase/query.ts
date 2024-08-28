@@ -39,7 +39,7 @@ export async function queryConsensus(
   const consensusSnapshot = getDoc(consensusRef);
   const consensusDoc = (await consensusSnapshot).data() as FSConsensus;
 
-  return consensusDoc.form_teachers ?? '';
+  return consensusDoc.form_teachers;
 }
 
 export async function querySearchMask(mask: string) {
