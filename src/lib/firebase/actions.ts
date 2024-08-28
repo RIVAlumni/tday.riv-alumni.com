@@ -71,3 +71,27 @@ export async function actionRefuseEntry(
   await setDoc(fsRecordRef, newRecord, { merge: true });
   return;
 }
+
+export async function actionSetConflict(
+  currentUser: FSUser,
+  currentRecord: FSRegistration,
+) {
+  const { registration_id, comments } = currentRecord;
+
+  const newRecord = {
+    ...currentRecord,
+    status: 'CONFLICT',
+    comments:
+      `${comments}\n\n(Handover initiated by ${currentUser.display_name?.toUpperCase()} on ${new Date().toUTCString()})`.trim(),
+    updated_at: serverTimestamp(),
+  };
+
+  const fsRecordRef = doc(
+    firestore,
+    colRegistrationsRef(currentYear).path,
+    registration_id,
+  );
+
+  await setDoc(fsRecordRef, newRecord, { merge: true });
+  return;
+}

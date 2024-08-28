@@ -15,7 +15,11 @@
   import { authStore } from '$lib/stores';
   import { querySearchMask } from '$lib/firebase/query';
 
-  import { actionCheckIn, actionRefuseEntry } from '$lib/firebase/actions';
+  import {
+    actionSetConflict,
+    actionCheckIn,
+    actionRefuseEntry,
+  } from '$lib/firebase/actions';
 
   onMount(() => {
     const interval = setInterval(() => (currentTime = new Date()), 500);
@@ -89,6 +93,24 @@
       .then(() => {
         actionButtonSuccess =
           'Refusal of entry successful. Please turn them away from the school now.';
+        records.set([]);
+      })
+      .catch((err) => {
+        actionButtonError = err.message;
+      });
+  };
+
+  const handleSetConflict = () => {
+    actionButtonSuccess = '';
+    actionButtonError = '';
+
+    if (!$authStore) return;
+    if (!$recordCursorWritable.registration_id) return;
+
+    actionSetConflict($authStore, $recordCursorWritable)
+      .then(() => {
+        actionButtonSuccess =
+          'Handover complete. Please send them over to the Conflict Resolution Station.';
         records.set([]);
       })
       .catch((err) => {
@@ -392,6 +414,7 @@
       <div class="w-full flex flex-col gap-2">
         <Button
           type="button"
+          on:click="{handleSetConflict}"
           class="text-white bg-yellow-600 hover:bg-yellow-600/90 shadow">
           Handover to Conflict Resolution Station
         </Button>
@@ -399,14 +422,14 @@
         <div class="flex flex-row gap-2">
           <Button
             type="button"
-            on:click="{() => handleCheckIn()}"
+            on:click="{handleCheckIn}"
             class="w-full text-white bg-emerald-600 hover:bg-emerald-600/90 shadow">
             Check-In
           </Button>
 
           <Button
             type="button"
-            on:click="{() => handleRefuseEntry()}"
+            on:click="{handleRefuseEntry}"
             class="w-full text-white bg-red-600 hover:bg-red-600/90 shadow">
             Refuse Entry
           </Button>
