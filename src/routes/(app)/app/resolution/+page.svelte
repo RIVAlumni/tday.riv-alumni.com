@@ -2,7 +2,6 @@
   import type { FSRegistration } from '$lib/models';
 
   import { onMount } from 'svelte';
-  import { writable } from 'svelte/store';
   import { createForm } from 'svelte-forms-lib';
   import { Render, Subscribe } from 'svelte-headless-table';
 
@@ -46,10 +45,11 @@
   <title>Reception Station | Conflict Resolution Team</title>
 </svelte:head>
 
-<div class="p-4 w-full h-min">
+<div class="px-4 w-full h-min">
   <form
     on:submit|preventDefault="{handleSubmit}"
-    class="flex flex-row items-center pb-4 gap-4">
+    class="p-4 top-0 sticky z-50 bg-background
+            flex flex-row items-center pb-4 gap-4">
     <Input
       type="text"
       id="full_name"

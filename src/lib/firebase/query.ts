@@ -52,7 +52,7 @@ export async function queryAllWithFilter(
 
   queryBuilder = query(
     queryBuilder,
-    limit(10),
+    limit(15),
     orderBy('registration_id', 'desc'),
   );
 
