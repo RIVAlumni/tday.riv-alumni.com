@@ -425,6 +425,8 @@
           class="text-xs uppercase whitespace-pre-line placeholder:normal-case">
           {record.comments}
         </p>
+
+        <hr class="h-px my-4 bg-gray-200 border-0" />
       {:else}
         <p class="text-xs">No previous registration records found</p>
       {/each}
