@@ -1,3 +1,4 @@
+import type { WhereFilterOp } from 'firebase/firestore';
 import type { FSConsensus, FSRegistration } from '$lib/models';
 
 import {
@@ -9,11 +10,23 @@ import {
   limit,
   getDocs,
   or,
+  getCountFromServer,
 } from 'firebase/firestore';
 
 import { colConsensusRef, colRegistrationsRef } from '$lib/firebase/firestore';
 
 const currentYear = new Date().getFullYear().toString();
+
+export async function queryCount(opStr: WhereFilterOp, status: string) {
+  const countQuery = query(
+    colRegistrationsRef(currentYear),
+    where('status', opStr, status),
+  );
+
+  const countSnapshot = await getCountFromServer(countQuery);
+  const { count } = countSnapshot.data();
+  return count;
+}
 
 export async function queryConsensus(
   graduating_year: string,
