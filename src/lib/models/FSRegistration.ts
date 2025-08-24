@@ -18,6 +18,7 @@ interface FSRegistration extends FSMetadata {
   emergency_contact_nok: string;
   form_teachers: string;
   visiting_teachers: string;
+  is_ex_riverlite: boolean;
   arrived_at: FieldValue;
 }
 

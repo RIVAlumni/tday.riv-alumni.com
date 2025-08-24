@@ -15,7 +15,7 @@
   import { Button } from '$lib/components/ui/button';
 
   import { authStore } from '$lib/stores';
-  import { queryConsensus, querySearchMask } from '$lib/firebase/query';
+  import { queryConsensus, queryContactNumber, getRegistrationById } from '$lib/firebase/query';
   import {
     actionSetConflict,
     actionCheckIn,
@@ -24,7 +24,7 @@
 
   onMount(() => {
     searchMaskOrQr = $page.url.searchParams.get('search') ?? '';
-    if (searchMaskOrQr) handleMaskQuery();
+    if (searchMaskOrQr) handleIdQuery(searchMaskOrQr);
 
     const interval = setInterval(() => (currentTime = new Date()), 500);
     return () => clearInterval(interval);
@@ -63,6 +63,16 @@
     handleMaskQuery();
   };
 
+  const handleIdQuery = async (id: string) => {
+    searchMaskOrQrError = '';
+    actionButtonSuccess = '';
+    actionButtonError = '';
+
+    const registration = await getRegistrationById(id);
+    records.set([registration]);
+    searchMaskOrQr = '';
+  }
+
   const handleMaskQuery = async () => {
     if (searchMaskOrQr.toUpperCase().match(/^[STFGM]\d{7}.$/))
       return (searchMaskOrQr = searchMaskOrQr.substring(5, 9).toUpperCase());
@@ -74,7 +84,7 @@
     actionButtonSuccess = '';
     actionButtonError = '';
 
-    const registrations = await querySearchMask(searchMaskOrQr.toUpperCase());
+    const registrations = await queryContactNumber(searchMaskOrQr.toUpperCase());
     records.set(registrations);
     searchMaskOrQr = '';
   };
@@ -220,87 +230,6 @@
   </Card.Root>
 
   <Card.Root class="col-span-1 sm:order-3">
-    <Card.Header class="text-sm font-normal">NRIC</Card.Header>
-    <Card.Content class="flex flex-row items-center">
-      <Input
-        id="nric"
-        type="text"
-        bind:value="{$recordCursorWritable.nric}"
-        on:keyup="{() =>
-          ($recordCursorWritable.nric =
-            $recordCursorWritable.nric.toUpperCase())}"
-        placeholder="No Record"
-        disabled="{$authStore && $authStore.access_level < 2}"
-        class="border-0 text-2xl md:text-3xl font-bold uppercase placeholder:normal-case
-                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
-    </Card.Content>
-  </Card.Root>
-
-  <Card.Root class="col-span-1 sm:order-4">
-    <Card.Header class="text-sm font-normal">Gender</Card.Header>
-    <Card.Content class="flex flex-row items-center">
-      <Input
-        id="gender"
-        type="text"
-        bind:value="{$recordCursorWritable.gender}"
-        on:keyup="{() =>
-          ($recordCursorWritable.gender =
-            $recordCursorWritable.gender.toUpperCase())}"
-        placeholder="No Record"
-        disabled="{$authStore && $authStore.access_level < 2}"
-        class="border-0 text-2xl md:text-3xl font-bold
-                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
-    </Card.Content>
-  </Card.Root>
-
-  <Card.Root class="col-span-1 sm:order-6">
-    <Card.Header class="text-sm font-normal">Graduating Class</Card.Header>
-    <Card.Content class="flex flex-row items-center">
-      <Input
-        id="graduating_class"
-        type="text"
-        bind:value="{$recordCursorWritable.graduating_class}"
-        placeholder="No Record"
-        disabled="{$authStore && $authStore.access_level < 2}"
-        class="border-0 text-2xl md:text-3xl font-bold
-                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
-    </Card.Content>
-  </Card.Root>
-
-  <Card.Root class="col-span-1 sm:order-7">
-    <Card.Header class="text-sm font-normal">Graduating Year</Card.Header>
-    <Card.Content class="flex flex-row items-center">
-      <Input
-        id="graduating_year"
-        type="text"
-        bind:value="{$recordCursorWritable.graduating_year}"
-        placeholder="No Record"
-        disabled="{$authStore && $authStore.access_level < 2}"
-        class="border-0 text-2xl md:text-3xl font-bold
-                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
-    </Card.Content>
-  </Card.Root>
-
-  <Card.Root class="col-span-2 sm:order-9">
-    <Card.Header class="text-sm font-normal">
-      Current School / Institution
-    </Card.Header>
-    <Card.Content class="flex flex-row items-center">
-      <Input
-        id="current_school_institution"
-        type="text"
-        bind:value="{$recordCursorWritable.current_school_institution}"
-        on:keyup="{() =>
-          ($recordCursorWritable.current_school_institution =
-            $recordCursorWritable.current_school_institution.toUpperCase())}"
-        placeholder="No Record"
-        disabled="{$authStore && $authStore.access_level < 2}"
-        class="border-0 text-2xl md:text-3xl font-bold uppercase placeholder:normal-case
-                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
-    </Card.Content>
-  </Card.Root>
-
-  <Card.Root class="col-span-2 sm:order-10">
     <Card.Header class="text-sm font-normal">Contact Number</Card.Header>
     <Card.Content class="flex flex-row items-center">
       <Input
@@ -314,32 +243,13 @@
     </Card.Content>
   </Card.Root>
 
-  <Card.Root class="col-span-1 sm:order-12">
-    <Card.Header class="text-sm font-normal">Name of Next-of-Kin</Card.Header>
+  <Card.Root class="col-span-1 sm:order-4">
+    <Card.Header class="text-sm font-normal">Ex-Riverlite?</Card.Header>
     <Card.Content class="flex flex-row items-center">
       <Input
-        id="name_of_nok"
+        id="ex_riverlite"
         type="text"
-        bind:value="{$recordCursorWritable.name_of_nok}"
-        on:keyup="{() =>
-          ($recordCursorWritable.name_of_nok =
-            $recordCursorWritable.name_of_nok.toUpperCase())}"
-        placeholder="No Record"
-        disabled="{$authStore && $authStore.access_level < 2}"
-        class="border-0 text-2xl md:text-3xl font-bold uppercase placeholder:normal-case
-                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
-    </Card.Content>
-  </Card.Root>
-
-  <Card.Root class="col-span-1 sm:order-[13]">
-    <Card.Header class="text-sm font-normal">
-      Relationship with Next-of-Kin
-    </Card.Header>
-    <Card.Content class="flex flex-row items-center">
-      <Input
-        id="relationship_with_nok"
-        type="text"
-        bind:value="{$recordCursorWritable.relationship_with_nok}"
+        bind:value="{$recordCursorWritable.is_ex_riverlite}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
@@ -347,15 +257,13 @@
     </Card.Content>
   </Card.Root>
 
-  <Card.Root class="col-span-2 sm:order-[14]">
-    <Card.Header class="text-sm font-normal">
-      Emergency Contact of Next-of-Kin
-    </Card.Header>
+  <Card.Root class="col-span-2 sm:order-5">
+    <Card.Header class="text-sm font-normal">Graduating Year</Card.Header>
     <Card.Content class="flex flex-row items-center">
       <Input
-        id="emergency_contact_nok"
+        id="graduating_year"
         type="text"
-        bind:value="{$recordCursorWritable.emergency_contact_nok}"
+        bind:value="{$recordCursorWritable.graduating_year}"
         placeholder="No Record"
         disabled="{$authStore && $authStore.access_level < 2}"
         class="border-0 text-2xl md:text-3xl font-bold
@@ -363,29 +271,7 @@
     </Card.Content>
   </Card.Root>
 
-  <Card.Root class="col-span-2 sm:col-span-1 sm:order-[15]">
-    <Card.Header class="text-sm font-normal">Form Teachers</Card.Header>
-    <Card.Content class="flex flex-row items-center">
-      <Input
-        id="form_teachers"
-        type="text"
-        bind:value="{$recordCursorWritable.form_teachers}"
-        on:keyup="{() =>
-          ($recordCursorWritable.form_teachers =
-            $recordCursorWritable.form_teachers.toUpperCase())}"
-        placeholder="No Record"
-        disabled="{$authStore && $authStore.access_level < 2}"
-        class="border-0 text-2xl md:text-3xl font-bold uppercase placeholder:normal-case
-                focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
-    </Card.Content>
-    <Card.Footer>
-      <p class="text-xs text-yellow-600">
-        Consensus from classmates: {consensus}
-      </p>
-    </Card.Footer>
-  </Card.Root>
-
-  <Card.Root class="col-span-2 sm:col-span-1 sm:order-[16]">
+  <Card.Root class="col-span-2 sm:order-6">
     <Card.Header class="text-sm font-normal">
       Total Number of Teachers Visiting
     </Card.Header>
@@ -400,9 +286,14 @@
         class="border-0 text-2xl md:text-3xl font-bold
                 focus-visible:ring-0 disabled:opacity-100 disabled:cursor-text" />
     </Card.Content>
+    <Card.Footer>
+      <p class="text-xs">
+        {$recordCursorWritable.visiting_teachers}
+      </p>
+    </Card.Footer>
   </Card.Root>
 
-  <Card.Root class="sm:order-5 col-span-2 sm:col-span-1">
+  <Card.Root class="sm:order-7 col-span-2 sm:col-span-1">
     <Card.Header class="text-sm font-normal">Status</Card.Header>
     <Card.Content class="flex flex-row items-center">
       <Input
@@ -416,7 +307,7 @@
     </Card.Content>
   </Card.Root>
 
-  <Card.Root class="col-span-2 sm:col-span-1 row-span-2 sm:order-8">
+  <Card.Root class="col-span-2 row-span-2 sm:order-9">
     <Card.Header class="text-sm font-normal">Comments</Card.Header>
     <Card.Content class="flex flex-row items-center">
       <Textarea
@@ -430,7 +321,7 @@
     </Card.Content>
   </Card.Root>
 
-  <Card.Root class="col-span-2 sm:col-span-1 row-span-3 sm:order-11">
+  <Card.Root class="col-span-2 sm:col-span-1 row-span-3 sm:order-8">
     <Card.Header class="text-sm font-normal">
       Previous Registration Records
     </Card.Header>
@@ -448,7 +339,7 @@
     </Card.Content>
   </Card.Root>
 
-  <Card.Root class="col-span-2 sm:col-span-1 sm:order-[17]">
+  <Card.Root class="col-span-2 sm:col-span-1 sm:order-10">
     <Card.Header class="text-sm font-normal">Action</Card.Header>
     <Card.Content class="flex flex-row items-center">
       <div class="w-full flex flex-col gap-2">

@@ -42,6 +42,21 @@ export async function queryConsensus(
   return consensusDoc.form_teachers;
 }
 
+export async function queryContactNumber(contact: string) {
+  const registrationQuery = query(
+    colRegistrationsRef(currentYear),
+    where('contact_number', '==', contact),
+    orderBy('registration_id', 'desc'),
+    limit(5),
+  );
+
+  const querySnapshot = getDocs(registrationQuery);
+  const queryDocs = (await querySnapshot).docs;
+  const docs = queryDocs.map((doc) => doc.data() as FSRegistration);
+
+  return docs;
+}
+
 export async function querySearchMask(mask: string) {
   const registrationQuery = query(
     colRegistrationsRef(currentYear),
@@ -56,6 +71,14 @@ export async function querySearchMask(mask: string) {
   const docs = queryDocs.map((doc) => doc.data() as FSRegistration);
 
   return docs;
+}
+
+export async function getRegistrationById(id: string) {
+  const registrationRef = doc(colRegistrationsRef(currentYear), id);
+  const registrationSnapshot = getDoc(registrationRef);
+  const registrationDoc = (await registrationSnapshot).data() as FSRegistration;
+
+  return registrationDoc;
 }
 
 type FilterByParameters = Pick<

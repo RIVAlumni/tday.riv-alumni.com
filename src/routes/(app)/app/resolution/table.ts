@@ -27,20 +27,12 @@ const viewColumns = viewTable.createColumns([
         header: 'Status',
       }),
       viewTable.column({
-        accessor: 'nric',
-        header: 'NRIC',
-      }),
-      viewTable.column({
-        accessor: 'gender',
-        header: 'Gender',
-      }),
-      viewTable.column({
-        accessor: 'current_school_institution',
-        header: 'Current School',
-      }),
-      viewTable.column({
         accessor: 'contact_number',
         header: 'Contact',
+      }),
+      viewTable.column({
+        accessor: 'is_ex_riverlite',
+        header: 'Ex-Riverlite',
       }),
     ],
   }),
@@ -48,31 +40,14 @@ const viewColumns = viewTable.createColumns([
     header: 'Graduating',
     columns: [
       viewTable.column({
-        accessor: 'graduating_class',
-        header: 'Class',
-      }),
-      viewTable.column({
         accessor: 'graduating_year',
         header: 'Year',
       }),
     ],
   }),
-  viewTable.group({
-    header: 'Next-of-Kin',
-    columns: [
-      viewTable.column({
-        accessor: 'name_of_nok',
-        header: 'Name',
-      }),
-      viewTable.column({
-        accessor: 'relationship_with_nok',
-        header: 'Relationship',
-      }),
-      viewTable.column({
-        accessor: 'emergency_contact_nok',
-        header: 'Emergency Contact',
-      }),
-    ],
+  viewTable.column({
+    accessor: 'visiting_teachers',
+    header: 'Visiting Teachers',
   }),
   viewTable.column({
     accessor: 'search',

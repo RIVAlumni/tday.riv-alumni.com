@@ -39,7 +39,7 @@
         records.map((record) => {
           const newRecord: SearchableFSRegistration = {
             ...record,
-            search: `${record.nric}${record.contact_number.substring(4, 8)}`,
+            search: `${record.registration_id}`,
           };
 
           return newRecord;
@@ -51,13 +51,12 @@
   });
 
   const { form, handleChange, handleSubmit } = createForm<
-    Partial<Pick<FSRegistration, 'full_name' | 'nric' | 'contact_number'>>
+    Partial<Pick<FSRegistration, 'full_name' | 'contact_number'>>
   >({
     initialValues: {},
-    onSubmit: async ({ full_name, nric, contact_number }) => {
+    onSubmit: async ({ full_name, contact_number }) => {
       const filters = {
         full_name: full_name?.toUpperCase(),
-        nric: nric?.toUpperCase(),
         contact_number: contact_number?.toUpperCase(),
       };
 
@@ -117,15 +116,6 @@
           placeholder="Filter by Full Name"
           on:change="{handleChange}"
           bind:value="{$form.full_name}" />
-
-        <Input
-          type="text"
-          id="nric"
-          name="nric"
-          class="px-3 py-1 max-w-xs"
-          placeholder="Filter by NRIC"
-          on:change="{handleChange}"
-          bind:value="{$form.nric}" />
 
         <Input
           type="text"
