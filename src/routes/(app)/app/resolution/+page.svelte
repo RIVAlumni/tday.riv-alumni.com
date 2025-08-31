@@ -64,7 +64,7 @@
       const searchableRegistrations = registrations.map((record) => {
         const newRecord: SearchableFSRegistration = {
           ...record,
-          search: `${record.nric}${record.contact_number.substring(4, 8)}`,
+          search: `${record.registration_id}`,
         };
 
         return newRecord;
