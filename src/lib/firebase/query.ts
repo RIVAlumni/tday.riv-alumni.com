@@ -45,7 +45,7 @@ export async function queryConsensus(
 export async function queryContactNumber(contact: string) {
   const registrationQuery = query(
     colRegistrationsRef(currentYear),
-    where('contact_number', '==', contact),
+    where('contact_number', '==', Number(contact)),
     orderBy('registration_id', 'desc'),
     limit(5),
   );

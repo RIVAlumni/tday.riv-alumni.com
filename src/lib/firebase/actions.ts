@@ -45,7 +45,7 @@ export async function actionCheckIn(
   const fsRecordRef = doc(
     firestore,
     colRegistrationsRef(currentYear).path,
-    registration_id,
+    String(registration_id),
   );
 
   await setDoc(fsRecordRef, newRecord, { merge: true });
@@ -70,7 +70,7 @@ export async function actionRefuseEntry(
   const fsRecordRef = doc(
     firestore,
     colRegistrationsRef(currentYear).path,
-    registration_id,
+    String(registration_id),
   );
 
   await setDoc(fsRecordRef, newRecord, { merge: true });
@@ -95,7 +95,7 @@ export async function actionSetConflict(
   const fsRecordRef = doc(
     firestore,
     colRegistrationsRef(currentYear).path,
-    registration_id,
+    String(registration_id),
   );
 
   await setDoc(fsRecordRef, newRecord, { merge: true });

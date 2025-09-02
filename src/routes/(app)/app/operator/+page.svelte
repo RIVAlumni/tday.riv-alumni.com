@@ -13,6 +13,7 @@
   import { Input } from '$lib/components/ui/input';
   import { Textarea } from '$lib/components/ui/textarea';
   import { Button } from '$lib/components/ui/button';
+  import Watermark from '$lib/components/Watermark.svelte';
 
   import { authStore } from '$lib/stores';
   import { queryConsensus, queryContactNumber, getRegistrationById } from '$lib/firebase/query';
@@ -74,11 +75,11 @@
   }
 
   const handleMaskQuery = async () => {
-    if (searchMaskOrQr.toUpperCase().match(/^[STFGM]\d{7}.$/))
-      return (searchMaskOrQr = searchMaskOrQr.substring(5, 9).toUpperCase());
+    // if (searchMaskOrQr.toUpperCase().match(/^[STFGM]\d{7}.$/))
+    //   return (searchMaskOrQr = searchMaskOrQr.substring(5, 9).toUpperCase());
 
-    if (searchMaskOrQr.length < 8)
-      return (searchMaskOrQrError = 'Minimum 8 characters required');
+    // if (searchMaskOrQr.length < 8)
+    //   return (searchMaskOrQrError = 'Minimum 8 characters required');
 
     searchMaskOrQrError = '';
     actionButtonSuccess = '';
@@ -149,6 +150,8 @@
 <svelte:head>
   <title>Reception Station | Operator</title>
 </svelte:head>
+
+<Watermark displayName={$authStore?.display_name || ''} email={$authStore?.email || ''} />
 
 <div
   class="px-4 pt-4 top-0 sticky bg-background shadow

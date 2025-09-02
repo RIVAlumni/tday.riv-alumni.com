@@ -12,6 +12,7 @@
   import * as Table from '$lib/components/ui/table';
   import { Button } from '$lib/components/ui/button';
   import { Input } from '$lib/components/ui/input';
+  import Watermark from '$lib/components/Watermark.svelte';
 
   import { queryAllWithFilter } from '$lib/firebase/query';
 
@@ -77,6 +78,8 @@
 <svelte:head>
   <title>Reception Station | Conflict Resolution Team</title>
 </svelte:head>
+
+<Watermark displayName={$authStore?.display_name || ''} email={$authStore?.email || ''} />
 
 {#if $authStore?.access_level === FSUserAccessLevel.Mediator}
   <div class="px-4 w-full h-min">
