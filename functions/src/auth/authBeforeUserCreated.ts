@@ -19,11 +19,11 @@ export const authBeforeUserCreated = beforeUserCreated(async (event) => {
   if (!emailVerified)
     throw new HttpsError('failed-precondition', 'Email must be verified');
 
-  if (!email.endsWith('@riv-alumni.com'))
-    throw new HttpsError(
-      'failed-precondition',
-      'Email must be an internal email from the organisation',
-    );
+  // if (!email.endsWith('@riv-alumni.com'))
+  //   throw new HttpsError(
+  //     'failed-precondition',
+  //     'Email must be an internal email from the organisation',
+  //   );
 
   const docRef = firestore.doc(`users/${uid}`);
   const fsUser: FSUser = {
