@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { page } from '$app/state';
   import DotsIcon from '@tabler/icons-svelte/icons/dots';
   import FolderIcon from '@tabler/icons-svelte/icons/folder';
   import Share3Icon from '@tabler/icons-svelte/icons/share-3';
@@ -7,6 +8,7 @@
 
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
   import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+  import { isPathActive } from '$lib/data/nav.js';
 
   let { items }: { items: { name: string; url: string; icon: Icon }[] } = $props();
 
@@ -18,7 +20,7 @@
   <Sidebar.Menu>
     {#each items as item (item.name)}
       <Sidebar.MenuItem>
-        <Sidebar.MenuButton>
+        <Sidebar.MenuButton isActive={isPathActive(page.url.pathname, item.url)}>
           {#snippet child({ props })}
             <a
               {...props}

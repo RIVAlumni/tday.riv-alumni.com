@@ -291,7 +291,6 @@
     <div class="overflow-hidden rounded-lg border">
       <DragDropProvider
         modifiers={[
-          // @ts-expect-error @dnd-kit/abstract types are botched atm
           RestrictToVerticalAxis,
         ]}
         onDragEnd={(e) => (data = move(data, e))}>

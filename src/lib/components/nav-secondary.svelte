@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { page } from '$app/state';
   import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+  import { isPathActive } from '$lib/data/nav.js';
   import type { WithoutChildren } from '$lib/utils.js';
   import type { ComponentProps } from 'svelte';
   import type { Icon } from '@tabler/icons-svelte';
@@ -17,7 +19,7 @@
     <Sidebar.Menu>
       {#each items as item (item.title)}
         <Sidebar.MenuItem>
-          <Sidebar.MenuButton>
+          <Sidebar.MenuButton isActive={isPathActive(page.url.pathname, item.url)}>
             {#snippet child({ props })}
               <a
                 href={item.url}

@@ -61,6 +61,12 @@
       "skillPath": "skills/firebase-security-rules-auditor/SKILL.md",
       "computedHash": "5a90e991bb9acfd3e43bfb570498dee60b9cef94cbb80cfb99257c7e4f61c1a0"
     },
+    "shadcn-svelte": {
+      "source": "huntabyte/shadcn-svelte",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn-svelte/SKILL.md",
+      "computedHash": "e2cc56b65eb0c28042934ec7d7b253e842b6e22456917276d53a0c71266303e7"
+    },
     "xcode-project-setup": {
       "source": "firebase/agent-skills",
       "sourceType": "github",
