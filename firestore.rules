@@ -1,0 +1,53 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+      
+      match /users/{userId} {
+      	allow get: if isSignedIn() &&
+        							request.auth.uid == userId
+      }
+      
+      match /events/{eventId} {
+      	allow get: if isSignedIn();
+        
+        match /registrations/{registrationId} {
+        	allow get: if isSignedIn()
+          							&& isAuthorised(1);
+          
+          allow list: if isSignedIn()
+          								&& isAuthorised(1);
+          
+          allow update: if isSignedIn()
+          									&& isAuthorised(1);
+        }
+        
+        match /consensus/{yearClassId} {
+        	allow get: if isSignedIn()
+          							&& isAuthorised(1);
+        }
+      }
+    }
+    
+    function isSignedIn() {
+    	return request.auth != null
+      				&& request.auth.token.email_verified == true
+              // && request.auth.token.email.matches('.*@riv-alumni[.]com') == true
+    }
+    
+    function isAuthorised(minAccessLevel) {
+    	let userRef = /databases/$(database)/documents/users/$(request.auth.uid);
+    	let userExists = exists(userRef);
+      let userData = get(userRef).data;
+      
+			let userAccessLevel = userData.access_level;
+      let userAccessExpires = userData.access_expires;
+      
+      return userExists
+      				&& userAccessLevel >= minAccessLevel
+              && userAccessExpires >= request.time;
+    }
+  }
+}
