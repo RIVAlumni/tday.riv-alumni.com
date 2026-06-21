@@ -33,5 +33,6 @@
     class="pointer-events-none select-none relative hidden lg:block"
     style="background-image: url('/bg1.png'); background-position: 15% center; background-size: cover; filter: brightness(0.2) grayscale(1);"
     role="img"
-    aria-label="RIVAlumni background"></div>
+    aria-label="RIVAlumni background">
+  </div>
 </div>
