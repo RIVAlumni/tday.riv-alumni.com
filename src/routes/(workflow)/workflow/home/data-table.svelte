@@ -89,13 +89,15 @@
   import * as Select from '$lib/components/ui/select/index.js';
   import { Label } from '$lib/components/ui/label/index.js';
   import { FlexRender, renderComponent } from '$lib/components/ui/data-table/index.js';
-  import LayoutColumnsIcon from '@tabler/icons-svelte/icons/layout-columns';
-  import ChevronDownIcon from '@tabler/icons-svelte/icons/chevron-down';
-  import PlusIcon from '@tabler/icons-svelte/icons/plus';
-  import ChevronsLeftIcon from '@tabler/icons-svelte/icons/chevrons-left';
-  import ChevronLeftIcon from '@tabler/icons-svelte/icons/chevron-left';
-  import ChevronRightIcon from '@tabler/icons-svelte/icons/chevron-right';
-  import ChevronsRightIcon from '@tabler/icons-svelte/icons/chevrons-right';
+  import {
+    LayoutColumnsIcon,
+    ChevronDownIcon,
+    PlusIcon,
+    ChevronsLeftIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    ChevronsRightIcon,
+  } from '$lib/icons';
   import DataTableCheckbox from './data-table-checkbox.svelte';
   import DataTableCellViewer from './data-table-cell-viewer.svelte';
   import DataTableReviewer from './data-table-reviewer.svelte';
@@ -290,9 +292,7 @@
     class="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
     <div class="overflow-hidden rounded-lg border">
       <DragDropProvider
-        modifiers={[
-          RestrictToVerticalAxis,
-        ]}
+        modifiers={[RestrictToVerticalAxis]}
         onDragEnd={(e) => (data = move(data, e))}>
         <Table.Root>
           <Table.Header class="bg-muted sticky top-0 z-10">

@@ -1,14 +1,12 @@
 <script lang="ts">
-  import { page } from '$app/state';
-  import DotsIcon from '@tabler/icons-svelte/icons/dots';
-  import FolderIcon from '@tabler/icons-svelte/icons/folder';
-  import Share3Icon from '@tabler/icons-svelte/icons/share-3';
-  import TrashIcon from '@tabler/icons-svelte/icons/trash';
   import type { Icon } from '@tabler/icons-svelte';
 
-  import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-  import * as Sidebar from '$lib/components/ui/sidebar/index.js';
-  import { isPathActive } from '$lib/data/nav.js';
+  import { page } from '$app/state';
+  import { DotsIcon, FolderIcon, Share3Icon, TrashIcon } from '$lib/icons';
+
+  import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+  import * as Sidebar from '$lib/components/ui/sidebar';
+  import { isPathActive } from '$lib/data/nav';
 
   let { items }: { items: { name: string; url: string; icon: Icon }[] } = $props();
 
@@ -16,7 +14,7 @@
 </script>
 
 <Sidebar.Group class="group-data-[collapsible=icon]:hidden">
-  <Sidebar.GroupLabel>Documents</Sidebar.GroupLabel>
+  <Sidebar.GroupLabel>Records</Sidebar.GroupLabel>
   <Sidebar.Menu>
     {#each items as item (item.name)}
       <Sidebar.MenuItem>
@@ -63,11 +61,5 @@
         </DropdownMenu.Root>
       </Sidebar.MenuItem>
     {/each}
-    <Sidebar.MenuItem>
-      <Sidebar.MenuButton class="text-sidebar-foreground/70">
-        <DotsIcon class="text-sidebar-foreground/70" />
-        <span>More</span>
-      </Sidebar.MenuButton>
-    </Sidebar.MenuItem>
   </Sidebar.Menu>
 </Sidebar.Group>

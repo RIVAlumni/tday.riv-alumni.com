@@ -1,7 +1,6 @@
 <script lang="ts">
   import { Badge } from '$lib/components/ui/badge/index.js';
-  import CircleCheckFilledIcon from '@tabler/icons-svelte/icons/circle-check-filled';
-  import LoaderIcon from '@tabler/icons-svelte/icons/loader';
+  import { CircleCheckFilledIcon, LoaderIcon } from '$lib/icons';
   import type { Row } from '@tanstack/table-core';
   import type { Schema } from './schemas.js';
 

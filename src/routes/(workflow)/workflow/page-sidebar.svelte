@@ -1,17 +1,13 @@
 <script lang="ts">
+  import type { ComponentProps } from 'svelte';
+
   import RIVALogo from '$lib/assets/favicon.svg';
-  import NavDocuments from './nav-documents.svelte';
+  import NavDocuments from './nav-records.svelte';
   import NavMain from './nav-main.svelte';
   import NavSecondary from './nav-secondary.svelte';
   import NavUser from './nav-user.svelte';
-  import * as Sidebar from '$lib/components/ui/sidebar/index.js';
-  import {
-    documents,
-    navMain,
-    navSecondary,
-    user,
-  } from '$lib/data/nav.js';
-  import type { ComponentProps } from 'svelte';
+  import * as Sidebar from '$lib/components/ui/sidebar';
+  import { records, navMain, navSecondary, user } from '$lib/data/nav';
 
   let { ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
 </script>
@@ -27,8 +23,11 @@
             <a
               href="/workflow/home"
               {...props}>
-              <img src={RIVALogo} alt="RIVAlumni logo" class="size-5!" />
-              <span class="text-base font-semibold">Teachers' Day</span>
+              <img
+                src={RIVALogo}
+                alt="RIVAlumni logo"
+                class="size-5!" />
+              <span class="text-base font-semibold">Internal Systems</span>
             </a>
           {/snippet}
         </Sidebar.MenuButton>
@@ -37,7 +36,7 @@
   </Sidebar.Header>
   <Sidebar.Content>
     <NavMain items={navMain} />
-    <NavDocuments items={documents} />
+    <NavDocuments items={records} />
     <NavSecondary
       items={navSecondary}
       class="mt-auto" />

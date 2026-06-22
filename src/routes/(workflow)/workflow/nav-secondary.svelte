@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { page } from '$app/state';
-  import * as Sidebar from '$lib/components/ui/sidebar/index.js';
-  import { isPathActive } from '$lib/data/nav.js';
-  import type { WithoutChildren } from '$lib/utils.js';
+  import type { WithoutChildren } from '$lib/utils';
   import type { ComponentProps } from 'svelte';
   import type { Icon } from '@tabler/icons-svelte';
+
+  import { page } from '$app/state';
+  import * as Sidebar from '$lib/components/ui/sidebar';
+  import { isPathActive } from '$lib/data/nav';
 
   let {
     items,

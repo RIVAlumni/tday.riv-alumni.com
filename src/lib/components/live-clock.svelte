@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ClockIcon from '@tabler/icons-svelte/icons/clock';
+  import { ClockIcon } from '$lib/icons';
 
   // Real-time clock. The initial `new Date()` is what renders on the server and
   // on first paint; `$effect` then starts a sub-second interval once mounted in

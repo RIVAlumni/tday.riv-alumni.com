@@ -1,13 +1,13 @@
 import type { Icon } from '@tabler/icons-svelte';
-import DashboardIcon from '@tabler/icons-svelte/icons/dashboard';
-import DatabaseIcon from '@tabler/icons-svelte/icons/database';
-import FaceIdErrorIcon from '@tabler/icons-svelte/icons/face-id-error';
-import FileWordIcon from '@tabler/icons-svelte/icons/file-word';
-import HelpIcon from '@tabler/icons-svelte/icons/help';
-import MoodCheckIcon from '@tabler/icons-svelte/icons/mood-check';
-import ReportIcon from '@tabler/icons-svelte/icons/report';
-import SearchIcon from '@tabler/icons-svelte/icons/search';
-import SettingsIcon from '@tabler/icons-svelte/icons/settings';
+import {
+  DashboardIcon,
+  DatabaseIcon,
+  FaceIdErrorIcon,
+  HelpIcon,
+  MoodCheckIcon,
+  ReportIcon,
+  SettingsIcon,
+} from '$lib/icons';
 
 export interface NavItem {
   title: string;
@@ -37,19 +37,17 @@ export const user: SidebarUser = {
 export const navMain: NavItem[] = [
   { title: 'Dashboard', url: '/workflow/home', icon: DashboardIcon },
   { title: 'Check-In', url: '/workflow/check-in', icon: MoodCheckIcon },
-  { title: 'Conflict Resolution', url: '#', icon: FaceIdErrorIcon },
+  { title: 'Conflict Resolution', url: '/workflow/resolve', icon: FaceIdErrorIcon },
+];
+
+export const records: DocumentItem[] = [
+  { name: 'Registrations', url: '/workflow/records', icon: DatabaseIcon },
+  { name: 'Generate Report', url: '/workflow/generate', icon: ReportIcon },
 ];
 
 export const navSecondary: NavItem[] = [
-  { title: 'Settings', url: '#', icon: SettingsIcon },
-  { title: 'Get Help', url: '#', icon: HelpIcon },
-  { title: 'Search', url: '#', icon: SearchIcon },
-];
-
-export const documents: DocumentItem[] = [
-  { name: 'Data Library', url: '#', icon: DatabaseIcon },
-  { name: 'Reports', url: '#', icon: ReportIcon },
-  { name: 'Word Assistant', url: '#', icon: FileWordIcon },
+  { title: 'Settings', url: '/workflow/settings', icon: SettingsIcon },
+  { title: 'Get Help', url: '/workflow/help', icon: HelpIcon },
 ];
 
 /**
@@ -70,9 +68,7 @@ export function isPathActive(pathname: string, itemUrl: string): boolean {
  * future routes render sensibly without an explicit entry.
  */
 const routeTitles = new Map(
-  navMain
-    .filter((item) => item.url !== '#')
-    .map((item) => [item.url, item.title] as const),
+  navMain.filter((item) => item.url !== '#').map((item) => [item.url, item.title] as const),
 );
 
 export function pageTitleForPath(pathname: string): string {
