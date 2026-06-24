@@ -9,10 +9,11 @@
   let { children } = $props();
 </script>
 
-<svelte:head
-  ><link
+<svelte:head>
+  <link
     rel="icon"
-    href={favicon} /></svelte:head>
+    href={favicon} />
+</svelte:head>
 {@render children()}
 
 <div style="display:none">

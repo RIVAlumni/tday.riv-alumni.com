@@ -19,7 +19,7 @@
     <Separator
       orientation="vertical"
       class="mx-2 data-[orientation=vertical]:h-4" />
-    <h1 class="text-base font-medium">{pageTitle}</h1>
+    <h1 class="min-w-0 flex-1 truncate text-base font-medium">{pageTitle}</h1>
     <div class="ms-auto flex items-center gap-2">
       <LiveClock class="hidden sm:inline-flex" />
     </div>
