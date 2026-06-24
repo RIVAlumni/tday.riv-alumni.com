@@ -4,6 +4,7 @@ import {
   DatabaseIcon,
   FaceIdErrorIcon,
   HelpIcon,
+  LayoutGridIcon,
   MoodCheckIcon,
   ReportIcon,
   SettingsIcon,
@@ -36,7 +37,8 @@ export const user: SidebarUser = {
 
 export const navMain: NavItem[] = [
   { title: 'Dashboard', url: '/workflow/home', icon: DashboardIcon },
-  { title: 'Check-In', url: '/workflow/check-in', icon: MoodCheckIcon },
+  { title: 'Reception (Check-in)', url: '/workflow/reception', icon: MoodCheckIcon },
+  { title: 'Reception 2 · Dashboard', url: '/workflow/reception2', icon: LayoutGridIcon },
   { title: 'Conflict Resolution', url: '/workflow/resolve', icon: FaceIdErrorIcon },
 ];
 
