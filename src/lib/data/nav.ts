@@ -45,11 +45,12 @@ export const navMain: NavItem[] = [
 export const records: DocumentItem[] = [
   { name: 'Registrations', url: '/workflow/records', icon: DatabaseIcon },
   { name: 'Generate Report', url: '/workflow/generate', icon: ReportIcon },
+  { name: 'Audit Logs', url: '/workflow/logs', icon: ReportIcon },
 ];
 
 export const navSecondary: NavItem[] = [
   { title: 'Settings', url: '/workflow/settings', icon: SettingsIcon },
-  { title: 'Get Help', url: '/workflow/help', icon: HelpIcon },
+  { title: 'Getting Started', url: '/workflow/onboarding', icon: HelpIcon },
 ];
 
 /**
