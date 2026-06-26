@@ -44,4 +44,5 @@
   <Sidebar.Footer>
     <NavUser {user} />
   </Sidebar.Footer>
+  <Sidebar.Rail class="inset-y-2.5 after:inset-y-2.5" />
 </Sidebar.Root>
