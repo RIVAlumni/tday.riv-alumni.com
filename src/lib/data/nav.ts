@@ -31,9 +31,9 @@ export const user: SidebarUser = {
 
 // prettier-ignore
 export const navMain: NavItem[] = [
-  { title: 'Dashboard',               url: '/workflow/home',       icon: DashboardIcon   },
-  { title: 'Reception (Check-in)',    url: '/workflow/reception',  icon: MoodCheckIcon   },
-  { title: 'Conflict Resolution',     url: '/workflow/resolve',    icon: FaceIdErrorIcon },
+  { title: 'Dashboard',            url: '/workflow/home',      icon: DashboardIcon   },
+  { title: 'Reception (Check-in)', url: '/workflow/reception', icon: MoodCheckIcon   },
+  { title: 'Conflict Resolution',  url: '/workflow/resolve',   icon: FaceIdErrorIcon },
 ];
 
 // prettier-ignore
