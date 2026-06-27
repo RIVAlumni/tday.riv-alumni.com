@@ -8,7 +8,7 @@
   import * as Sidebar from '$lib/components/ui/sidebar';
   import { isPathActive } from '$lib/data/nav';
 
-  let { items }: { items: { name: string; url: string; icon: Icon }[] } = $props();
+  let { items }: { items: { title: string; url: string; icon: Icon }[] } = $props();
 
   const sidebar = Sidebar.useSidebar();
 </script>
@@ -16,7 +16,7 @@
 <Sidebar.Group class="group-data-[collapsible=icon]:hidden">
   <Sidebar.GroupLabel>Records</Sidebar.GroupLabel>
   <Sidebar.Menu>
-    {#each items as item (item.name)}
+    {#each items as item (item.title)}
       <Sidebar.MenuItem>
         <Sidebar.MenuButton isActive={isPathActive(page.url.pathname, item.url)}>
           {#snippet child({ props })}
@@ -24,7 +24,7 @@
               {...props}
               href={item.url}>
               <item.icon />
-              <span>{item.name}</span>
+              <span>{item.title}</span>
             </a>
           {/snippet}
         </Sidebar.MenuButton>

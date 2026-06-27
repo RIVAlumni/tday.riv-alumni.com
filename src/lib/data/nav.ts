@@ -16,12 +16,6 @@ export interface NavItem {
   icon: Icon;
 }
 
-export interface DocumentItem {
-  name: string;
-  url: string;
-  icon: Icon;
-}
-
 export interface SidebarUser {
   name: string;
   email: string;
@@ -35,22 +29,24 @@ export const user: SidebarUser = {
   avatar: '/avatars/shadcn.jpg',
 };
 
+// prettier-ignore
 export const navMain: NavItem[] = [
-  { title: 'Dashboard', url: '/workflow/home', icon: DashboardIcon },
-  { title: 'Reception (Check-in)', url: '/workflow/reception', icon: MoodCheckIcon },
-  { title: 'Reception 2 · Dashboard', url: '/workflow/reception2', icon: LayoutGridIcon },
-  { title: 'Conflict Resolution', url: '/workflow/resolve', icon: FaceIdErrorIcon },
+  { title: 'Dashboard',               url: '/workflow/home',       icon: DashboardIcon   },
+  { title: 'Reception (Check-in)',    url: '/workflow/reception',  icon: MoodCheckIcon   },
+  { title: 'Conflict Resolution',     url: '/workflow/resolve',    icon: FaceIdErrorIcon },
 ];
 
-export const records: DocumentItem[] = [
-  { name: 'Registrations', url: '/workflow/records', icon: DatabaseIcon },
-  { name: 'Generate Report', url: '/workflow/generate', icon: ReportIcon },
-  { name: 'Audit Logs', url: '/workflow/logs', icon: ReportIcon },
+// prettier-ignore
+export const records: NavItem[] = [
+  { title: 'Registrations',   url: '/workflow/records',  icon: DatabaseIcon },
+  { title: 'Generate Report', url: '/workflow/generate', icon: ReportIcon   },
+  { title: 'Audit Logs',      url: '/workflow/logs',     icon: ReportIcon   },
 ];
 
+// prettier-ignore
 export const navSecondary: NavItem[] = [
-  { title: 'Settings', url: '/workflow/settings', icon: SettingsIcon },
-  { title: 'Getting Started', url: '/workflow/onboarding', icon: HelpIcon },
+  { title: 'Settings',        url: '/workflow/settings',   icon: SettingsIcon },
+  { title: 'Getting Started', url: '/workflow/onboarding', icon: HelpIcon     },
 ];
 
 /**

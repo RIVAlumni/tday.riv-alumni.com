@@ -1,3 +1,5 @@
+import { HugeiconsFreeIcons } from '@hugeicons/core-free-icons';
+
 /**
  * Centralized re-export of the @tabler/icons-svelte icons used across the app.
  *
@@ -69,6 +71,7 @@ export { default as Share3Icon } from '@tabler/icons-svelte/icons/share-3';
 export { default as ShareIcon } from '@lucide/svelte/icons/share';
 export { default as SparklesIcon } from '@tabler/icons-svelte/icons/sparkles';
 export { default as TargetArrowIcon } from '@tabler/icons-svelte/icons/target-arrow';
+export { default as TicketIcon } from '@tabler/icons-svelte/icons/ticket';
 export { default as Trash2Icon } from '@lucide/svelte/icons/trash-2';
 export { default as TrashIcon } from '@tabler/icons-svelte/icons/trash';
 export { default as TrendingDownIcon } from '@tabler/icons-svelte/icons/trending-down';
@@ -79,3 +82,5 @@ export { default as UserEditIcon } from '@tabler/icons-svelte/icons/user-edit';
 export { default as UserIcon } from '@tabler/icons-svelte/icons/user';
 export { default as UsersIcon } from '@tabler/icons-svelte/icons/users';
 export { default as WalkIcon } from '@tabler/icons-svelte/icons/walk';
+export { CheckIcon } from '@hugeicons/core-free-icons';
+export { UnfoldMoreIcon } from '@hugeicons/core-free-icons';

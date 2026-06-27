@@ -183,7 +183,7 @@
   <Card.Content class="px-2 pt-4 sm:px-6 sm:pt-6">
     <Chart.Container
       config={chartConfig}
-      class="aspect-auto h-[250px] w-full">
+      class="aspect-auto h-62.5 w-full">
       <AreaChart
         legend
         data={filteredData}

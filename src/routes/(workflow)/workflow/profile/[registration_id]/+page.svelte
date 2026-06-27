@@ -287,7 +287,7 @@
           {:else}
             <ol class="relative flex flex-col">
               <span
-                class="absolute left-[0.875rem] top-2 bottom-2 w-px bg-border"
+                class="absolute left-3.5 top-2 bottom-2 w-px bg-border"
                 aria-hidden="true"></span>
               {#each visitorHistory as entry (entry.at.getTime())}
                 {@const m = statusMeta[entry.action]}
