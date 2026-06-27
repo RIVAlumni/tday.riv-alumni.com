@@ -25,6 +25,7 @@
     </Sidebar.Header>
 
     <Sidebar.Content>
+      <Sidebar.Separator class="mx-0" />
       Hello world
     </Sidebar.Content>
 </PageSidebarRight>
