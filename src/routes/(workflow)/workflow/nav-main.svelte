@@ -1,14 +1,14 @@
 <script lang="ts">
-  import type { Icon } from '@tabler/icons-svelte';
+  import type { IconComponent } from '$lib/icons';
 
   import { page } from '$app/state';
-  import { CirclePlusFilledIcon, MailIcon } from '$lib/icons';
+  import { AddCircleIcon, Mail01Icon } from '$lib/icons';
 
   import { Button } from '$lib/components/ui/button';
   import * as Sidebar from '$lib/components/ui/sidebar';
   import { isPathActive } from '$lib/data/nav';
 
-  let { items }: { items: { title: string; url: string; icon?: Icon }[] } = $props();
+  let { items }: { items: { title: string; url: string; icon?: IconComponent }[] } = $props();
 </script>
 
 <Sidebar.Group>
@@ -18,14 +18,14 @@
         <Sidebar.MenuButton
           class="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
           tooltipContent="Quick create">
-          <CirclePlusFilledIcon />
+          <AddCircleIcon />
           <span>Quick Create</span>
         </Sidebar.MenuButton>
         <Button
           size="icon"
           class="size-8 group-data-[collapsible=icon]:opacity-0"
           variant="outline">
-          <MailIcon />
+          <Mail01Icon />
           <span class="sr-only">Inbox</span>
         </Button>
       </Sidebar.MenuItem>

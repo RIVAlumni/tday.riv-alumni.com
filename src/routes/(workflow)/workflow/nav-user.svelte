@@ -1,9 +1,9 @@
 <script lang="ts">
   import {
     CreditCardIcon,
-    DotsVerticalIcon,
-    LogoutIcon,
-    NotificationIcon,
+    MoreVerticalIcon,
+    Logout01Icon,
+    Notification01Icon,
     UserCircleIcon,
   } from '$lib/icons';
   import * as Avatar from '$lib/components/ui/avatar/index.js';
@@ -36,7 +36,7 @@
                 {user.email}
               </span>
             </div>
-            <DotsVerticalIcon class="ms-auto size-4" />
+            <MoreVerticalIcon class="ms-auto size-4" />
           </Sidebar.MenuButton>
         {/snippet}
       </DropdownMenu.Trigger>
@@ -72,13 +72,13 @@
             Billing
           </DropdownMenu.Item>
           <DropdownMenu.Item>
-            <NotificationIcon />
+            <Notification01Icon />
             Notifications
           </DropdownMenu.Item>
         </DropdownMenu.Group>
         <DropdownMenu.Separator />
         <DropdownMenu.Item>
-          <LogoutIcon />
+          <Logout01Icon />
           Log out
         </DropdownMenu.Item>
       </DropdownMenu.Content>

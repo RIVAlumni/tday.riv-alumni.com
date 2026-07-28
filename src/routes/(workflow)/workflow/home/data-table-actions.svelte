@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
-  import { DotsVerticalIcon } from '$lib/icons';
+  import { MoreVerticalIcon } from '$lib/icons';
 </script>
 
 <DropdownMenu.Root>
@@ -11,7 +11,7 @@
         variant="ghost"
         size="icon"
         {...props}>
-        <DotsVerticalIcon />
+        <MoreVerticalIcon />
         <span class="sr-only">Open menu</span>
       </Button>
     {/snippet}

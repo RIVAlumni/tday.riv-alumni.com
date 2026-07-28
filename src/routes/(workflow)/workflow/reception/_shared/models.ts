@@ -10,11 +10,11 @@
 
 import {
   BanIcon,
-  CircleCheckFilledIcon,
-  DoorExitIcon,
+  CheckmarkCircle01Icon,
+  Door01Icon,
   HeartHandshakeIcon,
-  IdBadge2Icon,
-  InfoCircleIcon,
+  IdentificationIcon,
+  InformationCircleIcon,
 } from '$lib/icons';
 
 // --- Events ---------------------------------------------------------------
@@ -355,7 +355,7 @@ export function statsFor(eventId: string, pool: Registration[]): EventStats {
 }
 
 // --- Presentation metadata (shared so every design stays consistent) ------
-type IconComponent = typeof IdBadge2Icon;
+type IconComponent = typeof IdentificationIcon;
 
 export const statusMeta: Record<
   RegistrationStatus,
@@ -363,14 +363,14 @@ export const statusMeta: Record<
 > = {
   REGISTERED: {
     label: 'Registered',
-    icon: IdBadge2Icon,
+    icon: IdentificationIcon,
     badge: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 ring-1 ring-sky-500/25',
     dot: 'bg-sky-500',
     soft: 'bg-sky-500/10',
   },
   CHECKED_IN: {
     label: 'Checked in',
-    icon: CircleCheckFilledIcon,
+    icon: CheckmarkCircle01Icon,
     badge: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/25',
     dot: 'bg-emerald-500',
     soft: 'bg-emerald-500/10',
@@ -384,7 +384,7 @@ export const statusMeta: Record<
   },
   CONFLICT: {
     label: 'Needs resolution',
-    icon: InfoCircleIcon,
+    icon: InformationCircleIcon,
     badge: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/25',
     dot: 'bg-amber-500',
     soft: 'bg-amber-500/10',
@@ -415,7 +415,7 @@ export const actionMeta: Record<
 > = {
   CHECKED_IN: {
     label: 'Check In',
-    icon: DoorExitIcon,
+    icon: Door01Icon,
     button: 'bg-emerald-600 text-white hover:bg-emerald-600/90',
     outline: 'border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400',
     toastTitle: 'Visitor checked in',

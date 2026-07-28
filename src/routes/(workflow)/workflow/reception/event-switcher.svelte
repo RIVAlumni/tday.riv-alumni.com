@@ -1,8 +1,10 @@
 <script lang="ts">
+  // ── Component imports from $lib ───────────────────────────────────────
   import * as Sidebar from '$lib/components/ui/sidebar/index.js';
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-  import { HugeiconsIcon } from '@hugeicons/svelte';
-  import {CheckIcon, UnfoldMoreIcon} from '$lib/icons';
+
+  // ── Icon imports from $lib ────────────────────────────────────────────
+  import { CheckIcon, UnfoldMoreIcon } from '$lib/icons';
 
   let { events, defaultEvent }: { events: string[]; defaultEvent: string } = $props();
 
@@ -25,7 +27,7 @@
   <Sidebar.MenuItem>
     <DropdownMenu.Root>
       <DropdownMenu.Trigger>
-        {#snippet child({ props })}
+        {#snippet child({ props }: { props: Record<string, unknown> })}
           <Sidebar.MenuButton
             size="lg"
             class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
@@ -38,7 +40,7 @@
               <span class="truncate font-semibold">{selectedEvent}</span>
               <span class="truncate text-xs text-muted-foreground">Reception Station</span>
             </div>
-            <HugeiconsIcon icon={UnfoldMoreIcon} class="ms-auto size-4" />
+            <UnfoldMoreIcon class="ms-auto size-4" />
           </Sidebar.MenuButton>
         {/snippet}
       </DropdownMenu.Trigger>
@@ -54,7 +56,7 @@
             </span>
             <span class="flex-1">{event}</span>
             {#if event === selectedEvent}
-              <HugeiconsIcon icon={CheckIcon} class="ms-auto" />
+              <CheckIcon class="ms-auto" />
             {/if}
           </DropdownMenu.Item>
         {/each}

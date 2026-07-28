@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ClockIcon } from '$lib/icons';
+  import { Clock01Icon } from '$lib/icons';
 
   // Real-time clock. The initial `new Date()` is what renders on the server and
   // on first paint; `$effect` then starts a sub-second interval once mounted in
@@ -56,7 +56,7 @@
     ></span>
   </span>
 
-  <ClockIcon class="size-4 text-muted-foreground" />
+  <Clock01Icon class="size-4 text-muted-foreground" />
 
   <span class="font-medium tracking-wide">{time} {period}</span>
 

@@ -8,8 +8,7 @@
 	import SheetPortal from "./sheet-portal.svelte";
 	import SheetOverlay from "./sheet-overlay.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
-	import { HugeiconsIcon } from "@hugeicons/svelte"
-	import { Cancel01Icon } from '@hugeicons/core-free-icons';
+	import { Cancel01Icon } from '$lib/icons';
 	import { cn, type WithoutChildrenOrChild } from "$lib/utils.js";
 	import type { ComponentProps } from "svelte";
 
@@ -46,7 +45,7 @@
 			<SheetPrimitive.Close data-slot="sheet-close">
 				{#snippet child({ props })}
 					<Button variant="ghost" class="bg-secondary absolute top-4 right-4" size="icon-sm" {...props}>
-						<HugeiconsIcon icon={Cancel01Icon} strokeWidth={2}  />
+						<Cancel01Icon strokeWidth={2}  />
 						<span class="sr-only">Close</span>
 					</Button>
 				{/snippet}

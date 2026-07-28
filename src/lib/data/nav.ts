@@ -1,19 +1,19 @@
-import type { Icon } from '@tabler/icons-svelte';
+import type { IconComponent } from '$lib/icons';
 import {
-  DashboardIcon,
-  DatabaseIcon,
-  FaceIdErrorIcon,
-  HelpIcon,
+  DashboardSquare01Icon,
+  Database01Icon,
+  FaceIdIcon,
+  HelpCircleIcon,
   LayoutGridIcon,
-  MoodCheckIcon,
-  ReportIcon,
-  SettingsIcon,
+  CheckmarkCircle01Icon,
+  Note01Icon,
+  Settings01Icon,
 } from '$lib/icons';
 
 export interface NavItem {
   title: string;
   url: string;
-  icon: Icon;
+  icon: IconComponent;
 }
 
 export interface SidebarUser {
@@ -31,22 +31,22 @@ export const user: SidebarUser = {
 
 // prettier-ignore
 export const navMain: NavItem[] = [
-  { title: 'Dashboard',            url: '/workflow/home',      icon: DashboardIcon   },
-  { title: 'Reception (Check-in)', url: '/workflow/reception', icon: MoodCheckIcon   },
-  { title: 'Conflict Resolution',  url: '/workflow/resolve',   icon: FaceIdErrorIcon },
+  { title: 'Dashboard',            url: '/workflow/home',      icon: DashboardSquare01Icon   },
+  { title: 'Reception (Check-in)', url: '/workflow/reception', icon: CheckmarkCircle01Icon   },
+  { title: 'Conflict Resolution',  url: '/workflow/resolve',   icon: FaceIdIcon },
 ];
 
 // prettier-ignore
 export const records: NavItem[] = [
-  { title: 'Registrations',   url: '/workflow/records',  icon: DatabaseIcon },
-  { title: 'Generate Report', url: '/workflow/generate', icon: ReportIcon   },
-  { title: 'Audit Logs',      url: '/workflow/logs',     icon: ReportIcon   },
+  { title: 'Registrations',   url: '/workflow/records',  icon: Database01Icon },
+  { title: 'Generate Report', url: '/workflow/generate', icon: Note01Icon   },
+  { title: 'Audit Logs',      url: '/workflow/logs',     icon: Note01Icon   },
 ];
 
 // prettier-ignore
 export const navSecondary: NavItem[] = [
-  { title: 'Settings',        url: '/workflow/settings',   icon: SettingsIcon },
-  { title: 'Getting Started', url: '/workflow/onboarding', icon: HelpIcon     },
+  { title: 'Settings',        url: '/workflow/settings',   icon: Settings01Icon },
+  { title: 'Getting Started', url: '/workflow/onboarding', icon: HelpCircleIcon     },
 ];
 
 /**

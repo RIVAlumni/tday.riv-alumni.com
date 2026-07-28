@@ -1,8 +1,7 @@
 <script lang="ts">
   import { Select as SelectPrimitive } from 'bits-ui';
   import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
-  import { HugeiconsIcon } from '@hugeicons/svelte';
-  import { ArrowUp01Icon } from '@hugeicons/core-free-icons';
+  import { ArrowUp01Icon } from '$lib/icons';
 
   let {
     ref = $bindable(null),
@@ -19,7 +18,5 @@
     className,
   )}
   {...restProps}>
-  <HugeiconsIcon
-    icon={ArrowUp01Icon}
-    strokeWidth={2} />
+  <ArrowUp01Icon strokeWidth={2} />
 </SelectPrimitive.ScrollUpButton>

@@ -7,9 +7,9 @@
 
   import {
     BanIcon,
-    ChevronRightIcon,
-    ClockIcon,
-    DoorExitIcon,
+    ArrowRight01Icon,
+    Clock01Icon,
+    Door01Icon,
     HeartHandshakeIcon,
     HistoryIcon,
     UserIcon,
@@ -84,7 +84,7 @@
     {
       label: 'Checked in',
       value: counts.checkedIn,
-      icon: DoorExitIcon,
+      icon: Door01Icon,
       tone: 'text-emerald-500',
     },
     {
@@ -133,7 +133,7 @@
           <span
             data-slot="select-value"
             class="flex items-center gap-2">
-            <ClockIcon class="size-4 text-muted-foreground" />
+            <Clock01Icon class="size-4 text-muted-foreground" />
             {#if eventFilter === 'all'}
               All events
             {:else}
@@ -277,7 +277,7 @@
                           </p>
                         {/if}
                       </span>
-                      <ChevronRightIcon
+                      <ArrowRight01Icon
                         class="size-4 shrink-0 self-center text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
                     </a>
                   </li>

@@ -90,13 +90,13 @@
   import { Label } from '$lib/components/ui/label/index.js';
   import { FlexRender, renderComponent } from '$lib/components/ui/data-table/index.js';
   import {
-    LayoutColumnsIcon,
-    ChevronDownIcon,
-    PlusIcon,
-    ChevronsLeftIcon,
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    ChevronsRightIcon,
+    Layout03Icon,
+    ArrowDown01Icon,
+    AddCircleIcon,
+    ArrowLeftDoubleIcon,
+    ArrowLeft01Icon,
+    ArrowRight01Icon,
+    ArrowRightDoubleIcon,
   } from '$lib/icons';
   import DataTableCheckbox from './data-table-checkbox.svelte';
   import DataTableCellViewer from './data-table-cell-viewer.svelte';
@@ -257,10 +257,10 @@
               variant="outline"
               size="sm"
               {...props}>
-              <LayoutColumnsIcon />
+              <Layout03Icon />
               <span class="hidden lg:inline">Customize Columns</span>
               <span class="lg:hidden">Columns</span>
-              <ChevronDownIcon />
+              <ArrowDown01Icon />
             </Button>
           {/snippet}
         </DropdownMenu.Trigger>
@@ -282,7 +282,7 @@
       <Button
         variant="outline"
         size="sm">
-        <PlusIcon />
+        <AddCircleIcon />
         <span class="hidden lg:inline">Add Section</span>
       </Button>
     </div>
@@ -369,7 +369,7 @@
             onclick={() => table.setPageIndex(0)}
             disabled={!table.getCanPreviousPage()}>
             <span class="sr-only">Go to first page</span>
-            <ChevronsLeftIcon />
+            <ArrowLeftDoubleIcon />
           </Button>
           <Button
             variant="outline"
@@ -378,7 +378,7 @@
             onclick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}>
             <span class="sr-only">Go to previous page</span>
-            <ChevronLeftIcon />
+            <ArrowLeft01Icon />
           </Button>
           <Button
             variant="outline"
@@ -387,7 +387,7 @@
             onclick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}>
             <span class="sr-only">Go to next page</span>
-            <ChevronRightIcon />
+            <ArrowRight01Icon />
           </Button>
           <Button
             variant="outline"
@@ -396,7 +396,7 @@
             onclick={() => table.setPageIndex(table.getPageCount() - 1)}
             disabled={!table.getCanNextPage()}>
             <span class="sr-only">Go to last page</span>
-            <ChevronsRightIcon />
+            <ArrowRightDoubleIcon />
           </Button>
         </div>
       </div>

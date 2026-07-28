@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { WithoutChildren } from '$lib/utils';
   import type { ComponentProps } from 'svelte';
-  import type { Icon } from '@tabler/icons-svelte';
+  import type { IconComponent } from '$lib/icons';
 
   import { page } from '$app/state';
   import * as Sidebar from '$lib/components/ui/sidebar';
@@ -10,7 +10,7 @@
   let {
     items,
     ...restProps
-  }: { items: { title: string; url: string; icon: Icon }[] } & WithoutChildren<
+  }: { items: { title: string; url: string; icon: IconComponent }[] } & WithoutChildren<
     ComponentProps<typeof Sidebar.Group>
   > = $props();
 </script>

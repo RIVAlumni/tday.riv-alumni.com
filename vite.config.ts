@@ -23,7 +23,10 @@ export default defineConfig({
 			adapter: adapter(),
 			preprocess: [mdsvex({ extensions: ['.svx', '.md'] })],
 			extensions: ['.svelte', '.svx', '.md'],
-			experimental: { remoteFunctions: true, handleRenderingErrors: true }
+			// SvelteKit 3 removed the built-in $lib alias in favour of #lib subpath imports.
+			// Restored here until the codebase is migrated. https://svelte.dev/docs/kit/$lib
+			alias: { $lib: 'src/lib' },
+			experimental: { remoteFunctions: true }
 		}),
 		paraglideVitePlugin({ project: './project.inlang', outdir: './src/lib/paraglide' })
 	],

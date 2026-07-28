@@ -1,9 +1,7 @@
 <script lang="ts">
   import { Checkbox as CheckboxPrimitive } from 'bits-ui';
   import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
-  import { HugeiconsIcon } from '@hugeicons/svelte';
-  import { Tick02Icon } from '@hugeicons/core-free-icons';
-  import { MinusSignIcon } from '@hugeicons/core-free-icons';
+  import { Tick02Icon, MinusSignIcon } from '$lib/icons';
 
   let {
     ref = $bindable(null),
@@ -29,13 +27,9 @@
       data-slot="checkbox-indicator"
       class="[&>svg]:size-3.5 grid place-content-center text-current transition-none">
       {#if checked}
-        <HugeiconsIcon
-          icon={Tick02Icon}
-          strokeWidth={2} />
+        <Tick02Icon strokeWidth={2} />
       {:else if indeterminate}
-        <HugeiconsIcon
-          icon={MinusSignIcon}
-          strokeWidth={2} />
+        <MinusSignIcon strokeWidth={2} />
       {/if}
     </div>
   {/snippet}

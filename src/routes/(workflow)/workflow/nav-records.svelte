@@ -1,14 +1,14 @@
 <script lang="ts">
-  import type { Icon } from '@tabler/icons-svelte';
+  import type { IconComponent } from '$lib/icons';
 
   import { page } from '$app/state';
-  import { DotsIcon, FolderIcon, Share3Icon, TrashIcon } from '$lib/icons';
+  import { MoreHorizontalIcon, Folder01Icon, Share01Icon, Delete01Icon } from '$lib/icons';
 
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
   import * as Sidebar from '$lib/components/ui/sidebar';
   import { isPathActive } from '$lib/data/nav';
 
-  let { items }: { items: { title: string; url: string; icon: Icon }[] } = $props();
+  let { items }: { items: { title: string; url: string; icon: IconComponent }[] } = $props();
 
   const sidebar = Sidebar.useSidebar();
 </script>
@@ -35,7 +35,7 @@
                 {...props}
                 showOnHover
                 class="data-[state=open]:bg-accent rounded-sm">
-                <DotsIcon />
+                <MoreHorizontalIcon />
                 <span class="sr-only">More</span>
               </Sidebar.MenuAction>
             {/snippet}
@@ -45,16 +45,16 @@
             side={sidebar.isMobile ? 'bottom' : 'right'}
             align={sidebar.isMobile ? 'end' : 'start'}>
             <DropdownMenu.Item>
-              <FolderIcon />
+              <Folder01Icon />
               <span>Open</span>
             </DropdownMenu.Item>
             <DropdownMenu.Item>
-              <Share3Icon />
+              <Share01Icon />
               <span>Share</span>
             </DropdownMenu.Item>
             <DropdownMenu.Separator />
             <DropdownMenu.Item variant="destructive">
-              <TrashIcon />
+              <Delete01Icon />
               <span>Delete</span>
             </DropdownMenu.Item>
           </DropdownMenu.Content>

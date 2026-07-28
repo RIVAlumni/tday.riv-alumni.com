@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { TrendingDownIcon, TrendingUpIcon } from '$lib/icons';
+  import { ChartDownIcon, ChartUpIcon } from '$lib/icons';
   import { Badge } from '$lib/components/ui/badge/index.js';
   import * as Card from '$lib/components/ui/card/index.js';
 </script>
@@ -14,14 +14,14 @@
       </Card.Title>
       <Card.Action>
         <Badge variant="outline">
-          <TrendingUpIcon />
+          <ChartUpIcon />
           +12.5%
         </Badge>
       </Card.Action>
     </Card.Header>
     <Card.Footer class="flex-col items-start gap-1.5 text-sm">
       <div class="line-clamp-1 flex gap-2 font-medium">
-        Trending up this month <TrendingUpIcon class="size-4" />
+        Trending up this month <ChartUpIcon class="size-4" />
       </div>
       <div class="text-muted-foreground">Visitors for the last 6 months</div>
     </Card.Footer>
@@ -34,14 +34,14 @@
       </Card.Title>
       <Card.Action>
         <Badge variant="outline">
-          <TrendingDownIcon />
+          <ChartDownIcon />
           -20%
         </Badge>
       </Card.Action>
     </Card.Header>
     <Card.Footer class="flex-col items-start gap-1.5 text-sm">
       <div class="line-clamp-1 flex gap-2 font-medium">
-        Down 20% this period <TrendingDownIcon class="size-4" />
+        Down 20% this period <ChartDownIcon class="size-4" />
       </div>
       <div class="text-muted-foreground">Acquisition needs attention</div>
     </Card.Footer>
@@ -54,14 +54,14 @@
       </Card.Title>
       <Card.Action>
         <Badge variant="outline">
-          <TrendingUpIcon />
+          <ChartUpIcon />
           +12.5%
         </Badge>
       </Card.Action>
     </Card.Header>
     <Card.Footer class="flex-col items-start gap-1.5 text-sm">
       <div class="line-clamp-1 flex gap-2 font-medium">
-        Strong user retention <TrendingUpIcon class="size-4" />
+        Strong user retention <ChartUpIcon class="size-4" />
       </div>
       <div class="text-muted-foreground">Engagement exceed targets</div>
     </Card.Footer>
@@ -74,14 +74,14 @@
       </Card.Title>
       <Card.Action>
         <Badge variant="outline">
-          <TrendingUpIcon />
+          <ChartUpIcon />
           +4.5%
         </Badge>
       </Card.Action>
     </Card.Header>
     <Card.Footer class="flex-col items-start gap-1.5 text-sm">
       <div class="line-clamp-1 flex gap-2 font-medium">
-        Steady performance increase <TrendingUpIcon class="size-4" />
+        Steady performance increase <ChartUpIcon class="size-4" />
       </div>
       <div class="text-muted-foreground">Meets growth projections</div>
     </Card.Footer>

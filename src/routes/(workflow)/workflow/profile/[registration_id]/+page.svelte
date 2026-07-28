@@ -10,18 +10,18 @@
   import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 
   import {
-    ArrowRightIcon,
-    BuildingBankIcon,
-    CalendarStarIcon,
-    ChalkboardIcon,
-    ChevronLeftIcon,
-    ClockIcon,
-    DoorExitIcon,
+    ArrowRight01Icon,
+    Building03Icon,
+    Calendar03Icon,
+    Presentation07Icon,
+    ArrowLeft01Icon,
+    Clock01Icon,
+    Door01Icon,
     HeartHandshakeIcon,
-    IdBadge2Icon,
+    IdentificationIcon,
     IdIcon,
-    InfoCircleIcon,
-    PhoneIcon,
+    InformationCircleIcon,
+    CallIcon,
     SchoolIcon,
     UserIcon,
   } from '$lib/icons';
@@ -92,7 +92,7 @@
     <a
       href="/workflow/logs"
       class="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-      <ChevronLeftIcon class="size-4" />
+      <ArrowLeft01Icon class="size-4" />
       Back to Audit Log
     </a>
   </div>
@@ -132,7 +132,7 @@
                 </Card.Title>
                 <div class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   <span class="inline-flex items-center gap-1 font-mono">
-                    <IdBadge2Icon class="size-3.5" />
+                    <IdentificationIcon class="size-3.5" />
                     {registration.registration_id}
                   </span>
                   <span aria-hidden="true">·</span>
@@ -142,7 +142,7 @@
                   </span>
                   <span aria-hidden="true">·</span>
                   <span class="inline-flex items-center gap-1">
-                    <CalendarStarIcon class="size-3.5" />
+                    <Calendar03Icon class="size-3.5" />
                     Class of {registration.graduating_year}
                     {registration.graduating_class}
                   </span>
@@ -162,7 +162,7 @@
             <div class="flex flex-col gap-1">
               <dt
                 class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                <PhoneIcon class="size-3.5" /> Contact number
+                <CallIcon class="size-3.5" /> Contact number
               </dt>
               <dd class="text-sm font-medium tabular-nums">{registration.contact_number}</dd>
             </div>
@@ -183,7 +183,7 @@
             <div class="flex flex-col gap-1">
               <dt
                 class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                <BuildingBankIcon class="size-3.5" /> Ex-Riverlite
+                <Building03Icon class="size-3.5" /> Ex-Riverlite
               </dt>
               <dd class="text-sm font-medium">
                 {#if isExRiverlite}
@@ -200,7 +200,7 @@
             <div class="flex flex-col gap-1">
               <dt
                 class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                <ChalkboardIcon class="size-3.5" /> Visiting teachers
+                <Presentation07Icon class="size-3.5" /> Visiting teachers
               </dt>
               <dd class="flex flex-col gap-1 text-sm font-medium">
                 <span>
@@ -219,7 +219,7 @@
             <div class="flex flex-col gap-1">
               <dt
                 class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                <ClockIcon class="size-3.5" /> Arrived at
+                <Clock01Icon class="size-3.5" /> Arrived at
               </dt>
               <dd class="text-sm font-medium tabular-nums">
                 {formatTime(registration.arrived_at)}
@@ -232,7 +232,7 @@
             <div class="flex flex-col gap-2">
               <dt
                 class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                <InfoCircleIcon class="size-3.5" /> Notes
+                <InformationCircleIcon class="size-3.5" /> Notes
               </dt>
               <p
                 class="whitespace-pre-line rounded-3xl bg-muted/40 p-3 text-sm leading-relaxed text-muted-foreground">
@@ -251,9 +251,9 @@
           <Button
             href="/workflow/reception"
             class="gap-1.5 {actionMeta.CHECKED_IN.button}">
-            <DoorExitIcon class="size-4" />
+            <Door01Icon class="size-4" />
             Open at Reception
-            <ArrowRightIcon class="size-4" />
+            <ArrowRight01Icon class="size-4" />
           </Button>
         </Card.Footer>
       </Card.Root>
@@ -262,7 +262,7 @@
       <Card.Root class="lg:w-80">
         <Card.Header>
           <Card.Title class="flex items-center gap-2">
-            <ClockIcon class="size-4 text-muted-foreground" />
+            <Clock01Icon class="size-4 text-muted-foreground" />
             Action history
           </Card.Title>
           <Card.Description>Operator actions recorded for this visitor.</Card.Description>
