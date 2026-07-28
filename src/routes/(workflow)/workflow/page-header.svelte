@@ -4,8 +4,10 @@
   import { Separator } from '$lib/components/ui/separator/index.js';
   import * as Sidebar from '$lib/components/ui/sidebar/index.js';
   import { pageTitleForPath } from '$lib/data/nav.js';
+  import { getPageTitle } from '$lib/data/page-title.svelte.js';
 
-  const pageTitle = $derived(pageTitleForPath(page.url.pathname));
+  const override = $derived(getPageTitle());
+  const pageTitle = $derived(override ?? pageTitleForPath(page.url.pathname));
 </script>
 
 <svelte:head>

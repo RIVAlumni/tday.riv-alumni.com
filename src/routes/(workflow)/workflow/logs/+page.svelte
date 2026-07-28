@@ -223,7 +223,7 @@
                 {#each group.entries as entry (entry.registration_id + entry.at.getTime())}
                   {@const meta = statusMeta[entry.action]}
                   {@const verb = actionVerb[entry.action]}
-                  {@const profileHref = `/workflow/profile/${entry.registration_id}`}
+                  {@const profileHref = `/workflow/records/${entry.registration_id}`}
                   <li class="relative">
                     <a
                       href={profileHref}

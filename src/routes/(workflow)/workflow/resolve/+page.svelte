@@ -18,7 +18,7 @@
   let table = $state<any>(null);
 
   function navigateToProfile(registrationId: string) {
-    goto(`/workflow/profile/${registrationId}`);
+    goto(`/workflow/records/${registrationId}`);
   }
 </script>
 
