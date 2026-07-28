@@ -8,9 +8,9 @@
   class="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
   <Card.Root class="@container/card">
     <Card.Header>
-      <Card.Description>Total Revenue</Card.Description>
+      <Card.Description>Total Registrations</Card.Description>
       <Card.Title class="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-        $1,250.00
+        550
       </Card.Title>
       <Card.Action>
         <Badge variant="outline">
@@ -21,16 +21,16 @@
     </Card.Header>
     <Card.Footer class="flex-col items-start gap-1.5 text-sm">
       <div class="line-clamp-1 flex gap-2 font-medium">
-        Trending up this month <ChartUpIcon class="size-4" />
+        Trending up this year <ChartUpIcon class="size-4" />
       </div>
-      <div class="text-muted-foreground">Visitors for the last 6 months</div>
+      <div class="text-muted-foreground">Registrations for the last year</div>
     </Card.Footer>
   </Card.Root>
   <Card.Root class="@container/card">
     <Card.Header>
-      <Card.Description>New Customers</Card.Description>
+      <Card.Description>Checked In</Card.Description>
       <Card.Title class="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-        1,234
+        334
       </Card.Title>
       <Card.Action>
         <Badge variant="outline">
@@ -41,16 +41,16 @@
     </Card.Header>
     <Card.Footer class="flex-col items-start gap-1.5 text-sm">
       <div class="line-clamp-1 flex gap-2 font-medium">
-        Down 20% this period <ChartDownIcon class="size-4" />
+        Down 20% this year <ChartDownIcon class="size-4" />
       </div>
-      <div class="text-muted-foreground">Acquisition needs attention</div>
+      <div class="text-muted-foreground">Checked in attendees for the last year</div>
     </Card.Footer>
   </Card.Root>
   <Card.Root class="@container/card">
     <Card.Header>
-      <Card.Description>Active Accounts</Card.Description>
+      <Card.Description>Check-in Rate</Card.Description>
       <Card.Title class="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-        45,678
+        60.8%
       </Card.Title>
       <Card.Action>
         <Badge variant="outline">
@@ -68,9 +68,9 @@
   </Card.Root>
   <Card.Root class="@container/card">
     <Card.Header>
-      <Card.Description>Growth Rate</Card.Description>
+      <Card.Description>Peak Throughput</Card.Description>
       <Card.Title class="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-        4.5%
+        99 per 15 mins
       </Card.Title>
       <Card.Action>
         <Badge variant="outline">
