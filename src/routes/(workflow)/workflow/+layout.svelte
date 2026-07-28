@@ -1,7 +1,10 @@
 <script lang="ts">
+  import { user } from '$lib/data/nav';
+
   import * as Sidebar from '$lib/components/ui/sidebar/index.js';
   import PageHeader from './page-header.svelte';
   import PageSidebarLeft from './page-sidebar-left.svelte';
+  import PageWatermark from './page-watermark.svelte';
   import { setupSidebarRight } from './page-sidebar-right.svelte.ts';
 
   let { children } = $props();
@@ -19,6 +22,9 @@
     <PageHeader />
     <div class="flex flex-1 flex-col">
       <div class="@container/main relative flex flex-1 flex-col gap-2">
+        <PageWatermark
+          name={user.name}
+          email={user.email} />
         {@render children()}
       </div>
     </div>
