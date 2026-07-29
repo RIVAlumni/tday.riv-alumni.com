@@ -3,11 +3,6 @@
 runConfig:
   minInstances: 0
 
-# SvelteKit adapter-node produces a standalone Node server in the build/ directory.
-build:
-  output:
-    directory: build
-
 # Environment variables and secrets.
 # env:
   # - variable: MESSAGE
@@ -15,7 +10,3 @@ build:
   #   availability:
   #     - BUILD
   #     - RUNTIME
-
-  # Grant access to secrets in Cloud Secret Manager.
-  # - variable: MY_SECRET
-  #   secret: mySecretRef
