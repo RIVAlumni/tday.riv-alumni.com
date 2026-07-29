@@ -51,8 +51,8 @@ export const events: ReceptionEvent[] = [
     id: 'tdy-2026',
     year: '2026',
     title: "Teachers' Day 2026",
-    date: '2026-06-26',
-    venue: 'RIVA Parade Square',
+    date: '2026-09-03',
+    venue: 'Rivervale Primary School',
     status: 'active',
   },
   {
