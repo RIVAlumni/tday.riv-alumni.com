@@ -6,7 +6,7 @@
   import { Button } from '$lib/components/ui/button/index.js';
   import * as Select from '$lib/components/ui/select/index.js';
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-  import { ArrowDown01Icon, Layout03Icon, Search01Icon } from '$lib/icons';
+  import { ArrowDown01Icon, Layout03Icon, RefreshIcon, Search01Icon } from '$lib/icons';
 
   let {
     registrations,
@@ -32,6 +32,12 @@
     return f ? (f.value as string) : 'all';
   });
 
+  let statusFilterLabel = $derived(
+    statusFilterValue === 'all'
+      ? 'Status'
+      : (visibleStatuses.find(([k]) => k === statusFilterValue)?.[1].label ?? 'Status'),
+  );
+
   function setStatusFilter(v: string) {
     if (v === 'all') {
       columnFilters = columnFilters.filter((f) => f.id !== 'status');
@@ -50,6 +56,10 @@
     return f ? (f.value as string) : 'all';
   });
 
+  let yearFilterLabel = $derived(
+    yearFilterValue === 'all' ? 'Year' : yearFilterValue,
+  );
+
   function setYearFilter(v: string) {
     if (v === 'all') {
       columnFilters = columnFilters.filter((f) => f.id !== 'graduating_year');
@@ -57,6 +67,17 @@
       setColumnFilter('graduating_year', v);
     }
   }
+
+  function reload() {
+    globalFilter = '';
+    columnFilters = [];
+    table.setPageIndex(0);
+  }
+
+  // --- Column visibility count ---
+  let hiddenCount = $derived(
+    table.getAllColumns().filter((c) => c.getCanHide() && !c.getIsVisible()).length,
+  );
 
   // --- Shared ---
   function setColumnFilter(columnId: string, value: string) {
@@ -88,8 +109,8 @@
       onValueChange={setStatusFilter}>
       <Select.Trigger
         size="sm"
-        class="w-36">
-        Status
+        class="w-40">
+        {statusFilterLabel}
       </Select.Trigger>
       <Select.Content>
         <Select.Item value="all">All statuses</Select.Item>
@@ -106,7 +127,7 @@
       <Select.Trigger
         size="sm"
         class="w-28">
-        Year
+        {yearFilterLabel}
       </Select.Trigger>
       <Select.Content>
         <Select.Item value="all">All years</Select.Item>
@@ -117,8 +138,13 @@
     </Select.Root>
   </div>
 
-  <!-- Row 3: Column visibility -->
-  <div>
+  <!-- Row 3: Reload + Column visibility -->
+  <div class="flex items-center gap-2">
+    <Button variant="outline" size="sm" onclick={reload}>
+      <RefreshIcon class="size-3.5" />
+      <span class="hidden sm:inline">Reload</span>
+    </Button>
+
     <DropdownMenu.Root>
       <DropdownMenu.Trigger>
         {#snippet child({ props }: { props: Record<string, unknown> })}
@@ -148,5 +174,8 @@
         {/each}
       </DropdownMenu.Content>
     </DropdownMenu.Root>
+    {#if hiddenCount > 0}
+      <span class="text-muted-foreground text-xs">{hiddenCount} column{hiddenCount !== 1 ? 's' : ''} hidden</span>
+    {/if}
   </div>
 </div>

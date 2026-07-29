@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import type { Registration } from '../reception/_shared/models';
 
   // --- Table core ---
@@ -56,7 +57,25 @@
   // --- Table state ---
   let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 15 });
   let sorting = $state<SortingState>([{ id: 'registration_id', desc: false }]);
+
+  const VISIBILITY_KEY = 'records:column-visibility';
   let columnVisibility = $state<VisibilityState>({});
+  let visibilityLoaded = $state(false);
+
+  onMount(() => {
+    try {
+      const raw = localStorage.getItem(VISIBILITY_KEY);
+      if (raw) columnVisibility = JSON.parse(raw) as VisibilityState;
+    } catch { /* noop */ }
+    visibilityLoaded = true;
+  });
+
+  $effect(() => {
+    if (!visibilityLoaded) return;
+    try {
+      localStorage.setItem(VISIBILITY_KEY, JSON.stringify(columnVisibility));
+    } catch { /* noop */ }
+  });
 
   // --- Columns ---
   const columns: ColumnDef<Registration>[] = [
@@ -64,12 +83,12 @@
       accessorKey: 'registration_id',
       header: 'ID',
       cell: ({ row }) => row.original.registration_id,
-      enableHiding: false,
     },
     {
       accessorKey: 'full_name',
       header: 'Name',
       cell: ({ row }) => renderComponent(NameCell, { registration: row.original }),
+      enableHiding: false,
     },
     {
       accessorKey: 'status',
