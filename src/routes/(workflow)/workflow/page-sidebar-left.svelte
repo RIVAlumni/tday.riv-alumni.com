@@ -7,7 +7,7 @@
   import NavSecondary from './nav-secondary.svelte';
   import NavUser from './nav-user.svelte';
   import * as Sidebar from '$lib/components/ui/sidebar';
-  import { records, navMain, navSecondary, user } from '$lib/data/nav';
+  import { records, navMain, navSecondary } from '$lib/data/nav';
 
   let { ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
 </script>
@@ -42,7 +42,7 @@
       class="mt-auto" />
   </Sidebar.Content>
   <Sidebar.Footer>
-    <NavUser {user} />
+    <NavUser />
   </Sidebar.Footer>
   <Sidebar.Rail class="inset-y-2.5 after:inset-y-2.5" />
 </Sidebar.Root>

@@ -9,8 +9,12 @@
   import * as Avatar from '$lib/components/ui/avatar/index.js';
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
   import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+  import { internalAuth } from '$lib/firebase/auth.svelte';
 
-  let { user }: { user: { name: string; email: string; avatar: string } } = $props();
+  // Read user data from the internal auth store with fallbacks for SSR / loading
+  const displayName = $derived(internalAuth.user?.displayName ?? 'RIVAlumni Operator');
+  const email = $derived(internalAuth.user?.email ?? 'operator@riv-alumni.com');
+  const photo = $derived(internalAuth.user?.photoURL ?? '/avatars/shadcn.jpg');
 
   const sidebar = Sidebar.useSidebar();
 </script>
@@ -26,14 +30,14 @@
             class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
             <Avatar.Root class="size-8 rounded-lg grayscale">
               <Avatar.Image
-                src={user.avatar}
-                alt={user.name} />
+                src={photo}
+                alt={displayName} />
               <Avatar.Fallback class="rounded-lg">CN</Avatar.Fallback>
             </Avatar.Root>
             <div class="grid flex-1 text-start text-sm leading-tight">
-              <span class="truncate font-medium">{user.name}</span>
+              <span class="truncate font-medium">{displayName}</span>
               <span class="text-muted-foreground truncate text-xs">
-                {user.email}
+                {email}
               </span>
             </div>
             <MoreVerticalIcon class="ms-auto size-4" />
@@ -49,14 +53,14 @@
           <div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
             <Avatar.Root class="size-8 rounded-lg">
               <Avatar.Image
-                src={user.avatar}
-                alt={user.name} />
+                src={photo}
+                alt={displayName} />
               <Avatar.Fallback class="rounded-lg">CN</Avatar.Fallback>
             </Avatar.Root>
             <div class="grid flex-1 text-start text-sm leading-tight">
-              <span class="truncate font-medium">{user.name}</span>
+              <span class="truncate font-medium">{displayName}</span>
               <span class="text-muted-foreground truncate text-xs">
-                {user.email}
+                {email}
               </span>
             </div>
           </div>
