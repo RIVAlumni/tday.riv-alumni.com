@@ -3,7 +3,6 @@
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { locales, localizeHref } from '$lib/paraglide/runtime';
-  import { Toaster } from 'svelte-sonner';
   import './layout.css';
   import favicon from '$lib/assets/favicon.svg';
 
@@ -16,7 +15,6 @@
     href={favicon} />
 </svelte:head>
 {@render children()}
-<Toaster />
 
 <div style="display:none">
   {#each locales as locale (locale)}

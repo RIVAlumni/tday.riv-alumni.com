@@ -2,7 +2,6 @@
   import CheckIcon from '$lib/components/icons/CheckIcon.svelte';
   import CrossIcon from '$lib/components/icons/Cancel01Icon.svelte';
   import { getCountdownState } from '$lib/data/countdown';
-  import { toast } from 'svelte-sonner';
   import { visitorAuth } from '$lib/firebase/auth.svelte';
   import { onMount } from 'svelte';
 
@@ -35,12 +34,15 @@
     event.preventDefault();
   }
 
+  let signInError = $state<string | null>(null);
+
   async function handleGoogleSignIn() {
+    signInError = null;
     try {
       await visitorAuth.signInWithGoogle();
     } catch (err) {
       console.error('Google sign-in failed:', err);
-      toast.error('Sign-in failed. Please try again.');
+      signInError = 'Sign-in failed. Please try again.';
     }
   }
 
@@ -178,6 +180,9 @@
                 </svg>
                 Sign in with Google
               </button>
+              {#if signInError}
+                <p class="mt-3 text-sm" style="color: #eb2f06;">{signInError}</p>
+              {/if}
             </div>
           </section>
 

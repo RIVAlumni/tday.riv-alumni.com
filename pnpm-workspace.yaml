@@ -1,4 +1,6 @@
 allowBuilds:
+  '@firebase/util': true
   '@hugeicons/svelte': true
   '@tailwindcss/oxide': true
   esbuild: true
+  protobufjs: true
