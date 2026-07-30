@@ -19,7 +19,7 @@ export interface FirebaseProjectConfig {
  */
 export const VISITOR_CONFIG: FirebaseProjectConfig = {
 	apiKey: 'AIzaSyD6GNLuCF6BmvLlJgcRFjpFmc35fL03SAo',
-	authDomain: 'rivalumniops.firebaseapp.com',
+	authDomain: 'auth.ops.riv-alumni.com',
 	projectId: 'rivalumniops',
 	storageBucket: 'rivalumniops.appspot.com',
 	messagingSenderId: '438307082557',
