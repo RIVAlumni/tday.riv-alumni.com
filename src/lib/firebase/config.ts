@@ -1,7 +1,7 @@
 // $lib/firebase/config.ts
+import { dev } from '$app/environment';
 
-/** Only connect emulators when running in development mode (NODE_ENV=development). */
-export const USE_EMULATORS = import.meta.env.DEV;
+export const USE_EMULATORS = dev;
 
 export interface FirebaseProjectConfig {
 	apiKey: string;
