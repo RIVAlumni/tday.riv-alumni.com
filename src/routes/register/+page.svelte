@@ -47,6 +47,10 @@
     }
   }
 
+  async function handleSignOut() {
+    await visitorAuth.signOut();
+  }
+
   onMount(() => {
     visitorAuth.init();
     const countdownInterval = window.setInterval(() => {
@@ -168,19 +172,28 @@
             </div>
 
             <div class="google-button-wrap">
-              <button
-                class="google-fallback"
-                type="button"
-                onclick={handleGoogleSignIn}>
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24">
-                  <path
-                    d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
-                    fill="currentColor" />
-                </svg>
-                Sign in with Google
-              </button>
+              {#if visitorAuth.user}
+                <p class="signed-in-status">
+                  Signed in as <strong>{visitorAuth.user.email}</strong>.
+                  <button type="button" class="sign-out-link" onclick={handleSignOut}>
+                    Not you? Logout
+                  </button>
+                </p>
+              {:else}
+                <button
+                  class="google-fallback"
+                  type="button"
+                  onclick={handleGoogleSignIn}>
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24">
+                    <path
+                      d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
+                      fill="currentColor" />
+                  </svg>
+                  Sign in with Google
+                </button>
+              {/if}
               {#if signInError}
                 <Alert.Root variant="destructive">
                   <Alert.Title>Sign-in failed</Alert.Title>
@@ -802,6 +815,43 @@
   .google-fallback svg {
     width: 1.1rem;
     height: 1.1rem;
+  }
+
+  .signed-in-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 0.2rem;
+    background: rgba(255, 255, 255, 0.06);
+    color: #d4d4d0;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .signed-in-status strong {
+    color: #f5f5f2;
+    font-weight: 600;
+  }
+
+  .sign-out-link {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--red);
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 550;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .sign-out-link:hover {
+    color: #ff6c4c;
   }
 
   .consent-notice {
