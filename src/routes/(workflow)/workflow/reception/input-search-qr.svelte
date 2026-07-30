@@ -145,7 +145,7 @@
   });
 </script>
 
-<Drawer.Content>
+<Drawer.Content class="sm:!max-w-sm sm:!mx-auto">
   <Drawer.Header>
     <Drawer.Title>Scan Recipient's QR Code</Drawer.Title>
     <Drawer.Description>Point the camera at the QR code to scan.</Drawer.Description>

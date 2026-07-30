@@ -46,6 +46,12 @@
       </p>
     </div>
     <Field>
+      {#if loginError}
+        <Alert.Root variant="destructive">
+          <Alert.Title>Sign-in failed</Alert.Title>
+          <Alert.Description>{loginError}</Alert.Description>
+        </Alert.Root>
+      {/if}
       <Button
         variant="outline"
         type="button"
@@ -59,12 +65,6 @@
         </svg>
         Login with Google
       </Button>
-      {#if loginError}
-        <Alert.Root variant="destructive">
-          <Alert.Title>Sign-in failed</Alert.Title>
-          <Alert.Description>{loginError}</Alert.Description>
-        </Alert.Root>
-      {/if}
       <FieldDescription class="text-center">
         Unable to login?
         <a
