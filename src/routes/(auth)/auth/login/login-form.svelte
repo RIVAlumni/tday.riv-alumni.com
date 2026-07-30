@@ -18,7 +18,6 @@
 
   onMount(() => {
     internalAuth.init();
-    toast.error('Sign-in failed. Please try again.');
   });
 
   let loginError = $state<string | null>(null);
