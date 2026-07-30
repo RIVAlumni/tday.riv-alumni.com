@@ -2,6 +2,7 @@
   import CheckIcon from '$lib/components/icons/CheckIcon.svelte';
   import CrossIcon from '$lib/components/icons/Cancel01Icon.svelte';
   import { getCountdownState } from '$lib/data/countdown';
+  import { visitorAuth } from '$lib/firebase/auth.svelte';
   import { onMount } from 'svelte';
 
   const graduationYears = Array.from({ length: 28 }, (_, index) => 2026 - index);
@@ -33,7 +34,16 @@
     event.preventDefault();
   }
 
+  async function handleGoogleSignIn() {
+    try {
+      await visitorAuth.signInWithGoogle();
+    } catch (err) {
+      console.error('Google sign-in failed:', err);
+    }
+  }
+
   onMount(() => {
+    visitorAuth.init();
     const countdownInterval = window.setInterval(() => {
       countdown = getCountdownState();
     }, 1_000);
@@ -155,7 +165,8 @@
             <div class="google-button-wrap">
               <button
                 class="google-fallback"
-                type="button">
+                type="button"
+                onclick={handleGoogleSignIn}>
                 <svg
                   aria-hidden="true"
                   viewBox="0 0 24 24">

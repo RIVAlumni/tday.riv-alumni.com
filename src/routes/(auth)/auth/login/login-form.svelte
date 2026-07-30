@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
+  import { internalAuth } from '$lib/firebase/auth.svelte';
   import { FieldGroup, Field, FieldDescription } from '$lib/components/ui/field/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
   import { cn, type WithElementRef } from '$lib/utils.js';
@@ -11,6 +14,19 @@
   }: WithElementRef<HTMLFormAttributes> = $props();
 
   const id = $props.id();
+
+  onMount(() => {
+    internalAuth.init();
+  });
+
+  async function handleGoogleLogin() {
+    try {
+      await internalAuth.signInWithGoogle();
+      goto('/workflow/home');
+    } catch (err) {
+      console.error('Login failed:', err);
+    }
+  }
 </script>
 
 <form
@@ -27,7 +43,8 @@
     <Field>
       <Button
         variant="outline"
-        type="button">
+        type="button"
+        onclick={handleGoogleLogin}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24">
