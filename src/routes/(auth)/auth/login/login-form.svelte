@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { internalAuth } from '$lib/firebase/auth.svelte';
+  import * as Alert from '$lib/components/ui/alert/index.js';
   import { FieldGroup, Field, FieldDescription } from '$lib/components/ui/field/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
   import { cn, type WithElementRef } from '$lib/utils.js';
@@ -29,7 +30,7 @@
       goto('/workflow/home');
     } catch (err) {
       console.error('Login failed:', err);
-      loginError = 'Sign-in failed. Please try again.';
+      loginError = 'Please try again.';
     }
   }
 </script>
@@ -60,7 +61,10 @@
         Login with Google
       </Button>
       {#if loginError}
-        <p class="text-destructive text-center text-sm">{loginError}</p>
+        <Alert.Root variant="destructive">
+          <Alert.Title>Sign-in failed</Alert.Title>
+          <Alert.Description>{loginError}</Alert.Description>
+        </Alert.Root>
       {/if}
       <FieldDescription class="text-center">
         Unable to login?
