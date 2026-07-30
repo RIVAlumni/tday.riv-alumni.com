@@ -2,6 +2,7 @@
   import CheckIcon from '$lib/components/icons/CheckIcon.svelte';
   import CrossIcon from '$lib/components/icons/Cancel01Icon.svelte';
   import { getCountdownState } from '$lib/data/countdown';
+  import { toast } from 'svelte-sonner';
   import { visitorAuth } from '$lib/firebase/auth.svelte';
   import { onMount } from 'svelte';
 
@@ -39,6 +40,7 @@
       await visitorAuth.signInWithGoogle();
     } catch (err) {
       console.error('Google sign-in failed:', err);
+      toast.error('Sign-in failed. Please try again.');
     }
   }
 

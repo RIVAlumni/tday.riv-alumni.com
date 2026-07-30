@@ -9,6 +9,7 @@
   import * as Avatar from '$lib/components/ui/avatar/index.js';
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
   import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+  import { goto } from '$app/navigation';
   import { internalAuth } from '$lib/firebase/auth.svelte';
 
   // Read user data from the internal auth store with fallbacks for SSR / loading
@@ -17,6 +18,11 @@
   const photo = $derived(internalAuth.user?.photoURL ?? '/avatars/shadcn.jpg');
 
   const sidebar = Sidebar.useSidebar();
+
+  async function handleSignOut() {
+    await internalAuth.signOut();
+    goto('/auth/login');
+  }
 </script>
 
 <Sidebar.Menu>
@@ -81,7 +87,7 @@
           </DropdownMenu.Item>
         </DropdownMenu.Group>
         <DropdownMenu.Separator />
-        <DropdownMenu.Item>
+        <DropdownMenu.Item onclick={handleSignOut}>
           <Logout01Icon />
           Log out
         </DropdownMenu.Item>

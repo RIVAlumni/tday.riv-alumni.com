@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { toast } from 'svelte-sonner';
   import { internalAuth } from '$lib/firebase/auth.svelte';
   import { FieldGroup, Field, FieldDescription } from '$lib/components/ui/field/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
@@ -25,6 +26,7 @@
       goto('/workflow/home');
     } catch (err) {
       console.error('Login failed:', err);
+      toast.error('Sign-in failed. Please try again.');
     }
   }
 </script>
