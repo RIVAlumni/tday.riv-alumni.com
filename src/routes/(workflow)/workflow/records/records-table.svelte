@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { Registration } from '../reception/_shared/models';
+  import type { Registration } from '$lib/models/registration';
+  import { is2024 } from '$lib/models/registration';
+  import { Timestamp } from 'firebase/firestore';
 
   // --- Table core ---
   import { createSvelteTable } from '$lib/components/ui/data-table/data-table.svelte.js';
@@ -105,7 +107,7 @@
     {
       accessorKey: 'current_institution',
       header: 'Institution',
-      cell: ({ row }) => row.original.current_institution || '—',
+      cell: ({ row }) => is2024(row.original) ? (row.original.current_institution || '—') : '—',
     },
     {
       accessorKey: 'visiting_teachers',
@@ -119,7 +121,8 @@
       cell: ({ row }) => {
         const iso = row.original.arrived_at;
         if (!iso) return '—';
-        return new Date(iso).toLocaleTimeString('en-SG', {
+        const d = iso instanceof Timestamp ? iso.toDate() : new Date(iso as unknown as string);
+        return d.toLocaleTimeString('en-SG', {
           hour: '2-digit',
           minute: '2-digit',
           hour12: true,

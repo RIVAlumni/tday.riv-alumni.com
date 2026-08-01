@@ -20,17 +20,6 @@
   function navigateToProfile(registrationId: string) {
     goto(`/workflow/records/${registrationId}`);
   }
-
-  // Default the year filter to the current year on mount
-  $effect(() => {
-    const currentYear = new Date().getFullYear().toString();
-    if (
-      registrations.some((r) => r.graduating_year === currentYear) &&
-      !columnFilters.some((f) => f.id === 'graduating_year')
-    ) {
-      columnFilters = [...columnFilters, { id: 'graduating_year', value: currentYear }];
-    }
-  });
 </script>
 
 <div class="@container/main flex flex-col gap-4 p-4 lg:p-6">

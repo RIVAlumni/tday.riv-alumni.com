@@ -1,7 +1,8 @@
 <script lang="ts">
   import type { Table } from '@tanstack/table-core';
-  import type { Registration, RegistrationStatus } from '../reception/_shared/models';
-  import { statusMeta } from '../reception/_shared/models';
+  import type { Registration, RegistrationStatus } from '$lib/models/registration';
+  import { statusMeta, events, type ReceptionEvent } from '../reception/_shared/models';
+  import { reception } from '../reception/_shared/store.svelte';
   import { Input } from '$lib/components/ui/input/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
   import * as Select from '$lib/components/ui/select/index.js';
@@ -20,7 +21,14 @@
     table: Table<Registration>;
   } = $props();
 
-  // --- Status filter ---
+  // --- Event year filter ---
+  let eventYearLabel = $derived(
+    events.find((e) => e.id === reception.activeEventId)?.title ?? 'Event Year',
+  );
+
+  function setEventYear(id: string) {
+    reception.setActiveEvent(id);
+  }
   const visibleStatuses: [RegistrationStatus, (typeof statusMeta)[RegistrationStatus]][] = [
     ['CHECKED_IN', statusMeta.CHECKED_IN],
     ['CONFLICT', statusMeta.CONFLICT],
@@ -57,7 +65,7 @@
   });
 
   let yearFilterLabel = $derived(
-    yearFilterValue === 'all' ? 'Year' : yearFilterValue,
+    yearFilterValue === 'all' ? 'Grad Year' : yearFilterValue,
   );
 
   function setYearFilter(v: string) {
@@ -101,8 +109,24 @@
       bind:value={globalFilter} />
   </div>
 
-  <!-- Row 2: Status + Year -->
+  <!-- Row 2: Event Year + Status + Graduation Year -->
   <div class="flex items-center gap-3">
+    <Select.Root
+      type="single"
+      value={reception.activeEventId}
+      onValueChange={setEventYear}>
+      <Select.Trigger
+        size="sm"
+        class="w-44">
+        {eventYearLabel}
+      </Select.Trigger>
+      <Select.Content>
+        {#each events as event (event.id)}
+          <Select.Item value={event.id}>{event.title}</Select.Item>
+        {/each}
+      </Select.Content>
+    </Select.Root>
+
     <Select.Root
       type="single"
       value={statusFilterValue}

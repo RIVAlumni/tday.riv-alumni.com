@@ -1,6 +1,6 @@
 <script lang="ts">
   import { UserIcon } from '$lib/icons';
-  import type { Registration } from '../reception/_shared/models';
+  import type { Registration } from '$lib/models/registration';
 
   let { registration }: { registration: Registration } = $props();
 </script>

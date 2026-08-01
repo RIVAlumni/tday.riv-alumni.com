@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Badge } from '$lib/components/ui/badge/index.js';
-  import type { RegistrationStatus } from '../reception/_shared/models';
+  import type { RegistrationStatus } from '$lib/models/registration';
   import { statusMeta } from '../reception/_shared/models';
 
   let { status }: { status: RegistrationStatus } = $props();

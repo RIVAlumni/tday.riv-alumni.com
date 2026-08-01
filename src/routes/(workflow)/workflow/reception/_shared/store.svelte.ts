@@ -10,16 +10,21 @@
 import {
   defaultEventId,
   events,
-  getRegistration,
-  seedRegistrations,
-  searchRegistrations,
-  statsFor,
   type ActionType,
-  type EventStats,
   type ReceptionEvent,
+} from './models';
+import {
   type Registration,
   type RegistrationStatus,
-} from './models';
+} from '$lib/models/registration';
+import {
+  getRegistration,
+  searchRegistrations,
+  statsFor,
+  type EventStats,
+} from '$lib/util/registration';
+import { seedRegistrations } from '$lib/data/registration';
+import { Timestamp } from 'firebase/firestore';
 
 const STORAGE_KEY = 'reception:active-event';
 
@@ -139,7 +144,8 @@ class ReceptionStore {
 
     const previous = target.status;
     target.status = action;
-    if (action === 'CHECKED_IN') target.arrived_at = new Date().toISOString();
+    target.updated_at = Timestamp.now();
+    if (action === 'CHECKED_IN') target.arrived_at = Timestamp.now();
 
     // Conflict handovers append the operator's reason to the record's notes,
     // mirroring the legacy `actionSetConflict` comment trail in `../master`.
@@ -168,10 +174,14 @@ class ReceptionStore {
   /**
    * Level 2 (Mediator) only: patch editable fields on a registration. Level 1
    * operators are read-only and must flag for resolution instead.
+   *
+   * Accepts shared fields plus any year-specific extra that the caller has
+   * validated against the active event type.
    */
   updateRegistration(
     registrationId: string,
-    patch: Partial<Pick<Registration, 'full_name' | 'nric' | 'contact_number'>>,
+    patch: Partial<Pick<Registration, 'full_name' | 'contact_number' | 'graduating_year' | 'visiting_teachers' | 'comments'>> &
+      Partial<Record<string, unknown>>,
   ): boolean {
     if (!this.canEditRegistrations) return false;
     const target = this.registrations.find(
@@ -179,6 +189,7 @@ class ReceptionStore {
     );
     if (!target) return false;
     Object.assign(target, patch);
+    target.updated_at = Timestamp.now();
     return true;
   }
 

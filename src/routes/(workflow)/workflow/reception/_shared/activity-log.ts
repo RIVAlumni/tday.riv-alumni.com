@@ -14,7 +14,9 @@
  */
 
 import type { ActivityEntry } from './store.svelte.js';
-import type { ActionType, Registration } from './models.js';
+import type { ActionType } from './models.js';
+import type { Registration } from '$lib/models/registration';
+import { nricFor } from '$lib/util/registration';
 
 export interface TimelineEntry {
   event_id: string;
@@ -81,7 +83,7 @@ export function historicalActivity(
       event_id: r?.event_id ?? 'tdy-2026',
       registration_id: t.reg,
       full_name: r?.full_name ?? 'Unknown visitor',
-      nric: r?.nric ?? '—',
+      nric: nricFor(r),
       action: t.action,
       operator: t.operator,
       at: new Date(now.getTime() - t.agoMin * 60_000),
@@ -110,7 +112,7 @@ export function buildTimeline(
       event_id: e.event_id,
       registration_id: e.registration_id,
       full_name: e.full_name,
-      nric: byId.get(e.registration_id)?.nric ?? '—',
+      nric: nricFor(byId.get(e.registration_id)),
       action: e.action,
       operator: liveOperator,
       at: e.at,

@@ -5,6 +5,8 @@
 
   import { reception } from '../../reception/_shared/store.svelte';
   import { statusMeta } from '../../reception/_shared/models';
+  import { is2024, is2025 } from '$lib/models/registration';
+  import { Timestamp } from 'firebase/firestore';
   import { setPageTitle } from '$lib/data/page-title.svelte.js';
 
   import * as Card from '$lib/components/ui/card/index.js';
@@ -83,9 +85,10 @@
     saving = false;
   }
 
-  function formatDate(iso: string | null): string {
+  function formatDate(iso: Timestamp | string | null): string {
     if (!iso) return '—';
-    return new Date(iso).toLocaleString('en-SG', {
+    const d = iso instanceof Timestamp ? iso.toDate() : new Date(iso);
+    return d.toLocaleString('en-SG', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -197,32 +200,36 @@
         <Card.Description>Read-only registration data.</Card.Description>
       </Card.Header>
       <Card.Content class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <div class="flex flex-col gap-1">
-          <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide">NRIC</span>
-          <span class="text-sm font-medium tabular-nums">{record.nric}</span>
-        </div>
-        <div class="flex flex-col gap-1">
-          <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide">Gender</span>
-          <span class="text-sm font-medium">{record.gender}</span>
-        </div>
-        <div class="flex flex-col gap-1">
-          <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide">Graduating Class</span>
-          <span class="text-sm font-medium">{record.graduating_class}</span>
-        </div>
-        <div class="flex flex-col gap-1">
-          <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide">Institution</span>
-          <span class="text-sm font-medium">{record.current_institution || '—'}</span>
-        </div>
-        <div class="flex flex-col gap-1">
-          <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide">Ex-Riverlite</span>
-          <span class="text-sm font-medium">
-            {#if record.is_ex_riverlite}
-              <Badge variant="secondary">Yes</Badge>
-            {:else}
-              No
-            {/if}
-          </span>
-        </div>
+        {#if is2024(record)}
+          <div class="flex flex-col gap-1">
+            <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide">NRIC</span>
+            <span class="text-sm font-medium tabular-nums">{record.nric}</span>
+          </div>
+          <div class="flex flex-col gap-1">
+            <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide">Gender</span>
+            <span class="text-sm font-medium">{record.gender === 'M' ? 'Male' : 'Female'}</span>
+          </div>
+          <div class="flex flex-col gap-1">
+            <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide">Graduating Class</span>
+            <span class="text-sm font-medium">{record.graduating_class}</span>
+          </div>
+          <div class="flex flex-col gap-1">
+            <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide">Institution</span>
+            <span class="text-sm font-medium">{record.current_institution || '—'}</span>
+          </div>
+        {/if}
+        {#if is2025(record)}
+          <div class="flex flex-col gap-1">
+            <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide">Ex-Riverlite</span>
+            <span class="text-sm font-medium">
+              {#if record.is_ex_riverlite}
+                <Badge variant="secondary">Yes</Badge>
+              {:else}
+                No
+              {/if}
+            </span>
+          </div>
+        {/if}
         <div class="flex flex-col gap-1">
           <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide">Arrived</span>
           <span class="text-sm font-medium">{formatDate(record.arrived_at)}</span>
