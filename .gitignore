@@ -29,3 +29,4 @@ project.inlang/cache/
 
 # firebase
 firebase-debug.log
+.pi/
