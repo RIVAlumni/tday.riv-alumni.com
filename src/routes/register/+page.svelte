@@ -2,6 +2,7 @@
   import CheckIcon from '$lib/components/icons/CheckIcon.svelte';
   import CrossIcon from '$lib/components/icons/Cancel01Icon.svelte';
   import { getCountdownState } from '$lib/data/countdown';
+  import { ArrowLeft01Icon, ArrowUpRight01Icon } from '$lib/icons';
   import * as Alert from '$lib/components/ui/alert/index.js';
   import { visitorAuth } from '$lib/firebase/auth.svelte';
   import { onMount } from 'svelte';
@@ -88,7 +89,12 @@
   class="attendance-page"
   class:motion-ready={heroMotionReady}>
   <header class="attendance-header">
-    <a href="/#home"><span aria-hidden="true">←</span> Event home</a>
+    <a href="/#home">
+      <ArrowLeft01Icon
+        size={15}
+        strokeWidth={1.8} />
+      Event home
+    </a>
     <p>Attendance registration</p>
     <time datetime="2026-09-03">03 / Sept / 26</time>
   </header>
@@ -114,7 +120,7 @@
     aria-labelledby="form-heading">
     <div class="form-intro">
       <p class="section-kicker"><span aria-hidden="true"></span> Pre-registration</p>
-      <h2 id="form-heading">Your visit starts here. Let's get your event ticket.</h2>
+      <h2 id="form-heading">From Little Hearts, With Big Thanks.</h2>
       <dl
         class="registration-schedule"
         aria-label="Teachers’ Day registration schedule">
@@ -162,7 +168,12 @@
             <a href="https://go.riv-alumni.com/outreach"
               >Contact our RIVA Community Outreach Team to check.</a>
           </p>
-          <a href="/#the-visit">View event details <span aria-hidden="true">↗</span></a>
+          <a href="/#the-visit">
+            View event details
+            <ArrowUpRight01Icon
+              size={16}
+              strokeWidth={1.8} />
+          </a>
         </section>
       {:else}
         <form onsubmit={handleSubmit}>
@@ -506,7 +517,9 @@
             class="submit-button"
             type="submit">
             <span>Submit registration</span>
-            <span aria-hidden="true">↗</span>
+            <ArrowUpRight01Icon
+              size={18}
+              strokeWidth={1.8} />
           </button>
 
           <p class="privacy-note">
@@ -585,7 +598,14 @@
   .attendance-header a {
     justify-self: start;
     display: inline-flex;
+    align-items: center;
     gap: 0.65rem;
+  }
+
+  .attendance-header a :global(svg),
+  .confirmation > a :global(svg),
+  .submit-button :global(svg) {
+    flex: 0 0 auto;
   }
 
   .attendance-header p {
@@ -674,7 +694,7 @@
     padding: clamp(6rem, 10vw, 10rem) clamp(1.25rem, 2.8vw, 3rem);
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: clamp(3rem, 7vw, 8rem);
+    gap: clamp(2.5rem, 4vw, 5.5rem);
     border-top: 1px solid var(--line);
   }
 
@@ -1255,6 +1275,9 @@
   .confirmation > a {
     align-self: flex-start;
     margin-top: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
     text-transform: uppercase;
     font-size: 0.75rem;
     font-weight: 700;

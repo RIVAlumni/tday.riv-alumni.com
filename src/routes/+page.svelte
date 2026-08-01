@@ -3,6 +3,7 @@
   import 'lenis/dist/lenis.css';
   import { onMount } from 'svelte';
   import { getCountdownState } from '$lib/data/countdown';
+  import { ArrowDown01Icon, ArrowUpRight01Icon } from '$lib/icons';
 
   const event = {
     date: 'Thursday, 3 September 2026',
@@ -244,6 +245,28 @@
 <main
   class:motion-ready={motionReady}
   class="landing">
+  <header class="site-header">
+    <nav aria-label="Primary navigation">
+      <a href="#the-visit">
+        <span class="site-nav-index">01</span>
+        <span>Details</span>
+      </a>
+      <a href="#what-to-expect">
+        <span class="site-nav-index">02</span>
+        <span>What to expect</span>
+      </a>
+      <a
+        class="site-nav-register"
+        href="/register">
+        <span class="site-nav-index">03</span>
+        <span>Register</span>
+        <ArrowUpRight01Icon
+          size={16}
+          strokeWidth={1.8} />
+      </a>
+    </nav>
+  </header>
+
   <section
     id="home"
     class="hero"
@@ -262,6 +285,27 @@
           <span>Teachers' Day</span>
           <span>Visitations 2026</span>
         </h1>
+
+        <div
+          class="hero-countdown"
+          role="timer"
+          aria-label={countdown.ariaLabel}>
+          <p>{countdown.eyebrow}</p>
+          {#if countdown.complete}
+            <strong>{countdown.deadline}</strong>
+          {:else}
+            <div
+              class="hero-countdown-units"
+              aria-hidden="true">
+              {#each countdown.units as unit (unit.label)}
+                <span>
+                  <strong>{unit.value}</strong>
+                  <small>{unit.label.slice(0, 1)}</small>
+                </span>
+              {/each}
+            </div>
+          {/if}
+        </div>
       </div>
 
       <div class="hero-details">
@@ -277,7 +321,9 @@
           class="action-link action-link--light"
           href="/register">
           <span>Register attendance</span>
-          <span aria-hidden="true">↗</span>
+          <ArrowUpRight01Icon
+            size={18}
+            strokeWidth={1.8} />
         </a>
       </div>
     </div>
@@ -287,7 +333,9 @@
       href="#the-visit"
       aria-label="Scroll to the visit details">
       <span>Scroll</span>
-      <span aria-hidden="true">↓</span>
+      <ArrowDown01Icon
+        size={18}
+        strokeWidth={1.8} />
     </a>
   </section>
 
@@ -441,14 +489,18 @@
             class="action-link action-link--glass"
             href="/register">
             <span>Register now</span>
-            <span aria-hidden="true">↗</span>
+            <ArrowUpRight01Icon
+              size={18}
+              strokeWidth={1.8} />
           </a>
         {:else if countdown.phase === 'event'}
           <a
             class="action-link action-link--glass"
             href="#the-visit">
             <span>View visit details</span>
-            <span aria-hidden="true">↓</span>
+            <ArrowDown01Icon
+              size={18}
+              strokeWidth={1.8} />
           </a>
         {:else if countdown.phase === 'vacate'}
           <a
@@ -457,7 +509,9 @@
             target="_blank"
             rel="noreferrer">
             <span>Need help?</span>
-            <span aria-hidden="true">↗</span>
+            <ArrowUpRight01Icon
+              size={18}
+              strokeWidth={1.8} />
           </a>
         {/if}
       </div>
@@ -551,7 +605,9 @@
           class="action-link action-link--dark"
           href="/register">
           <span>Register attendance</span>
-          <span aria-hidden="true">↗</span>
+          <ArrowUpRight01Icon
+            size={18}
+            strokeWidth={1.8} />
         </a>
       </div>
     </div>
@@ -605,6 +661,85 @@
   .landing a {
     color: inherit;
     text-decoration: none;
+  }
+
+  .site-header {
+    position: absolute;
+    z-index: 20;
+    top: 0;
+    right: 0;
+    left: 0;
+    padding: clamp(1.25rem, 2.8vw, 3rem);
+    display: flex;
+    justify-content: flex-end;
+    pointer-events: none;
+  }
+
+  .site-header nav {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid rgba(255, 255, 255, 0.38);
+    background: rgba(5, 5, 5, 0.26);
+    backdrop-filter: blur(0.65rem);
+    pointer-events: auto;
+  }
+
+  .site-header a {
+    min-height: 3.85rem;
+    padding-inline: clamp(0.9rem, 1.6vw, 1.5rem);
+    display: inline-flex;
+    align-items: center;
+    gap: clamp(0.55rem, 1vw, 0.9rem);
+    border-left: 1px solid rgba(255, 255, 255, 0.28);
+    text-transform: uppercase;
+    font-size: clamp(0.62rem, 0.75vw, 0.72rem);
+    font-weight: 680;
+    letter-spacing: -0.01em;
+    transition:
+      background 220ms ease,
+      color 220ms ease;
+  }
+
+  .site-header a:first-child {
+    border-left: 0;
+  }
+
+  .site-header a:not(.site-nav-register):hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .site-nav-index {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.55rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .site-header .site-nav-register {
+    border-left-color: var(--paper);
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .site-header .site-nav-register:hover {
+    border-left-color: var(--red);
+    background: var(--red);
+    color: #fff;
+  }
+
+  .site-header .site-nav-register .site-nav-index {
+    color: currentColor;
+    opacity: 0.58;
+  }
+
+  .site-header a:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 4px;
+  }
+
+  .site-header :global(svg),
+  .action-link :global(svg),
+  .scroll-cue :global(svg) {
+    flex: 0 0 auto;
   }
 
   .photo-surface {
@@ -718,6 +853,59 @@
     white-space: nowrap;
   }
 
+  .hero-countdown {
+    width: fit-content;
+    margin-top: clamp(1.1rem, 2.2vw, 2rem);
+    display: flex;
+    align-items: center;
+    gap: clamp(0.9rem, 1.6vw, 1.5rem);
+    text-transform: uppercase;
+  }
+
+  .hero-countdown > p {
+    max-width: none;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: clamp(0.58rem, 0.72vw, 0.68rem);
+    font-weight: 680;
+    line-height: 1.2;
+    letter-spacing: 0.015em;
+    white-space: nowrap;
+  }
+
+  .hero-countdown > strong {
+    font-size: clamp(0.78rem, 0.95vw, 0.9rem);
+    font-weight: 650;
+  }
+
+  .hero-countdown-units {
+    padding-left: clamp(0.9rem, 1.6vw, 1.5rem);
+    display: flex;
+    gap: clamp(0.75rem, 1.4vw, 1.25rem);
+    border-left: 1px solid rgba(255, 255, 255, 0.42);
+  }
+
+  .hero-countdown-units > span {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.22rem;
+  }
+
+  .hero-countdown-units strong {
+    min-width: 2ch;
+    font-variant-numeric: tabular-nums;
+    font-size: clamp(1.05rem, 1.55vw, 1.4rem);
+    font-weight: 560;
+    line-height: 1;
+    letter-spacing: -0.045em;
+  }
+
+  .hero-countdown-units small {
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 0.52rem;
+    font-weight: 700;
+  }
+
   .hero-details {
     display: grid;
     grid-template-columns: minmax(12rem, 1fr) minmax(12rem, 1fr) auto;
@@ -797,12 +985,6 @@
 
   .scroll-cue > span:first-child {
     writing-mode: vertical-rl;
-  }
-
-  .scroll-cue > span:last-child {
-    writing-mode: horizontal-tb;
-    font-size: 1rem;
-    line-height: 1;
   }
 
   .section-label {
@@ -1441,6 +1623,29 @@
   }
 
   @media (max-width: 600px) {
+    .site-header {
+      padding: 0.85rem 1rem;
+    }
+
+    .site-header nav {
+      width: 100%;
+    }
+
+    .site-header a {
+      min-width: 0;
+      min-height: 3.4rem;
+      padding-inline: 0.65rem;
+      flex: 1 1 0;
+      justify-content: center;
+      gap: 0.45rem;
+      font-size: clamp(0.55rem, 2.65vw, 0.65rem);
+      text-align: center;
+    }
+
+    .site-nav-index {
+      display: none;
+    }
+
     .hero-grid {
       gap: 1rem;
     }
@@ -1449,6 +1654,26 @@
       max-width: none;
       font-size: clamp(1.95rem, 9vw, 3.6rem);
       line-height: 0.9;
+    }
+
+    .hero-countdown {
+      margin-top: 1rem;
+      display: block;
+    }
+
+    .hero-countdown > p {
+      max-width: none;
+      margin-bottom: 0.65rem;
+    }
+
+    .hero-countdown-units {
+      padding-left: 0;
+      gap: clamp(0.65rem, 4vw, 1rem);
+      border-left: 0;
+    }
+
+    .hero-countdown-units strong {
+      font-size: clamp(1rem, 4.8vw, 1.3rem);
     }
 
     .hero-details {
