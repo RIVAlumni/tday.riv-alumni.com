@@ -4,50 +4,126 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /{document=**} {
       allow read, write: if false;
-      
+
       match /users/{userId} {
-      	allow get: if isSignedIn() &&
-        							request.auth.uid == userId
+        allow get: if isSignedIn() &&
+                      request.auth.uid == userId;
       }
-      
+
       match /events/{eventId} {
-      	allow get: if isSignedIn();
-        
+        allow get: if isSignedIn();
+
         match /registrations/{registrationId} {
-        	allow get: if isSignedIn()
-          							&& isAuthorised(1);
-          
+          allow create: if isUnauthenticatedRegistrationCreate();
+
+          allow get: if isSignedIn()
+                        && isAuthorised(1);
+
           allow list: if isSignedIn()
-          								&& isAuthorised(1);
-          
+                         && isAuthorised(1);
+
           allow update: if isSignedIn()
-          									&& isAuthorised(1);
-        }
-        
-        match /consensus/{yearClassId} {
-        	allow get: if isSignedIn()
-          							&& isAuthorised(1);
+                           && isAuthorised(1);
         }
       }
     }
-    
+
     function isSignedIn() {
-    	return request.auth != null
-      				&& request.auth.token.email_verified == true
+      return request.auth != null
+                  && request.auth.token.email_verified == true
               // && request.auth.token.email.matches('.*@riv-alumni[.]com') == true
     }
-    
+
     function isAuthorised(minAccessLevel) {
-    	let userRef = /databases/$(database)/documents/users/$(request.auth.uid);
-    	let userExists = exists(userRef);
+      let userRef = /databases/$(database)/documents/users/$(request.auth.uid);
+      let userExists = exists(userRef);
       let userData = get(userRef).data;
-      
-			let userAccessLevel = userData.access_level;
+
+      let userAccessLevel = userData.access_level;
       let userAccessExpires = userData.access_expires;
-      
+
       return userExists
-      				&& userAccessLevel >= minAccessLevel
+                  && userAccessLevel >= minAccessLevel
               && userAccessExpires >= request.time;
+    }
+
+    function isUnauthenticatedRegistrationCreate() {
+      let data = request.resource.data;
+
+      let pathOk =
+        data.event_id == eventId &&
+        data.registration_id == registrationId;
+
+      let baseOk =
+        data.full_name is string &&
+        data.full_name.size() > 0 &&
+        data.full_name.size() <= 120 &&
+        data.contact_number is string &&
+        data.contact_number.size() > 0 &&
+        data.contact_number.size() <= 8 &&
+        data.graduating_year is string &&
+        data.graduating_year.size() > 0;
+
+      let teachersOk =
+        data.visiting_teachers is list &&
+        data.visiting_teachers.size() <= 20 &&
+        data.visiting_teachers.toSet().size() == data.visiting_teachers.size();
+
+      let statusOk = data.status == 'REGISTERED';
+      let metaOk =
+        data.comments == '' &&
+        data.arrived_at == null &&
+        data.created_at == request.time &&
+        data.updated_at == request.time;
+
+      let messagesOk =
+        data.written_messages is list &&
+         data.written_messages.size() <= 2 &&
+         writtenMessagesValid();
+
+      // Prevent field injection - reject documents carrying unknown keys
+      let noExtraKeysOk =
+        request.resource.data.keys().toSet() == registrationKeys().toSet();
+
+      return pathOk && baseOk && teachersOk && statusOk && metaOk && messagesOk && noExtraKeysOk;
+    }
+
+    function writtenMessagesValid() {
+      let msgs = request.resource.data.written_messages;
+      return (msgs.size() == 0) ||
+        (msgs[0].keys().hasAll(['teacher_name', 'message']) &&
+         msgs[0].teacher_name is string &&
+         msgs[0].teacher_name.size() > 0 &&
+         msgs[0].teacher_name.size() <= 120 &&
+         msgs[0].message is string &&
+         msgs[0].message.size() > 0 &&
+         msgs[0].message.size() <= 2000 &&
+         (msgs.size() == 1 ||
+          (msgs[1].keys().hasAll(['teacher_name', 'message']) &&
+           msgs[1].teacher_name is string &&
+           msgs[1].teacher_name.size() > 0 &&
+           msgs[1].teacher_name.size() <= 120 &&
+           msgs[1].message is string &&
+           msgs[1].message.size() > 0 &&
+           msgs[1].message.size() <= 2000)));
+    }
+
+    function registrationKeys() {
+      let base = [
+        'event_id',
+        'registration_id',
+        'full_name',
+        'status',
+        'contact_number',
+        'graduating_year',
+        'visiting_teachers',
+        'written_messages',
+        'comments',
+        'arrived_at',
+        'created_at',
+        'updated_at',
+      ];
+      return base;
     }
   }
 }

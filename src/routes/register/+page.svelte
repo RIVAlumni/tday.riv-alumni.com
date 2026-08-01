@@ -1,11 +1,11 @@
 <script lang="ts">
   import CheckIcon from '$lib/components/icons/CheckIcon.svelte';
-  import CrossIcon from '$lib/components/icons/Cancel01Icon.svelte';
   import { getCountdownState } from '$lib/data/countdown';
   import { ArrowLeft01Icon, ArrowUpRight01Icon } from '$lib/icons';
   import * as Alert from '$lib/components/ui/alert/index.js';
   import { visitorAuth } from '$lib/firebase/auth.svelte';
   import { onMount } from 'svelte';
+  import { registrationFormSchema, type RegistrationFormInput } from '$lib/util/registration.schema';
 
   const graduationYears = Array.from({ length: 28 }, (_, index) => 2026 - index);
   const teacherOptions = [
@@ -25,15 +25,69 @@
     'Ms Fronia',
     'Ms Sakina',
   ].sort((first, second) => first.localeCompare(second));
-  let exRiverlite = $state('');
   let countdown = $state(getCountdownState());
   let heroMotionReady = $state(false);
   let heroImageVisible = $state(false);
 
   const registrationOpen = $derived(countdown.phase === 'pre-registration');
 
+  // ---- Zod validation state ---------------------------------------------
+  type FieldErrors = Partial<Record<string, string>>;
+  let fieldErrors = $state<FieldErrors>({});
+  let submissionError = $state<string | null>(null);
+  let submitting = $state(false);
+
+  function clearFieldError(field: string) {
+    if (fieldErrors[field]) {
+      fieldErrors = { ...fieldErrors, [field]: undefined };
+    }
+  }
+
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
+    submissionError = null;
+
+    const form = event.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+
+    const raw = {
+      full_name: (formData.get('full_name') as string) ?? '',
+      contact_number: (formData.get('contact_number') as string) ?? '',
+      graduating_year: (formData.get('graduating_year') as string) ?? '',
+      visiting_teachers: (formData.get('visiting_teachers') as string) ?? '',
+      teacher1_name: (formData.get('teacher1_name') as string) ?? '',
+      teacher1_message: (formData.get('teacher1_message') as string) ?? '',
+      teacher2_name: (formData.get('teacher2_name') as string) ?? '',
+      teacher2_message: (formData.get('teacher2_message') as string) ?? '',
+    };
+
+    const result = registrationFormSchema.safeParse(raw);
+
+    if (!result.success) {
+      const errors: FieldErrors = {};
+      for (const issue of result.error.issues) {
+        const path = issue.path.join('.');
+        // Map nested written_messages paths back to form field names
+        const field = path
+          .replace('written_messages.0.teacher_name', 'teacher1_name')
+          .replace('written_messages.0.message', 'teacher1_message')
+          .replace('written_messages.1.teacher_name', 'teacher2_name')
+          .replace('written_messages.1.message', 'teacher2_message');
+        if (!errors[field]) {
+          errors[field] = issue.message;
+        }
+      }
+      fieldErrors = errors;
+      return;
+    }
+
+    fieldErrors = {};
+    submitting = true;
+
+    // TODO: wire to Firestore write via createRegistration()
+    console.log('Valid registration:', result.data satisfies RegistrationFormInput);
+    submissionError = 'Registration is not yet wired to Firestore.';
+    submitting = false;
   }
 
   let authError = $state<string | null>(null);
@@ -302,11 +356,15 @@
                 <span>Full name</span>
                 <input
                   type="text"
-                  name="fullName"
+                  name="full_name"
                   autocomplete="name"
                   maxlength="120"
                   aria-describedby="full-name-note"
+                  oninput={() => clearFieldError('full_name')}
                   required />
+                {#if fieldErrors['full_name']}
+                  <small class="field-error">{fieldErrors['full_name']}</small>
+                {/if}
                 <small
                   id="full-name-note"
                   class="field-note">
@@ -318,17 +376,18 @@
               <label class="form-field">
                 <span>Contact number</span>
                 <input
-                  type="tel"
-                  name="contactNumber"
+                  type="text"
+                  name="contact_number"
                   autocomplete="tel"
                   inputmode="numeric"
                   placeholder="81234567"
-                  pattern="[89][0-9]{7}"
-                  minlength="8"
                   maxlength="8"
                   aria-describedby="contact-number-note"
-                  title="Enter an 8-digit Singapore mobile number starting with 8 or 9."
+                  oninput={() => clearFieldError('contact_number')}
                   required />
+                {#if fieldErrors['contact_number']}
+                  <small class="field-error">{fieldErrors['contact_number']}</small>
+                {/if}
                 <small
                   id="contact-number-note"
                   class="field-note">
@@ -336,69 +395,35 @@
                 </small>
               </label>
 
-              <fieldset class="form-field form-field--choice">
-                <legend>Are you an Ex-Riverlite?</legend>
-                <div class="choice-grid">
-                  <label>
-                    <input
-                      type="radio"
-                      name="exRiverlite"
-                      value="yes"
-                      bind:group={exRiverlite}
-                      required />
-                    <span
-                      class="choice-icon choice-icon--yes"
-                      aria-hidden="true">
-                      <CheckIcon
-                        size={28}
-                        strokeWidth={2} />
-                    </span>
-                    <span class="choice-copy"
-                      >Yes <small>I graduated from Rivervale Primary School</small></span>
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name="exRiverlite"
-                      value="no"
-                      bind:group={exRiverlite} />
-                    <span
-                      class="choice-icon choice-icon--no"
-                      aria-hidden="true">
-                      <CrossIcon
-                        size={28}
-                        strokeWidth={2} />
-                    </span>
-                    <span class="choice-copy"
-                      >No <small>I DID NOT graduate from Rivervale Primary School</small></span>
-                  </label>
-                </div>
-              </fieldset>
-
-              <label
-                class="form-field"
-                class:is-disabled={exRiverlite !== 'yes'}>
+              <label class="form-field">
                 <span>Graduating year</span>
                 <select
-                  name="graduatingYear"
-                  disabled={exRiverlite !== 'yes'}
-                  required={exRiverlite === 'yes'}>
+                  name="graduating_year"
+                  onchange={() => clearFieldError('graduating_year')}
+                  required>
                   <option value="">Select year</option>
                   {#each graduationYears as year (year)}
                     <option value={String(year)}>{year}</option>
                   {/each}
                 </select>
+                {#if fieldErrors['graduating_year']}
+                  <small class="field-error">{fieldErrors['graduating_year']}</small>
+                {/if}
               </label>
 
               <label class="form-field">
                 <span>Which teacher(s) would you like to meet?</span>
                 <textarea
-                  name="teachers"
+                  name="visiting_teachers"
                   rows="5"
                   maxlength="1000"
-                  placeholder="Enter one or more teacher names"
+                  placeholder="Enter one or more teacher names, separated by commas or new lines"
                   aria-describedby="teachers-disclaimer teachers-help"
+                  oninput={() => clearFieldError('visiting_teachers')}
                   required></textarea>
+                {#if fieldErrors['visiting_teachers']}
+                  <small class="field-error">{fieldErrors['visiting_teachers']}</small>
+                {/if}
                 <span class="field-notes">
                   <small
                     id="teachers-disclaimer"
@@ -447,11 +472,15 @@
                 <span>Name of Teacher 1</span>
                 <input
                   type="text"
-                  name="messageTeacher1"
+                  name="teacher1_name"
                   list="teacher-options"
                   maxlength="120"
                   placeholder="Enter or search for a teacher"
+                  oninput={() => clearFieldError('teacher1_name')}
                   aria-describedby="teacher-one-help" />
+                {#if fieldErrors['teacher1_name']}
+                  <small class="field-error">{fieldErrors['teacher1_name']}</small>
+                {/if}
                 <small
                   id="teacher-one-help"
                   class="field-note">
@@ -471,21 +500,29 @@
               <label class="form-field">
                 <span>Message for Teacher 1</span>
                 <textarea
-                  name="messageForTeacher1"
+                  name="teacher1_message"
                   rows="6"
                   maxlength="2000"
+                  oninput={() => clearFieldError('teacher1_message')}
                   placeholder="Write your message"></textarea>
+                {#if fieldErrors['teacher1_message']}
+                  <small class="field-error">{fieldErrors['teacher1_message']}</small>
+                {/if}
               </label>
 
               <label class="form-field">
                 <span>Name of Teacher 2</span>
                 <input
                   type="text"
-                  name="messageTeacher2"
+                  name="teacher2_name"
                   list="teacher-options"
                   maxlength="120"
                   placeholder="Enter or search for a teacher"
+                  oninput={() => clearFieldError('teacher2_name')}
                   aria-describedby="teacher-two-help" />
+                {#if fieldErrors['teacher2_name']}
+                  <small class="field-error">{fieldErrors['teacher2_name']}</small>
+                {/if}
                 <small
                   id="teacher-two-help"
                   class="field-note">
@@ -505,18 +542,28 @@
               <label class="form-field">
                 <span>Message for Teacher 2</span>
                 <textarea
-                  name="messageForTeacher2"
+                  name="teacher2_message"
                   rows="6"
                   maxlength="2000"
+                  oninput={() => clearFieldError('teacher2_message')}
                   placeholder="Write your message"></textarea>
+                {#if fieldErrors['teacher2_message']}
+                  <small class="field-error">{fieldErrors['teacher2_message']}</small>
+                {/if}
               </label>
             </div>
           </section>
 
+          {#if submissionError}
+            <Alert.Root variant="destructive">
+              <Alert.Description>{submissionError}</Alert.Description>
+            </Alert.Root>
+          {/if}
           <button
             class="submit-button"
-            type="submit">
-            <span>Submit registration</span>
+            type="submit"
+            disabled={submitting}>
+            <span>{submitting ? 'Submitting...' : 'Submit registration'}</span>
             <ArrowUpRight01Icon
               size={18}
               strokeWidth={1.8} />
@@ -1070,107 +1117,11 @@
     opacity: 0.42;
   }
 
-  .form-field--choice {
-    margin: 0;
-    padding: 0 0 0.65rem;
-    border: 0;
-  }
-
-  .form-field--choice legend {
-    margin-bottom: 0.7rem;
-  }
-
-  .choice-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.8rem;
-  }
-
-  .choice-grid label {
-    position: relative;
-    min-height: 6.5rem;
-    padding: 1rem;
-    display: flex;
-    align-items: flex-start;
-    gap: 0.8rem;
-    border: 1px solid rgba(255, 255, 255, 0.13);
-    background: var(--surface);
-    cursor: pointer;
-  }
-
-  .choice-grid label:has(input:checked) {
-    background: rgba(235, 47, 6, 0.11);
-  }
-
-  .choice-grid label:first-child:has(input:checked) {
-    border-color: var(--red);
-  }
-
-  .choice-grid label:last-child:has(input:checked) {
-    border-color: var(--red);
-  }
-
-  .choice-grid label:has(input:focus-visible) {
-    outline: 2px solid var(--red);
-    outline-offset: 4px;
-  }
-
-  .choice-grid input {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    min-height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  .choice-grid .choice-icon {
-    width: 2.3rem;
-    height: 2.3rem;
-    flex: 0 0 2.3rem;
-    display: grid;
-    place-items: center;
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    border-radius: 50%;
-    color: #fff;
-  }
-
-  .choice-grid .choice-icon--yes {
-    color: #ff8165;
-  }
-
-  .choice-grid .choice-icon--no {
-    color: #ff8165;
-  }
-
-  .choice-grid label:has(input:checked) .choice-icon--yes {
-    border-color: var(--red);
-    background: var(--red);
-    color: #fff;
-  }
-
-  .choice-grid label:has(input:checked) .choice-icon--no {
-    border-color: var(--red);
-    background: var(--red);
-    color: #fff;
-  }
-
-  .choice-grid .choice-copy {
-    display: grid;
-    gap: 0.45rem;
-    font-size: 0.92rem;
-    font-weight: 650;
-  }
-
-  .choice-grid label small {
-    color: var(--muted);
-    font-size: 0.75rem;
-    font-weight: 450;
-    line-height: 1.35;
+  .field-error {
+    color: var(--red);
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.4;
   }
 
   .field-note,
@@ -1391,10 +1342,6 @@
       grid-template-columns: 1.35rem minmax(0, 1fr);
       gap: 0.9rem;
       font-size: 0.82rem;
-    }
-
-    .choice-grid {
-      grid-template-columns: 1fr;
     }
 
     .attendance-footer {
