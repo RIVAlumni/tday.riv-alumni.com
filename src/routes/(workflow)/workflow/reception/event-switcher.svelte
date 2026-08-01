@@ -11,7 +11,7 @@
   // svelte-ignore state_referenced_locally
   let selectedEvent = $state(defaultEvent);
 
-  /** "Teachers Day 2026" → "2026", else null. */
+  /** "Teachers Day 2026" -> "2026", else null. */
   function yearOf(label: string): string | null {
     return label.match(/\b(\d{4})\b/)?.[1] ?? null;
   }

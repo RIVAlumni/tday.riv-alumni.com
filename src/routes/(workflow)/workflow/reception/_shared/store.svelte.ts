@@ -2,7 +2,7 @@
  * Reactive, event-scoped reception store shared by every reception design.
  *
  * The active event is an explicit operator choice persisted to `localStorage`
- * — never derived from the system clock (the bug in the legacy `../master`
+ * - never derived from the system clock (the bug in the legacy `../master`
  * build). Each design page hydrates the persisted choice once mounted so SSR
  * markup stays stable.
  */
@@ -31,7 +31,7 @@ const STORAGE_KEY = 'reception:active-event';
 /**
  * Operator access levels, mirroring the legacy `FSUserAccessLevel` enum from
  * `../master` (None = 0, Operator = 1, Mediator = 2). The decision on which
- * level sees event statistics is deferred — gate UI via `canViewStats`.
+ * level sees event statistics is deferred - gate UI via `canViewStats`.
  */
 export const AccessLevel = {
   None: 0,
@@ -73,7 +73,7 @@ export interface ReceptionMetrics {
 }
 
 class ReceptionStore {
-  /** Explicitly selected event — the single source of truth. */
+  /** Explicitly selected event - the single source of truth. */
   activeEventId = $state<string>(defaultEventId);
   /** All registrations, across events. Mutated in place for reactivity. */
   registrations = $state<Registration[]>(structuredClone(seedRegistrations));
@@ -167,7 +167,7 @@ class ReceptionStore {
       ...this.activity,
     ].slice(0, 24);
 
-    console.info(`[${this.activeEventId}] ${registrationId} ${previous} → ${action}`);
+    console.info(`[${this.activeEventId}] ${registrationId} ${previous} -> ${action}`);
     return previous;
   }
 

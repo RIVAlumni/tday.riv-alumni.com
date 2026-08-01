@@ -8,7 +8,7 @@
   const event = {
     date: 'Thursday, 3 September 2026',
     shortDate: '03 / Sept / 26',
-    time: '11:00 AM — 12:30 PM',
+    time: '11:00 AM - 12:30 PM',
     venue: 'Rivervale Primary School',
   };
 
@@ -227,13 +227,13 @@
 </script>
 
 <svelte:head>
-  <title>Teachers’ Day Visitations 2026 — From Little Hearts, With Big Thanks.</title>
+  <title>Teachers' Day Visitations 2026 - From Little Hearts, With Big Thanks.</title>
   <meta
     name="description"
     content="Rivervale Primary School graduates are invited back for the 2026 Teachers’ Day Visitations on Thursday, 3 September, from 11:00 AM to 12:30 PM." />
   <meta
     property="og:title"
-    content="Teachers’ Day Visitations 2026 — From Little Hearts, With Big Thanks." />
+    content="Teachers' Day Visitations 2026 - From Little Hearts, With Big Thanks." />
   <meta
     property="og:description"
     content="Return, reconnect, and thank the teachers who helped shape your story." />

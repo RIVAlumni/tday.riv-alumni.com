@@ -2,11 +2,11 @@
   // Page-facing opt-in for the workflow right sidebar.
   //
   // Render this inside a `+page.svelte` and pass the sidebar's content as its
-  // children — any `Sidebar.*` markup, or anything else:
+  // children - any `Sidebar.*` markup, or anything else:
   //
   //     <PageSidebarRight>
-  //       <Sidebar.Header>…</Sidebar.Header>
-  //       <Sidebar.Content>…</Sidebar.Content>
+  //       <Sidebar.Header>...</Sidebar.Header>
+  //       <Sidebar.Content>...</Sidebar.Content>
   //     </PageSidebarRight>
   //
   // This component renders nothing in place. It publishes its children into a
@@ -26,7 +26,7 @@
   const sidebar = useSidebarRight();
   // Register synchronously during init so the sidebar is present on the first
   // render. A page renders one stable content snippet, so capturing the
-  // initial value of `children` is intentional — hence `untrack`.
+  // initial value of `children` is intentional - hence `untrack`.
   const token = untrack(() => sidebar.setContent(children));
   // Token-guarded teardown: only clears if this page is still the active one,
   // so navigating between two sidebar pages never leaves the slot empty.

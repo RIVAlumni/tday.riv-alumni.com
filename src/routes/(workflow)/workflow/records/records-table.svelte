@@ -107,20 +107,20 @@
     {
       accessorKey: 'current_institution',
       header: 'Institution',
-      cell: ({ row }) => is2024(row.original) ? (row.original.current_institution || '—') : '—',
+      cell: ({ row }) => is2024(row.original) ? (row.original.current_institution || '-') : '-',
     },
     {
       accessorKey: 'visiting_teachers',
       header: 'Visiting Teachers',
       cell: ({ row }) =>
-        row.original.visiting_teachers.length ? row.original.visiting_teachers.join(', ') : '—',
+        row.original.visiting_teachers.length ? row.original.visiting_teachers.join(', ') : '-',
     },
     {
       accessorKey: 'arrived_at',
       header: 'Arrived',
       cell: ({ row }) => {
         const iso = row.original.arrived_at;
-        if (!iso) return '—';
+        if (!iso) return '-';
         const d = iso instanceof Timestamp ? iso.toDate() : new Date(iso as unknown as string);
         return d.toLocaleTimeString('en-SG', {
           hour: '2-digit',

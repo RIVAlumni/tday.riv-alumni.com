@@ -13,7 +13,7 @@ export interface FirebaseProjectConfig {
 }
 
 /**
- * RIVAlumni Ops — visitor-facing Firebase project.
+ * RIVAlumni Ops - visitor-facing Firebase project.
  * Used for public registration Google Sign-In (verified email).
  * Firebase API keys are public by design (they identify the project, not authenticate).
  */
@@ -27,7 +27,7 @@ export const VISITOR_CONFIG: FirebaseProjectConfig = {
 };
 
 /**
- * RIVAlumni Teachers' Day — internal receptionist Firebase project.
+ * RIVAlumni Teachers' Day - internal receptionist Firebase project.
  * Used for staff login to the internal dashboard.
  */
 export const INTERNAL_CONFIG: FirebaseProjectConfig = {

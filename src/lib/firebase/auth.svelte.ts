@@ -29,7 +29,7 @@ class FirebaseAuthStore implements AuthStore {
 		this._appName = appName;
 	}
 
-	/** Start the auth state observer. Idempotent — safe to call multiple times. */
+	/** Start the auth state observer. Idempotent - safe to call multiple times. */
 	init(): void {
 		if (this._unsubscribe) return;
 

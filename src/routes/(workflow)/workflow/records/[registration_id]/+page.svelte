@@ -86,7 +86,7 @@
   }
 
   function formatDate(iso: Timestamp | string | null): string {
-    if (!iso) return '—';
+    if (!iso) return '-';
     const d = iso instanceof Timestamp ? iso.toDate() : new Date(iso);
     return d.toLocaleString('en-SG', {
       day: 'numeric',
@@ -179,7 +179,7 @@
             <Textarea
               id="cm"
               bind:value={comments}
-              placeholder="Internal notes about this registrant…"
+              placeholder="Internal notes about this registrant..."
               class="min-h-24" />
             <Field.FieldDescription>Visible only to your team.</Field.FieldDescription>
           </Field.Field>
@@ -188,7 +188,7 @@
       <Card.Footer>
         <Button onclick={save} disabled={!dirty || saving}>
           <CheckIcon />
-          {saving ? 'Saving…' : 'Save Changes'}
+          {saving ? 'Saving...' : 'Save Changes'}
         </Button>
       </Card.Footer>
     </Card.Root>
@@ -215,7 +215,7 @@
           </div>
           <div class="flex flex-col gap-1">
             <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide">Institution</span>
-            <span class="text-sm font-medium">{record.current_institution || '—'}</span>
+            <span class="text-sm font-medium">{record.current_institution || '-'}</span>
           </div>
         {/if}
         {#if is2025(record)}

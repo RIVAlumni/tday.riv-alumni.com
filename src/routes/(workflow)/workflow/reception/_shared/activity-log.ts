@@ -3,14 +3,14 @@
  * (`/workflow/logs`) and the per-visitor profile (`/workflow/profile/[id]`).
  *
  * The live operator action trail lives in the reception store
- * (`reception.activity`) — in-memory, capped, and reset on reload. Because that
+ * (`reception.activity`) - in-memory, capped, and reset on reload. Because that
  * trail is empty until an operator acts, `historicalActivity()` synthesises a
  * realistic prior audit trail anchored to the real "now" so the timeline is
  * populated on first visit and every timestamp is unambiguously in the past.
  *
  * TODO(firebase): swap `historicalActivity()` for a Firestore audit-log query
  * (e.g. `audit_events` collection ordered by `at desc`). `buildTimeline()` and
- * the grouping helpers stay unchanged — only the data source moves.
+ * the grouping helpers stay unchanged - only the data source moves.
  */
 
 import type { ActivityEntry } from './store.svelte.js';
@@ -63,7 +63,7 @@ const HISTORICAL_TEMPLATE: HistoricalTemplate[] = [
     action: 'CONFLICT',
     agoMin: 34,
     operator: 'Daniel C.',
-    reason: 'Wheelchair user — confirm ground-floor access and teacher escort before admitting.',
+    reason: 'Wheelchair user - confirm ground-floor access and teacher escort before admitting.',
   },
   { reg: 'TDY26-0006', action: 'CHECKED_IN', agoMin: 47, operator: 'Priya R.' },
   { reg: 'TDY26-0003', action: 'CHECKED_IN', agoMin: 63, operator: 'Priya R.' },

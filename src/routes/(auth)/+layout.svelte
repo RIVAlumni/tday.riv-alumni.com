@@ -19,7 +19,7 @@
 
 {#if internalAuth.loading}
 	<div class="flex h-screen items-center justify-center">
-		<p>Loading…</p>
+		<p>Loading...</p>
 	</div>
 {:else if !internalAuth.user}
 	{@render children()}

@@ -76,7 +76,7 @@
 </script>
 
 <svelte:head>
-  <title>Attendance Registration — Teachers’ Day 2026</title>
+  <title>Attendance Registration - Teachers' Day 2026</title>
   <meta
     name="description"
     content="Pre-register your visit to Rivervale Primary School for Teachers’ Day on 3 September 2026." />
@@ -159,7 +159,7 @@
           <p
             class="confirmation-mark"
             aria-hidden="true">
-            —
+            -
           </p>
           <p class="section-kicker"><span aria-hidden="true"></span> Pre-registration closed</p>
           <h3>The form is now closed.</h3>
@@ -192,7 +192,7 @@
               class="google-button-wrap"
               aria-live="polite">
               {#if visitorAuth.loading}
-                <p class="google-auth-status">Checking your Google account…</p>
+                <p class="google-auth-status">Checking your Google account...</p>
               {:else if visitorAuth.user?.email}
                 <div class="verified-email">
                   <p>

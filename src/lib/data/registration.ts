@@ -65,7 +65,7 @@ export const seedRegistrations: Registration[] = [
 		contact_number: '95558888',
 		graduating_year: '2010',
 		visiting_teachers: ['Mr Raj Kumar', 'Ms Lim Bee Hoon'],
-		comments: 'Wheelchair user — please arrange ground-floor access.',
+		comments: 'Wheelchair user - please arrange ground-floor access.',
 		arrived_at: null,
 		created_at: Timestamp.fromDate(new Date('2026-09-01T13:00:00+08:00')),
 		updated_at: Timestamp.fromDate(new Date('2026-09-01T13:00:00+08:00')),
@@ -79,7 +79,7 @@ export const seedRegistrations: Registration[] = [
 		contact_number: '90001111',
 		graduating_year: '2014',
 		visiting_teachers: ['Mdm Siti Khadijah'],
-		comments: 'Duplicate registration — refer to Conflict Resolution.',
+		comments: 'Duplicate registration - refer to Conflict Resolution.'
 		arrived_at: null,
 		created_at: Timestamp.fromDate(new Date('2026-09-01T14:00:00+08:00')),
 		updated_at: Timestamp.fromDate(new Date('2026-09-01T14:00:00+08:00')),

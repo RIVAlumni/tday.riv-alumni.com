@@ -1,5 +1,5 @@
 /**
- * Registration utility functions — NRIC validation, ID generation, search,
+ * Registration utility functions - NRIC validation, ID generation, search,
  * stats, and the registration factory.
  *
  * Import from `$lib/util/registration`.
@@ -51,14 +51,14 @@ export function isNricLike(value: string): boolean {
   return normaliseNric(value) !== '';
 }
 
-/** Safe NRIC access — only 2024 registrations carry it. Returns "" otherwise. */
+/** Safe NRIC access - only 2024 registrations carry it. Returns "" otherwise. */
 export function nricFor(r: Registration | null | undefined): string {
   return r && is2024(r) ? r.nric : '';
 }
 
 // ── ID generation ────────────────────────────────────────────────────────
 
-const REG_ID_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // no I, O — avoid confusion with 1, 0
+const REG_ID_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // no I, O - avoid confusion with 1, 0
 const REG_ID_LENGTH = 6;
 
 /**

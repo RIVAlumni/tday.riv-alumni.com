@@ -118,7 +118,7 @@
       </h1>
       <p class="max-w-2xl text-sm text-muted-foreground">
         A historical timeline of every check-in, refusal, and conflict handover taken by operators.
-        The most recent action is at the top — select any entry to jump straight to the visitor's
+        The most recent action is at the top - select any entry to jump straight to the visitor's
         profile.
       </p>
     </div>
@@ -228,7 +228,7 @@
                     <a
                       href={profileHref}
                       class="group flex items-start gap-3 rounded-3xl border border-transparent p-3 transition-colors hover:border-border hover:bg-muted/50 focus-visible:border-ring focus-visible:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:outline-none"
-                      aria-label={`${verb}: ${entry.full_name} (${entry.registration_id}) — open profile`}>
+                      aria-label={`${verb}: ${entry.full_name} (${entry.registration_id}) - open profile`}>
                       <span
                         class="relative z-10 flex size-9 shrink-0 items-center justify-center rounded-full ring-4 ring-background {meta.soft} {nodeTone[
                           entry.action

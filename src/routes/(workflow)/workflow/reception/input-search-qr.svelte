@@ -4,8 +4,8 @@
    *
    * QR scanner drawer content.
    *
-   * The camera lifecycle is driven by the drawer's `open` prop — NOT by
-   * component mount — because bits-ui only gates the drawer's inner DOM on
+   * The camera lifecycle is driven by the drawer's `open` prop - NOT by
+   * component mount - because bits-ui only gates the drawer's inner DOM on
    * close; this component instance stays mounted for the page's lifetime.
    * Scans frames with jsQR on a 300 ms interval and reports the first
    * decoded value via `onScan`.
@@ -61,7 +61,7 @@
         audio: false,
       });
     } catch (err) {
-      // Devices without a rear camera reject `facingMode: environment` — retry with any camera.
+      // Devices without a rear camera reject `facingMode: environment` - retry with any camera.
       if (err instanceof DOMException && err.name === 'OverconstrainedError') {
         try {
           nextStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
@@ -137,7 +137,7 @@
   }
 
   $effect(() => {
-    // The video element lives inside the drawer's gated DOM — it only exists
+    // The video element lives inside the drawer's gated DOM - it only exists
     // while the drawer is open, so track it alongside `open`.
     if (!open || !videoEl) return;
     startCamera();
@@ -170,7 +170,7 @@
         </div>
       {:else if status === 'starting'}
         <div class="absolute inset-0 grid place-items-center">
-          <p class="text-sm text-muted-foreground">Starting camera…</p>
+          <p class="text-sm text-muted-foreground">Starting camera...</p>
         </div>
       {:else}
         <div class="absolute inset-0 grid place-items-center bg-muted/40 p-6 text-center">

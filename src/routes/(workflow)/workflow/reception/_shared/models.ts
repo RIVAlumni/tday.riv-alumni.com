@@ -1,5 +1,5 @@
 /**
- * Shared reception domain model — multi-event aware.
+ * Shared reception domain model - multi-event aware.
  *
  * Registration types live in `$lib/models/registration` so the whole app can
  * import them. This module re-exports everything from there and adds the
@@ -67,7 +67,7 @@ export const events: ReceptionEvent[] = [
 	},
 ];
 
-/** The event to default to — never the clock, always an explicit choice. */
+/** The event to default to - never the clock, always an explicit choice. */
 export const defaultEventId: string =
 	events.find((e) => e.status === 'active')?.id ?? events.at(-1)!.id;
 
@@ -164,7 +164,7 @@ export const actionMeta: Record<
 
 // --- Formatting -----------------------------------------------------------
 export function formatTime(iso: Timestamp | string | null): string {
-	if (!iso) return '—';
+	if (!iso) return '-';
 	const d = iso instanceof Timestamp ? iso.toDate() : new Date(iso);
 	return d.toLocaleTimeString('en-SG', {
 		hour: '2-digit',

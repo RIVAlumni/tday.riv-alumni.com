@@ -11,33 +11,10 @@
 - Try to follow the existing patterns in the code (indentation, spaces, etc.). In case of doubt, use prettier to format the added code.
 - Always use 2 spaces instead of tabs.
 
-# Naming Guidelines
+# Naming Conventions
 
-- Use `snake_case` for function, variable and type names
-- Naming usually optimizes for longest common prefix (see https://github.com/ggml-org/ggml/pull/302#discussion_r1243240963)
-
-  ```cpp
-  // not OK
-  int small_number;
-  int big_number;
-
-  // OK
-  int number_small;
-  int number_big;
-  ```
-
-- The general naming pattern is `<class>_<method>`, with `<method>` being `<action>_<noun>`
-
-  ```cpp
-  llama_model_init();           // class: "llama_model",         method: "init"
-  llama_sampler_chain_remove(); // class: "llama_sampler_chain", method: "remove"
-  llama_sampler_get_seed();     // class: "llama_sampler",       method: "get_seed"
-  llama_set_embeddings();       // class: "llama_context",       method: "set_embeddings"
-  llama_n_threads();            // class: "llama_context",       method: "n_threads"
-  llama_adapter_lora_free();    // class: "llama_adapter_lora",  method: "free"
-  ```
-
-  - The `get` `<action>` can be omitted
-  - The `<noun>` can be omitted if not necessary
-  - The `_context` suffix of the `<class>` is optional. Use it to disambiguate symbols when needed
-  - Use `init`/`free` for constructor/destructor `<action>`
+- Use `camelCase` for function, variable, and method names: `getCountdownState`, `visitorAuth`
+- Use `PascalCase` for types, interfaces, and Svelte components: `Registration`, `EventStats`, `DataTable`
+- Use `UPPER_SNAKE_CASE` for module-level constants: `USE_EMULATORS`, `VISITOR_CONFIG`
+- Use kebab-case for file names: `countdown.ts`, `input-search-qr.svelte`
+- Svelte 5 rune files use `.svelte.ts` extension: `auth.svelte.ts`, `store.svelte.ts`
