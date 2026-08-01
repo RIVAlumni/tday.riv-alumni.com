@@ -35,15 +35,25 @@
     event.preventDefault();
   }
 
-  let signInError = $state<string | null>(null);
+  let authError = $state<string | null>(null);
 
   async function handleGoogleSignIn() {
-    signInError = null;
+    authError = null;
     try {
       await visitorAuth.signInWithGoogle();
     } catch (err) {
       console.error('Google sign-in failed:', err);
-      signInError = 'Please try again.';
+      authError = 'Please try again.';
+    }
+  }
+
+  async function handleChangeEmail() {
+    authError = null;
+    try {
+      await visitorAuth.signOut();
+    } catch (err) {
+      console.error('Google sign-out failed:', err);
+      authError = 'We could not change your Google account. Please try again.';
     }
   }
 
@@ -167,24 +177,44 @@
               </div>
             </div>
 
-            <div class="google-button-wrap">
-              <button
-                class="google-fallback"
-                type="button"
-                onclick={handleGoogleSignIn}>
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24">
-                  <path
-                    d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
-                    fill="currentColor" />
-                </svg>
-                Sign in with Google
-              </button>
-              {#if signInError}
+            <div
+              class="google-button-wrap"
+              aria-live="polite">
+              {#if visitorAuth.loading}
+                <p class="google-auth-status">Checking your Google account…</p>
+              {:else if visitorAuth.user?.email}
+                <div class="verified-email">
+                  <p>
+                    We will send the event ticket to
+                    <strong>{visitorAuth.user.email}</strong>.
+                  </p>
+                  <p>
+                    Incorrect?
+                    <button
+                      class="change-email-button"
+                      type="button"
+                      onclick={handleChangeEmail}>Change email</button>
+                  </p>
+                </div>
+              {:else}
+                <button
+                  class="google-fallback"
+                  type="button"
+                  onclick={handleGoogleSignIn}>
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24">
+                    <path
+                      d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
+                      fill="currentColor" />
+                  </svg>
+                  Sign in with Google
+                </button>
+              {/if}
+              {#if authError}
                 <Alert.Root variant="destructive">
-                  <Alert.Title>Sign-in failed</Alert.Title>
-                  <Alert.Description>{signInError}</Alert.Description>
+                  <Alert.Title>Google account error</Alert.Title>
+                  <Alert.Description>{authError}</Alert.Description>
                 </Alert.Root>
               {/if}
             </div>
@@ -577,6 +607,7 @@
   .attendance-footer a:focus-visible,
   .confirmation > a:focus-visible,
   .google-fallback:focus-visible,
+  .change-email-button:focus-visible,
   .submit-button:focus-visible {
     outline: 2px solid var(--red);
     outline-offset: 4px;
@@ -771,6 +802,8 @@
   .google-button-wrap {
     min-height: 2.75rem;
     padding-left: 3.4rem;
+    display: grid;
+    gap: 0.85rem;
   }
 
   .google-fallback {
@@ -802,6 +835,53 @@
   .google-fallback svg {
     width: 1.1rem;
     height: 1.1rem;
+  }
+
+  .google-auth-status {
+    min-height: 2.75rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+
+  .verified-email {
+    min-height: 2.75rem;
+    padding: 1rem 1.1rem;
+    display: grid;
+    gap: 0.55rem;
+    border-left: 0.2rem solid var(--red);
+    background: rgba(235, 47, 6, 0.08);
+  }
+
+  .verified-email p {
+    margin: 0;
+    color: #c9c9c4;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  .verified-email strong {
+    color: var(--paper);
+    font-weight: 650;
+    overflow-wrap: anywhere;
+  }
+
+  .change-email-button {
+    margin-left: 0.15rem;
+    padding: 0;
+    border: 0;
+    border-bottom: 1px solid currentColor;
+    background: transparent;
+    color: #ff8165;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .change-email-button:hover {
+    color: var(--paper);
   }
 
   .consent-notice {
@@ -1270,6 +1350,11 @@
       gap: 1.1rem;
       border: 1px solid var(--line);
       border-top: 0.25rem solid var(--red);
+    }
+
+    .verified-email {
+      border: 1px solid var(--line);
+      border-top: 0.2rem solid var(--red);
     }
 
     .consent-notice p {
