@@ -11,6 +11,7 @@ export const writtenMessageSchema = z.object({
 
 export const registrationFormSchema = z
   .object({
+    email: z.string().email('A verified email is required'),
     full_name: z.string().min(1, 'Full name is required').max(120),
     contact_number: z
       .string()
@@ -60,6 +61,7 @@ export const registrationFormSchema = z
     }
 
     return {
+      email: data.email,
       full_name: data.full_name,
       contact_number: data.contact_number,
       graduating_year: data.graduating_year,
@@ -69,6 +71,7 @@ export const registrationFormSchema = z
   })
   .pipe(
     z.object({
+      email: z.string().email(),
       full_name: z.string().min(1).max(120),
       contact_number: z.string().length(8),
       graduating_year: z.string().min(1),

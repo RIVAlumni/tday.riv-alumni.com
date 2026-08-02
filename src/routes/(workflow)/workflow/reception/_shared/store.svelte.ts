@@ -10,10 +10,13 @@
 import {
   defaultEventId,
   events,
+  statusForAction,
   type ActionType,
   type ReceptionEvent,
 } from './models';
 import {
+  is2024,
+  is2026,
   type Registration,
   type RegistrationStatus,
 } from '$lib/models/registration';
@@ -138,14 +141,14 @@ class ReceptionStore {
     reason?: string,
   ): RegistrationStatus | null {
     const target = this.registrations.find(
-      (r) => r.event_id === this.activeEventId && r.registration_id === registrationId,
+      (r) => r.event_id === this.activeEventId && String(r.registration_id) === registrationId,
     );
     if (!target) return null;
 
     const previous = target.status;
-    target.status = action;
+    target.status = statusForAction(action);
     target.updated_at = Timestamp.now();
-    if (action === 'CHECKED_IN') target.arrived_at = Timestamp.now();
+    if (action === 'CHECKED_IN' && (is2024(target) || is2026(target))) target.arrived_at = Timestamp.now();
 
     // Conflict handovers append the operator's reason to the record's notes,
     // mirroring the legacy `actionSetConflict` comment trail in `../master`.
@@ -185,7 +188,7 @@ class ReceptionStore {
   ): boolean {
     if (!this.canEditRegistrations) return false;
     const target = this.registrations.find(
-      (r) => r.event_id === this.activeEventId && r.registration_id === registrationId,
+      (r) => r.event_id === this.activeEventId && String(r.registration_id) === registrationId,
     );
     if (!target) return false;
     Object.assign(target, patch);
@@ -229,7 +232,8 @@ class ReceptionStore {
       );
       if (target) {
         target.status = original.status;
-        target.arrived_at = original.arrived_at;
+        if (is2024(target) && is2024(original)) target.arrived_at = original.arrived_at;
+        else if (is2026(target) && is2026(original)) target.arrived_at = original.arrived_at;
       }
     }
     this.activity = this.activity.filter((a) => a.event_id !== eventId);

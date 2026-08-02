@@ -422,10 +422,20 @@
       <article data-reveal>
         <span>03</span>
         <h3>Bring</h3>
-        <p>
-          A screenshot of your registration email (with QR code) and any one of these EZ-Link (not
-          faded) or NRIC or SingPass app. A face verification will be conducted during check-in.
-        </p>
+        <div class="detail-copy">
+          <ol class="bring-checklist">
+            <li>Screenshot of the event ticket from your email.</li>
+            <li>
+              Photo ID for facial verification, either:
+              <ol>
+                <li>EZ-Link card (must not be faded)</li>
+                <li>NRIC</li>
+                <li>SingPass</li>
+              </ol>
+            </li>
+          </ol>
+          <p><strong>Note:</strong> A facial verification will be conducted during check-in.</p>
+        </div>
       </article>
     </div>
   </section>
@@ -1327,7 +1337,9 @@
   }
 
   .detail-list h3,
-  .detail-list p {
+  .detail-list p,
+  .detail-copy,
+  .bring-checklist {
     margin: 0;
   }
 
@@ -1338,11 +1350,32 @@
     font-weight: 520;
   }
 
-  .detail-list p {
+  .detail-list p,
+  .detail-copy {
     max-width: 34rem;
     color: #aaa9a5;
     font-size: clamp(1rem, 1.3vw, 1.2rem);
     line-height: 1.5;
+  }
+
+  .bring-checklist {
+    padding-left: 1.35em;
+  }
+
+  .bring-checklist ol {
+    margin-top: 0.35rem;
+    padding-left: 1.35em;
+    list-style-type: lower-alpha;
+  }
+
+  .bring-checklist li + li {
+    margin-top: 0.35rem;
+  }
+
+  .detail-copy > p {
+    margin-top: 1rem;
+    color: inherit;
+    font: inherit;
   }
 
   .detail-list p a {
@@ -1603,7 +1636,8 @@
       min-height: 0;
     }
 
-    .detail-list article p {
+    .detail-list article p,
+    .detail-list article .detail-copy {
       grid-column: 2;
     }
 

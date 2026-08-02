@@ -38,7 +38,7 @@ type Operator = 'Nurul A.' | 'Daniel C.' | 'Priya R.' | 'Marcus T.';
 
 interface HistoricalTemplate {
   /** Globally-unique registration id, so each entry can deep-link to a profile. */
-  reg: string;
+  reg: string | number;
   action: ActionType;
   /** Minutes before "now". */
   agoMin: number;
@@ -67,8 +67,8 @@ const HISTORICAL_TEMPLATE: HistoricalTemplate[] = [
   },
   { reg: 'TDY26-0006', action: 'CHECKED_IN', agoMin: 47, operator: 'Priya R.' },
   { reg: 'TDY26-0003', action: 'CHECKED_IN', agoMin: 63, operator: 'Priya R.' },
-  { reg: 'TDY25-0102', action: 'CHECKED_IN', agoMin: 1500, operator: 'Marcus T.' },
-  { reg: 'TDY25-0104', action: 'REFUSED', agoMin: 1512, operator: 'Marcus T.' },
+  { reg: 102, action: 'CHECKED_IN', agoMin: 1500, operator: 'Marcus T.' },
+  { reg: 104, action: 'REFUSED', agoMin: 1512, operator: 'Marcus T.' },
 ];
 
 /** Build the seeded historical trail relative to `now` (always in the past). */
@@ -76,12 +76,12 @@ export function historicalActivity(
   registrations: Registration[],
   now: Date = new Date(),
 ): TimelineEntry[] {
-  const byId = new Map(registrations.map((r) => [r.registration_id, r]));
+  const byId = new Map(registrations.map((r) => [String(r.registration_id), r]));
   return HISTORICAL_TEMPLATE.map((t) => {
-    const r = byId.get(t.reg);
+    const r = byId.get(String(t.reg));
     const entry: TimelineEntry = {
       event_id: r?.event_id ?? 'tdy-2026',
-      registration_id: t.reg,
+      registration_id: String(t.reg),
       full_name: r?.full_name ?? 'Unknown visitor',
       nric: nricFor(r),
       action: t.action,
@@ -106,7 +106,7 @@ export function buildTimeline(
   historical: TimelineEntry[],
   liveOperator = 'RIVAlumni Operator',
 ): TimelineEntry[] {
-  const byId = new Map(registrations.map((r) => [r.registration_id, r]));
+  const byId = new Map(registrations.map((r) => [String(r.registration_id), r]));
   const liveEntries: TimelineEntry[] = live.map((e) => {
     const entry: TimelineEntry = {
       event_id: e.event_id,

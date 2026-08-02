@@ -5,7 +5,8 @@
   import * as Alert from '$lib/components/ui/alert/index.js';
   import { visitorAuth } from '$lib/firebase/auth.svelte';
   import { onMount } from 'svelte';
-  import { registrationFormSchema, type RegistrationFormInput } from '$lib/util/registration.schema';
+  import { registrationFormSchema } from '$lib/util/registration.schema';
+  import { createRegistrationRecord, RegistrationWriteError } from '$lib/firebase';
 
   const graduationYears = Array.from({ length: 28 }, (_, index) => 2026 - index);
   const teacherOptions = [
@@ -36,6 +37,7 @@
   let fieldErrors = $state<FieldErrors>({});
   let submissionError = $state<string | null>(null);
   let submitting = $state(false);
+  let submittedId = $state<string | null>(null);
 
   function clearFieldError(field: string) {
     if (fieldErrors[field]) {
@@ -43,7 +45,7 @@
     }
   }
 
-  function handleSubmit(event: SubmitEvent) {
+  async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
     submissionError = null;
 
@@ -51,6 +53,7 @@
     const formData = new FormData(form);
 
     const raw = {
+      email: visitorAuth.user?.email ?? '',
       full_name: (formData.get('full_name') as string) ?? '',
       contact_number: (formData.get('contact_number') as string) ?? '',
       graduating_year: (formData.get('graduating_year') as string) ?? '',
@@ -84,10 +87,20 @@
     fieldErrors = {};
     submitting = true;
 
-    // TODO: wire to Firestore write via createRegistration()
-    console.log('Valid registration:', result.data satisfies RegistrationFormInput);
-    submissionError = 'Registration is not yet wired to Firestore.';
-    submitting = false;
+    console.debug('[register] zod output', JSON.parse(JSON.stringify(result.data)));
+
+    try {
+      const id = await createRegistrationRecord('2026', result.data);
+      submittedId = id;
+    } catch (err) {
+      if (err instanceof RegistrationWriteError) {
+        submissionError = err.message;
+      } else {
+        submissionError = 'An unexpected error occurred. Please try again.';
+      }
+    } finally {
+      submitting = false;
+    }
   }
 
   let authError = $state<string | null>(null);
@@ -221,6 +234,31 @@
             Walk-ins are subject to availability.
             <a href="https://go.riv-alumni.com/outreach"
               >Contact our RIVA Community Outreach Team to check.</a>
+          </p>
+          <a href="/#the-visit">
+            View event details
+            <ArrowUpRight01Icon
+              size={16}
+              strokeWidth={1.8} />
+          </a>
+        </section>
+      {:else if submittedId}
+        <section
+          class="confirmation"
+          aria-live="polite">
+          <p
+            class="confirmation-mark"
+            aria-hidden="true">
+            ✓
+          </p>
+          <p class="section-kicker"><span aria-hidden="true"></span> Registration complete</p>
+          <h3>You're all set.</h3>
+          <p>
+            Your registration has been recorded. We will send your event ticket to
+            <strong>{visitorAuth.user?.email}</strong>.
+          </p>
+          <p class="text-xs text-muted-foreground">
+            Reference: <code class="font-mono">{submittedId}</code>
           </p>
           <a href="/#the-visit">
             View event details

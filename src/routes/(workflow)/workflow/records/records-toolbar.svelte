@@ -56,7 +56,7 @@
 
   // --- Year filter ---
   let availableYears = $derived(
-    [...new Set(registrations.map((r) => r.graduating_year))].sort((a, b) => Number(b) - Number(a)),
+    [...new Set(registrations.map((r) => String(r.graduating_year)))].sort((a, b) => Number(b) - Number(a)),
   );
 
   let yearFilterValue = $derived.by(() => {

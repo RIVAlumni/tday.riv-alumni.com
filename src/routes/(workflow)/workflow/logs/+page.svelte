@@ -17,6 +17,7 @@
 
   import {
     events,
+    statusForAction,
     statusMeta,
     formatTime,
     relativeTime,
@@ -221,7 +222,7 @@
                   class="absolute left-[1.875rem] top-3 bottom-3 w-px bg-border"
                   aria-hidden="true"></span>
                 {#each group.entries as entry (entry.registration_id + entry.at.getTime())}
-                  {@const meta = statusMeta[entry.action]}
+                  {@const meta = statusMeta[statusForAction(entry.action)]}
                   {@const verb = actionVerb[entry.action]}
                   {@const profileHref = `/workflow/records/${entry.registration_id}`}
                   <li class="relative">

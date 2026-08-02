@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import type { Registration } from '$lib/models/registration';
   import { is2024 } from '$lib/models/registration';
+  import { arrivedAtFor, visitingTeachersFor } from '$lib/util/registration';
   import { Timestamp } from 'firebase/firestore';
 
   // --- Table core ---
@@ -112,14 +113,16 @@
     {
       accessorKey: 'visiting_teachers',
       header: 'Visiting Teachers',
-      cell: ({ row }) =>
-        row.original.visiting_teachers.length ? row.original.visiting_teachers.join(', ') : '-',
+      cell: ({ row }) => {
+        const teachers = visitingTeachersFor(row.original);
+        return teachers ? teachers : '-';
+      },
     },
     {
       accessorKey: 'arrived_at',
       header: 'Arrived',
       cell: ({ row }) => {
-        const iso = row.original.arrived_at;
+        const iso = arrivedAtFor(row.original);
         if (!iso) return '-';
         const d = iso instanceof Timestamp ? iso.toDate() : new Date(iso as unknown as string);
         return d.toLocaleTimeString('en-SG', {
@@ -133,7 +136,7 @@
       id: 'actions',
       header: '',
       cell: ({ row }) =>
-        renderComponent(ActionsCell, { registrationId: row.original.registration_id, onNavigate }),
+        renderComponent(ActionsCell, { registrationId: String(row.original.registration_id), onNavigate }),
       enableSorting: false,
       enableHiding: false,
     },
@@ -161,7 +164,7 @@
         return globalFilter;
       },
     },
-    getRowId: (row) => row.registration_id,
+    getRowId: (row) => String(row.registration_id),
     enableRowSelection: false,
     autoResetPageIndex: false,
     getCoreRowModel: getCoreRowModel(),
@@ -241,11 +244,11 @@
             role="row"
             onclick={(e: MouseEvent) => {
               if ((e.target as HTMLElement).closest('button, a')) return;
-              onNavigate(row.original.registration_id);
+              onNavigate(String(row.original.registration_id));
             }}
             onkeydown={(e: KeyboardEvent) => {
               if ((e.target as HTMLElement).closest('button, a')) return;
-              handleRowKeydown(e, row.original.registration_id);
+              handleRowKeydown(e, String(row.original.registration_id));
             }}>
             {#each row.getVisibleCells() as cell (cell.id)}
               <Table.Cell>

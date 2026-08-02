@@ -7,18 +7,19 @@
 
 import {
   is2024,
-  type BaseRegistration,
+  is2026,
   type Registration,
   type Registration2026,
 } from '$lib/models/registration';
 import type { WrittenMessage } from '$lib/models/registration';
-import { Timestamp } from 'firebase/firestore';
+import { serverTimestamp, type Timestamp } from 'firebase/firestore';
 
 // ── Form input type ──────────────────────────────────────────────────────
 
 /** Shape of the public /register form. Co-located here because it's the
  *  parameter type for {@link createRegistration}. */
 export interface RegistrationInput {
+  email: string;
   full_name: string;
   contact_number: string;
   graduating_year: string;
@@ -56,6 +57,19 @@ export function nricFor(r: Registration | null | undefined): string {
   return r && is2024(r) ? r.nric : '';
 }
 
+/** Visiting teachers as a single string - 2024/2025 store a string, 2026 an array. */
+export function visitingTeachersFor(r: Registration | null | undefined): string {
+  if (!r) return '';
+  const vt = r.visiting_teachers;
+  return Array.isArray(vt) ? vt.join(', ') : vt;
+}
+
+/** Arrival timestamp - 2024 and 2026 registrations carry it, 2025 does not. */
+export function arrivedAtFor(r: Registration | null | undefined): Timestamp | null {
+  if (!r) return null;
+  return is2024(r) || is2026(r) ? r.arrived_at : null;
+}
+
 // ── ID generation ────────────────────────────────────────────────────────
 
 const REG_ID_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // no I, O - avoid confusion with 1, 0
@@ -84,30 +98,29 @@ export function generateRegistrationId(): string {
  * registration ID (caller should retry on Firestore collision).
  */
 export function createRegistration(input: RegistrationInput, eventId: string): Registration {
-  const now = Timestamp.now();
-  const base: BaseRegistration = {
-    event_id: eventId,
-    registration_id: generateRegistrationId(),
-    full_name: input.full_name.toUpperCase().trim(),
-    status: 'REGISTERED',
-    contact_number: input.contact_number.trim(),
-    graduating_year: input.graduating_year,
-    visiting_teachers: input.visiting_teachers.map((t) => t.trim()).filter(Boolean),
-    comments: '',
-    arrived_at: null,
-    created_at: now,
-    updated_at: now,
-  };
+  const now = serverTimestamp() as unknown as Timestamp;
 
   if (eventId === '2026') {
     return {
-      ...base,
-      event_id: '2026' as const,
+      event_id: '2026',
+      registration_id: generateRegistrationId(),
+      email: input.email.trim().toLowerCase(),
+      full_name: input.full_name.toUpperCase().trim(),
+      status: 'REGISTERED',
+      contact_number: input.contact_number.trim(),
+      graduating_year: input.graduating_year,
+      visiting_teachers: input.visiting_teachers.map((t) => t.trim()).filter(Boolean),
+      comments: '',
+      arrived_at: null,
+      created_at: now,
+      updated_at: now,
       written_messages: input.written_messages.slice(0, 2),
-    } satisfies Registration2026 as Registration;
+    } satisfies Registration2026;
   }
 
-  return base as Registration;
+  // Only the 2026 public form creates records here; archived events are
+  // imported directly into Firestore.
+  throw new Error(`createRegistration: unsupported event ${eventId}`);
 }
 
 // ── Query helpers ────────────────────────────────────────────────────────
@@ -142,7 +155,7 @@ export function getRegistration(
   id: string,
   pool: Registration[],
 ): Registration | undefined {
-  return pool.find((r) => r.event_id === eventId && r.registration_id === id);
+  return pool.find((r) => r.event_id === eventId && String(r.registration_id) === id);
 }
 
 export function statsFor(eventId: string, pool: Registration[]): EventStats {

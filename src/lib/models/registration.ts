@@ -1,40 +1,44 @@
 import { Timestamp } from 'firebase/firestore';
 
-export type RegistrationStatus = 'REGISTERED' | 'CHECKED_IN' | 'REFUSED' | 'CONFLICT' | 'REJECTED';
+export type RegistrationStatus = 'REGISTERED' | 'CHECKED_IN' | 'CONFLICT' | 'REJECTED';
 
 export type EventId = '2024' | '2025' | '2026';
 
 export interface BaseRegistration {
   event_id: string;
-  registration_id: string;
   full_name: string;
   status: RegistrationStatus;
-  contact_number: string;
-  graduating_year: string;
-  visiting_teachers: string[];
   comments: string;
-  arrived_at: Timestamp | null;
   created_at: Timestamp;
   updated_at: Timestamp;
 }
 
 export interface Registration2024 extends BaseRegistration {
   event_id: '2024';
+  registration_id: string;
   nric: string;
   gender: 'M' | 'F';
-  graduating_class: string;
-  current_institution: string;
+  contact_number: string;
   contact_number_short: string;
+  graduating_class: string;
+  graduating_year: string;
+  current_institution: string;
   emergency_contact_nok: string;
   name_of_nok: string;
   relationship_with_nok: string;
-  form_teachers: string[];
+  form_teachers: string;
+  visiting_teachers: string;
+  arrived_at: Timestamp | null;
 }
 
 export interface Registration2025 extends BaseRegistration {
   event_id: '2025';
-  is_ex_riverlite: boolean;
-  contact_number_short: string;
+  registration_id: number;
+  is_ex_riverlite: 'Yes' | 'No';
+  contact_number: number;
+  contact_number_short: number;
+  graduating_year: number;
+  visiting_teachers: string;
 }
 
 export interface WrittenMessage {
@@ -44,7 +48,13 @@ export interface WrittenMessage {
 
 export interface Registration2026 extends BaseRegistration {
   event_id: '2026';
+  registration_id: string;
+  email: string;
+  contact_number: string;
+  graduating_year: string;
+  visiting_teachers: string[];
   written_messages: WrittenMessage[];
+  arrived_at: Timestamp | null;
 }
 
 export type Registration = Registration2024 | Registration2025 | Registration2026;

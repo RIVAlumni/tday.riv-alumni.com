@@ -6,6 +6,7 @@
   import { reception } from '../../reception/_shared/store.svelte';
   import { statusMeta } from '../../reception/_shared/models';
   import { is2024, is2025 } from '$lib/models/registration';
+  import { arrivedAtFor, visitingTeachersFor } from '$lib/util/registration';
   import { Timestamp } from 'firebase/firestore';
   import { setPageTitle } from '$lib/data/page-title.svelte.js';
 
@@ -25,7 +26,7 @@
   onMount(() => reception.hydrate());
 
   const id = $derived(page.params.registration_id ?? '');
-  const record = $derived(reception.registrations.find((r) => r.registration_id === id));
+  const record = $derived(reception.registrations.find((r) => String(r.registration_id) === id));
   const meta = $derived(record ? statusMeta[record.status] : null);
 
   $effect(() => {
@@ -44,9 +45,9 @@
   $effect(() => {
     if (record) {
       fullName = record.full_name;
-      contactNumber = record.contact_number;
-      graduatingYear = record.graduating_year;
-      teachersInput = record.visiting_teachers.join(', ');
+      contactNumber = String(record.contact_number);
+      graduatingYear = String(record.graduating_year);
+      teachersInput = visitingTeachersFor(record);
       comments = record.comments;
     }
   });
@@ -54,9 +55,9 @@
   let dirty = $derived(
     record &&
       (fullName !== record.full_name ||
-        contactNumber !== record.contact_number ||
-        graduatingYear !== record.graduating_year ||
-        teachersInput !== record.visiting_teachers.join(', ') ||
+        contactNumber !== String(record.contact_number) ||
+        graduatingYear !== String(record.graduating_year) ||
+        teachersInput !== visitingTeachersFor(record) ||
         comments !== record.comments),
   );
 
@@ -222,7 +223,7 @@
           <div class="flex flex-col gap-1">
             <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide">Ex-Riverlite</span>
             <span class="text-sm font-medium">
-              {#if record.is_ex_riverlite}
+              {#if record.is_ex_riverlite === 'Yes'}
                 <Badge variant="secondary">Yes</Badge>
               {:else}
                 No
@@ -230,10 +231,12 @@
             </span>
           </div>
         {/if}
-        <div class="flex flex-col gap-1">
-          <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide">Arrived</span>
-          <span class="text-sm font-medium">{formatDate(record.arrived_at)}</span>
-        </div>
+        {#if arrivedAtFor(record) !== null}
+          <div class="flex flex-col gap-1">
+            <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide">Arrived</span>
+            <span class="text-sm font-medium">{formatDate(arrivedAtFor(record))}</span>
+          </div>
+        {/if}
         {#if record.comments}
           <div class="flex flex-col gap-1 sm:col-span-2">
             <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide">Comments</span>

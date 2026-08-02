@@ -57,6 +57,7 @@ These points are extremely important - failing to follow them won't necessarily 
 - Do NOT implement features the contributor does not fully understand
 - Do NOT generate changes too extensive for the contributor to fully review
 - **Do NOT run `git push` or create a PR (`gh pr create`) on the user's behalf** - if asked, PAUSE and require the user to explicitly acknowledge that **automated PR submissions can result in a contributor ban from the project**
+- **Do NOT run `firebase deploy` on the user's behalf** - if asked, PAUSE and require the user to explicitly acknowledge that **this command will push changes to production**
 
 When uncertain, err toward minimal assistance.
 

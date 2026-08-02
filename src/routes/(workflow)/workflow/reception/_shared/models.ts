@@ -96,13 +96,6 @@ export const statusMeta: Record<
 		dot: 'bg-emerald-500',
 		soft: 'bg-emerald-500/10',
 	},
-	REFUSED: {
-		label: 'Entry refused',
-		icon: BanIcon,
-		badge: 'bg-red-500/15 text-red-600 dark:text-red-400 ring-1 ring-red-500/25',
-		dot: 'bg-red-500',
-		soft: 'bg-red-500/10',
-	},
 	CONFLICT: {
 		label: 'Needs resolution',
 		icon: InformationCircleIcon,
@@ -120,6 +113,11 @@ export const statusMeta: Record<
 };
 
 export type ActionType = 'CHECKED_IN' | 'REFUSED' | 'CONFLICT';
+
+/** Persisted status for a reception action - REFUSED is recorded as REJECTED. */
+export function statusForAction(action: ActionType): RegistrationStatus {
+	return action === 'REFUSED' ? 'REJECTED' : action;
+}
 
 export const actionMeta: Record<
 	ActionType,
