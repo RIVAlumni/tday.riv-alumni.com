@@ -15,6 +15,7 @@ import { getInternalFirestore } from '$lib/firebase/firestore';
 
 class UserStore {
   state = $state.raw<User | null | undefined>(undefined);
+  authUser = $state.raw<FirebaseUser | null | undefined>(undefined);
   isSignedIn = $state(false);
 
   private authUnsubscribe: (() => void) | null = null;
@@ -34,6 +35,7 @@ class UserStore {
 
   destroy(): void {
     this.unsubscribe();
+    this.authUser = null;
     this.isSignedIn = false;
     this.state = null;
   }
@@ -53,6 +55,7 @@ class UserStore {
       this.init();
       throw error;
     }
+    this.authUser = null;
     this.isSignedIn = false;
     this.state = null;
   }
@@ -67,6 +70,7 @@ class UserStore {
   private handleAuthChange(authUser: FirebaseUser | null): void {
     this.userUnsubscribe?.();
     this.userUnsubscribe = null;
+    this.authUser = authUser;
     this.isSignedIn = authUser !== null;
 
     if (!authUser) {
