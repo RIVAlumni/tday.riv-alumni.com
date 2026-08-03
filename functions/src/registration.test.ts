@@ -7,6 +7,11 @@ import {
   registrationSubmissionSchema,
 } from './registration.js';
 
+const MAX_WORD_MESSAGE = Array.from({ length: 150 }, (_, index) => `longteacherword${index}`).join(
+  ' ',
+);
+const OVER_WORD_LIMIT_MESSAGE = `${MAX_WORD_MESSAGE} overflow`;
+
 const VALID_SUBMISSION = {
   full_name: ' Example Visitor ',
   contact_number: '91234567',
@@ -62,6 +67,21 @@ test('accepts the maximum bounded lists', () => {
   });
 
   assert.equal(result.success, true);
+});
+
+test('enforces teacher message word limits', () => {
+  const maximumWords = registrationSubmissionSchema.safeParse({
+    ...VALID_SUBMISSION,
+    written_messages: [{ teacher_name: 'Mr Lim', message: MAX_WORD_MESSAGE }],
+  });
+  const overLimit = registrationSubmissionSchema.safeParse({
+    ...VALID_SUBMISSION,
+    written_messages: [{ teacher_name: 'Mr Lim', message: OVER_WORD_LIMIT_MESSAGE }],
+  });
+
+  assert.ok(MAX_WORD_MESSAGE.length > 2000);
+  assert.equal(maximumWords.success, true);
+  assert.equal(overLimit.success, false);
 });
 
 test('rejects invalid and unexpected submission data', () => {

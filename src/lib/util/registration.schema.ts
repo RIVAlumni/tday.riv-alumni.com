@@ -7,10 +7,22 @@ import type {
 import { Timestamp } from 'firebase/firestore';
 import { z } from 'zod';
 
+const MAX_MESSAGE_CHARACTERS = 10_000;
+const MAX_MESSAGE_WORDS = 150;
+
+function hasAtMostMessageWords(message: string): boolean {
+  return message.trim().split(/\s+/).filter(Boolean).length <= MAX_MESSAGE_WORDS;
+}
+
 export const writtenMessageSchema = z
   .object({
     teacher_name: z.string().min(1, 'Teacher name is required').max(120),
-    message: z.string().min(1, 'Message is required').max(2000),
+    message: z
+      .string()
+      .trim()
+      .min(1, 'Message is required')
+      .max(MAX_MESSAGE_CHARACTERS)
+      .refine(hasAtMostMessageWords, `Message must be ${MAX_MESSAGE_WORDS} words or fewer`),
   })
   .strict() satisfies z.ZodType<WrittenMessage>;
 
@@ -45,6 +57,23 @@ export const registration2026SubmissionSchema = registration2026Schema.pick({
 }) satisfies z.ZodType<Registration2026Submission>;
 
 const optionalFormField = z.string().trim().optional().default('');
+const optionalMessageFormField = z
+  .string()
+  .trim()
+  .max(MAX_MESSAGE_CHARACTERS)
+  .refine(hasAtMostMessageWords, `Message must be ${MAX_MESSAGE_WORDS} words or fewer`)
+  .optional()
+  .default('');
+
+export function registrationFormFieldName(path: PropertyKey[]): string {
+  return path
+    .join('.')
+    .replace(/^visiting_teachers\.\d+$/, 'visiting_teachers')
+    .replace('written_messages.0.teacher_name', 'teacher1_name')
+    .replace('written_messages.0.message', 'teacher1_message')
+    .replace('written_messages.1.teacher_name', 'teacher2_name')
+    .replace('written_messages.1.message', 'teacher2_message');
+}
 
 export const registrationFormSchema = z
   .object({
@@ -80,9 +109,9 @@ export const registrationFormSchema = z
           ),
       ),
     teacher1_name: optionalFormField,
-    teacher1_message: z.string().trim().max(2000).optional().default(''),
+    teacher1_message: optionalMessageFormField,
     teacher2_name: optionalFormField,
-    teacher2_message: z.string().trim().max(2000).optional().default(''),
+    teacher2_message: optionalMessageFormField,
   })
   .strict()
   .superRefine((data, context) => {

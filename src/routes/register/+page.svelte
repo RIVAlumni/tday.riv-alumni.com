@@ -5,7 +5,7 @@
   import * as Alert from '$lib/components/ui/alert/index.js';
   import { visitorAuth } from '$lib/firebase/auth.svelte';
   import { onMount, tick } from 'svelte';
-  import { registrationFormSchema } from '$lib/util/registration.schema';
+  import { registrationFormFieldName, registrationFormSchema } from '$lib/util/registration.schema';
   import { createRegistrationRecord, RegistrationWriteError } from '$lib/firebase';
 
   const graduationYears = Array.from({ length: 28 }, (_, index) => 2026 - index);
@@ -108,13 +108,7 @@
     if (!result.success) {
       const errors: FieldErrors = {};
       for (const issue of result.error.issues) {
-        const path = issue.path.join('.');
-        // Map nested written_messages paths back to form field names
-        const field = path
-          .replace('written_messages.0.teacher_name', 'teacher1_name')
-          .replace('written_messages.0.message', 'teacher1_message')
-          .replace('written_messages.1.teacher_name', 'teacher2_name')
-          .replace('written_messages.1.message', 'teacher2_message');
+        const field = registrationFormFieldName(issue.path);
         if (!errors[field]) {
           errors[field] = issue.message;
         }
@@ -592,7 +586,7 @@
                 <textarea
                   name="teacher1_message"
                   rows="6"
-                  maxlength="2000"
+                  maxlength="10000"
                   oninput={() => clearFieldError('teacher1_message')}
                   placeholder="Write your message"></textarea>
                 {#if fieldErrors['teacher1_message']}
@@ -634,7 +628,7 @@
                 <textarea
                   name="teacher2_message"
                   rows="6"
-                  maxlength="2000"
+                  maxlength="10000"
                   oninput={() => clearFieldError('teacher2_message')}
                   placeholder="Write your message"></textarea>
                 {#if fieldErrors['teacher2_message']}

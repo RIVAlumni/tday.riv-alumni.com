@@ -10,11 +10,18 @@ import { HttpsError, onCall } from 'firebase-functions/https';
 const REGISTRATION_ID_CHARACTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 const REGISTRATION_ID_LENGTH = 6;
 const MAX_ID_ATTEMPTS = 3;
+const MAX_MESSAGE_CHARACTERS = 10_000;
+const MAX_MESSAGE_WORDS = 150;
 
 const writtenMessageSchema = z
   .object({
     teacher_name: z.string().trim().min(1).max(120),
-    message: z.string().trim().min(1).max(2000),
+    message: z
+      .string()
+      .trim()
+      .min(1)
+      .max(MAX_MESSAGE_CHARACTERS)
+      .refine((message) => message.split(/\s+/).filter(Boolean).length <= MAX_MESSAGE_WORDS),
   })
   .strict();
 

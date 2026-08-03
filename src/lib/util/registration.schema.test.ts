@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   registration2026Schema,
   registration2026SubmissionSchema,
+  registrationFormFieldName,
   registrationFormSchema,
 } from './registration.schema';
 
@@ -18,6 +19,13 @@ const VALID_FORM = {
   teacher2_name: '',
   teacher2_message: '',
 };
+
+const LONG_TEACHER_TEXT =
+  "') or ('1'='1-- Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+const MAX_WORD_MESSAGE = Array.from({ length: 150 }, (_, index) => `longteacherword${index}`).join(
+  ' ',
+);
+const OVER_WORD_LIMIT_MESSAGE = `${MAX_WORD_MESSAGE} overflow`;
 
 const SUBMISSION_KEYS = [
   'full_name',
@@ -85,6 +93,60 @@ describe('registrationFormSchema', () => {
     expect(invalidContact.success).toBe(false);
     expect(invalidYear.success).toBe(false);
     expect(duplicateTeachers.success).toBe(false);
+  });
+
+  it('accepts 150 words and rejects longer teacher messages', () => {
+    const maximumWords = registrationFormSchema.safeParse({
+      ...VALID_FORM,
+      teacher1_message: MAX_WORD_MESSAGE,
+    });
+    const teacher1OverLimit = registrationFormSchema.safeParse({
+      ...VALID_FORM,
+      teacher1_message: OVER_WORD_LIMIT_MESSAGE,
+    });
+    const teacher2OverLimit = registrationFormSchema.safeParse({
+      ...VALID_FORM,
+      teacher1_name: '',
+      teacher1_message: '',
+      teacher2_name: 'Mr Lim',
+      teacher2_message: OVER_WORD_LIMIT_MESSAGE,
+    });
+
+    expect(MAX_WORD_MESSAGE.length).toBeGreaterThan(2000);
+    expect(maximumWords.success).toBe(true);
+    expect(teacher1OverLimit.success).toBe(false);
+    expect(teacher2OverLimit.success).toBe(false);
+    if (teacher1OverLimit.success || teacher2OverLimit.success) {
+      throw new Error('Expected messages over 150 words to fail');
+    }
+    expect(teacher1OverLimit.error.issues).toEqual(
+      expect.arrayContaining([expect.objectContaining({ path: ['teacher1_message'] })]),
+    );
+    expect(teacher2OverLimit.error.issues).toEqual(
+      expect.arrayContaining([expect.objectContaining({ path: ['teacher2_message'] })]),
+    );
+  });
+
+  it('maps an oversized visiting teacher entry to the textarea field', () => {
+    const result = registrationFormSchema.safeParse({
+      ...VALID_FORM,
+      full_name: "') or ('1'='1--",
+      contact_number: '80000000',
+      graduating_year: '1999',
+      visiting_teachers: LONG_TEACHER_TEXT,
+      teacher1_name: 'mr mah',
+      teacher1_message: LONG_TEACHER_TEXT,
+      teacher2_name: "') or ('1'='1--",
+      teacher2_message: "') or ('1'='1--",
+    });
+
+    expect(result.success).toBe(false);
+    if (result.success) throw new Error('Expected an oversized teacher entry to fail');
+
+    expect(result.error.issues).toEqual([
+      expect.objectContaining({ path: ['visiting_teachers', 3] }),
+    ]);
+    expect(registrationFormFieldName(result.error.issues[0].path)).toBe('visiting_teachers');
   });
 
   it('keeps the full persisted model strict', () => {
