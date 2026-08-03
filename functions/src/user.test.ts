@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { Timestamp } from 'firebase-admin/firestore';
 
-import { buildUserDocument, userDocumentSchema } from './user.js';
+import { authBeforeUserCreated, buildUserDocument, userDocumentSchema } from './user.js';
 
 const CREATED_AT = Timestamp.fromMillis(1_750_000_000_000);
 
@@ -45,6 +45,17 @@ test('requires an email that fits the user model', () => {
   assert.throws(() => buildUserDocument({ uid: 'missing-email' }, CREATED_AT));
   assert.throws(() =>
     buildUserDocument({ uid: 'invalid-email', email: 'not-an-email' }, CREATED_AT),
+  );
+});
+
+test('exports a blocking beforeCreate trigger', () => {
+  const endpoint = authBeforeUserCreated.__endpoint;
+
+  assert.equal(endpoint.platform, 'gcfv2');
+  assert.deepEqual(endpoint.region, ['asia-southeast1']);
+  assert.equal(
+    endpoint.blockingTrigger?.eventType,
+    'providers/cloud.auth/eventTypes/user.beforeCreate',
   );
 });
 

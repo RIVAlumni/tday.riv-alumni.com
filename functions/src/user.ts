@@ -1,7 +1,7 @@
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import * as logger from 'firebase-functions/logger';
-import { region } from 'firebase-functions/v1';
+import { beforeUserCreated, HttpsError } from 'firebase-functions/v2/identity';
 import { z } from 'zod';
 
 const ACCESS_LEVEL_NONE = 0;
@@ -34,8 +34,7 @@ export type UserDocument = z.infer<typeof userDocumentSchema>;
  * @param {Timestamp} createdAt Account creation timestamp.
  * @return {UserDocument} Validated user document.
  */
-export function buildUserDocument(user: unknown): UserDocument {
-  const createdAt = Timestamp.now();
+export function buildUserDocument(user: unknown, createdAt = Timestamp.now()): UserDocument {
   const parsedUser = authUserSchema.parse(user);
 
   return userDocumentSchema.parse({
@@ -66,7 +65,14 @@ function isAlreadyExists(error: unknown): boolean {
  * @return {Promise<void>} Resolves after the document is handled.
  */
 async function createUserDocument(user: unknown): Promise<void> {
-  const data = buildUserDocument(user);
+  let data: UserDocument;
+  try {
+    data = buildUserDocument(user);
+  } catch (error: unknown) {
+    logger.warn('Auth user does not match the user schema', { error });
+    throw new HttpsError('failed-precondition', 'A valid email is required.');
+  }
+
   const app = getApps()[0] ?? initializeApp();
   const reference = getFirestore(app).doc(`users/${data.uid}`);
 
@@ -79,11 +85,14 @@ async function createUserDocument(user: unknown): Promise<void> {
     }
 
     logger.error('User document creation failed', { uid: data.uid, error });
-    throw error;
+    throw new HttpsError('internal', 'The user account could not be initialized.');
   }
 }
 
-export const createUserOnAuthCreate = region('asia-southeast1')
-  .runWith({ maxInstances: 10 })
-  .auth.user()
-  .onCreate(createUserDocument);
+export const authBeforeUserCreated = beforeUserCreated(
+  { region: 'asia-southeast1', maxInstances: 10 },
+  async (event) => {
+    await createUserDocument(event.data);
+    return {};
+  },
+);

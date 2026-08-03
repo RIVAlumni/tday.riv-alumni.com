@@ -52,6 +52,17 @@
     });
   }
 
+  function scrollToConfirmation(element: Element) {
+    window.requestAnimationFrame(() => {
+      const maximumScrollTop = Math.max(
+        0,
+        document.documentElement.scrollHeight - window.innerHeight,
+      );
+      const elementTop = element.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top: Math.min(elementTop, maximumScrollTop), behavior: 'auto' });
+    });
+  }
+
   function focusFormControl(control: HTMLElement) {
     const scrollTarget = control.closest('.form-field, .consent-confirmation') ?? control;
     control.focus({ preventScroll: true });
@@ -128,7 +139,7 @@
       await tick();
       const confirmation = document.getElementById('registration-success');
       if (confirmation) {
-        scrollToElement(confirmation, 'start');
+        scrollToConfirmation(confirmation);
       }
     } catch (err) {
       if (err instanceof RegistrationWriteError) {
