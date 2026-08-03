@@ -4,7 +4,7 @@
   import { ArrowLeft01Icon, ArrowUpRight01Icon } from '$lib/icons';
   import * as Alert from '$lib/components/ui/alert/index.js';
   import { visitorAuth } from '$lib/firebase/auth.svelte';
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { registrationFormSchema } from '$lib/util/registration.schema';
   import { createRegistrationRecord, RegistrationWriteError } from '$lib/firebase';
 
@@ -45,6 +45,34 @@
     }
   }
 
+  function scrollToElement(element: Element, block: ScrollLogicalPosition = 'center') {
+    element.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block,
+    });
+  }
+
+  function focusFormControl(control: HTMLElement) {
+    const scrollTarget = control.closest('.form-field, .consent-confirmation') ?? control;
+    control.focus({ preventScroll: true });
+    scrollToElement(scrollTarget);
+  }
+
+  function handleInvalid(event: Event) {
+    const form = event.currentTarget;
+    const control = event.target;
+
+    if (
+      !(form instanceof HTMLFormElement) ||
+      !(control instanceof HTMLElement) ||
+      control !== form.querySelector(':invalid')
+    ) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => focusFormControl(control));
+  }
+
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
     submissionError = null;
@@ -81,6 +109,11 @@
         }
       }
       fieldErrors = errors;
+      await tick();
+      const firstInvalidControl = form.elements.namedItem(Object.keys(errors)[0]);
+      if (firstInvalidControl instanceof HTMLElement) {
+        focusFormControl(firstInvalidControl);
+      }
       return;
     }
 
@@ -92,6 +125,11 @@
     try {
       const id = await createRegistrationRecord(result.data);
       submittedId = id;
+      await tick();
+      const confirmation = document.getElementById('registration-success');
+      if (confirmation) {
+        scrollToElement(confirmation, 'start');
+      }
     } catch (err) {
       if (err instanceof RegistrationWriteError) {
         submissionError = err.message;
@@ -244,6 +282,7 @@
         </section>
       {:else if submittedId}
         <section
+          id="registration-success"
           class="confirmation"
           aria-live="polite">
           <p
@@ -268,7 +307,9 @@
           </a>
         </section>
       {:else}
-        <form onsubmit={handleSubmit}>
+        <form
+          onsubmit={handleSubmit}
+          oninvalidcapture={handleInvalid}>
           <section
             id="verify-email"
             class="form-section google-section"
@@ -1220,7 +1261,7 @@
   }
 
   .confirmation {
-    min-height: 48rem;
+    min-height: 0;
     padding: clamp(2rem, 4vw, 4rem);
     display: flex;
     flex-direction: column;
@@ -1259,6 +1300,8 @@
     color: #bbb;
     font-size: 1.05rem;
     line-height: 1.5;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .confirmation > a {
