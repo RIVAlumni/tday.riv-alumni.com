@@ -23,6 +23,12 @@
   });
 </script>
 
+<svelte:head>
+  <meta
+    name="robots"
+    content="noindex, nofollow" />
+</svelte:head>
+
 {#if userStore.state === undefined}
   <div class="flex h-screen items-center justify-center">
     <p>Loading...</p>

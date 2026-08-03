@@ -51,6 +51,12 @@
   }
 </script>
 
+<svelte:head>
+  <meta
+    name="robots"
+    content="noindex, nofollow" />
+</svelte:head>
+
 {#if userStore.state === undefined}
   <div class="flex h-screen items-center justify-center">
     <div class="flex w-full max-w-sm flex-col items-center gap-4 px-4">

@@ -227,16 +227,64 @@
 </script>
 
 <svelte:head>
-  <title>Teachers' Day Visitations 2026 - From Little Hearts, With Big Thanks.</title>
+  <title>Teachers' Day Alumni Visitations 2026 - RIVA x RIVPS</title>
   <meta
     name="description"
-    content="Rivervale Primary School graduates are invited back for the 2026 Teachers’ Day Visitations on Thursday, 3 September, from 11:00 AM to 12:30 PM." />
+    content="RIVA Teachers' Day 2026 event details and pre-registration. Reconnect and thank the teachers who helped shape your life." />
+  <meta
+    name="robots"
+    content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <meta
+    name="keywords"
+    content="Teachers' Day 2026, alumni visitations, Rivervale Primary School, RIVPS, RIVA, alumni event, Teachers' Day registration" />
+  <meta
+    name="publisher"
+    content="Rivervale Primary School Alumni Association" />
+  <link
+    rel="canonical"
+    href="https://tday.riv-alumni.com/" />
   <meta
     property="og:title"
-    content="Teachers' Day Visitations 2026 - From Little Hearts, With Big Thanks." />
+    content="Teachers' Day Alumni Visitations 2026 - RIVA x RIVPS" />
   <meta
     property="og:description"
-    content="Return, reconnect, and thank the teachers who helped shape your story." />
+    content="RIVA Teachers' Day 2026 event details and pre-registration. Reconnect and thank the teachers who helped shape your life." />
+  <meta
+    property="og:type"
+    content="website" />
+  <meta
+    property="og:url"
+    content="https://tday.riv-alumni.com/" />
+  <meta
+    property="og:image"
+    content="https://tday.riv-alumni.com/images/registration-hero-d55-0081.webp" />
+  <meta
+    property="og:image:type"
+    content="image/webp" />
+  <meta
+    property="og:image:width"
+    content="1600" />
+  <meta
+    property="og:image:height"
+    content="1066" />
+  <meta
+    property="og:image:alt"
+    content="RIVA volunteers welcoming visitors during a previous school event" />
+  <meta
+    name="twitter:card"
+    content="summary_large_image" />
+  <meta
+    name="twitter:title"
+    content="Teachers' Day Alumni Visitations 2026 - RIVA x RIVPS" />
+  <meta
+    name="twitter:description"
+    content="RIVA Teachers' Day 2026 event details and pre-registration. Reconnect and thank the teachers who helped shape your life." />
+  <meta
+    name="twitter:image"
+    content="https://tday.riv-alumni.com/images/registration-hero-d55-0081.webp" />
+  <meta
+    name="twitter:image:alt"
+    content="RIVA volunteers welcoming visitors during a previous school event" />
   <meta
     name="theme-color"
     content="#050505" />
