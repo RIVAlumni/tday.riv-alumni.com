@@ -1,12 +1,11 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { goto } from '$app/navigation';
-  import { internalAuth } from '$lib/firebase/auth.svelte';
-  import * as Alert from '$lib/components/ui/alert/index.js';
-  import { FieldGroup, Field, FieldDescription } from '$lib/components/ui/field/index.js';
-  import { Button } from '$lib/components/ui/button/index.js';
-  import { cn, type WithElementRef } from '$lib/utils.js';
   import type { HTMLFormAttributes } from 'svelte/elements';
+
+  import * as Alert from '$lib/components/ui/alert/index.js';
+  import { Button } from '$lib/components/ui/button/index.js';
+  import { FieldGroup, Field, FieldDescription } from '$lib/components/ui/field/index.js';
+  import { userStore } from '$lib/stores/user.svelte';
+  import { cn, type WithElementRef } from '$lib/utils.js';
 
   let {
     ref = $bindable(null),
@@ -14,19 +13,12 @@
     ...restProps
   }: WithElementRef<HTMLFormAttributes> = $props();
 
-  const id = $props.id();
-
-  onMount(() => {
-    internalAuth.init();
-  });
-
   let loginError = $state<string | null>(null);
 
   async function handleGoogleLogin() {
     loginError = null;
     try {
-      await internalAuth.signInWithGoogle();
-      goto('/workflow/home');
+      await userStore.signInWithGoogle();
     } catch (err) {
       console.error('Login failed:', err);
       loginError = 'Please try again.';

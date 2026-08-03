@@ -7,58 +7,237 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow get: if isSignedIn() &&
-                    request.auth.uid == userId;
+      allow get: if isSignedIn() && request.auth.uid == userId;
     }
 
     match /events/{eventId} {
-      allow get: if isSignedIn();
+      allow get: if isAuthorised(1);
 
       match /registrations/{registrationId} {
-        allow create: if isUnauthenticatedRegistrationCreate();
-
-        allow get: if isSignedIn()
-                      && isAuthorised(1);
-
-        allow list: if isSignedIn()
-                       && isAuthorised(1);
-
-        allow update: if isSignedIn()
-                         && isAuthorised(1);
+        allow create: if isValidPublicRegistrationCreate(eventId, registrationId);
+        allow get: if isAuthorised(1);
+        allow list: if isAuthorised(2);
+        allow update: if isMediatorUpdate(eventId) || isOperatorReceptionUpdate(eventId);
       }
     }
 
     function isSignedIn() {
-      return request.auth != null
-                  && request.auth.token.email_verified == true;
+      return request.auth != null && request.auth.token.email_verified == true;
     }
 
-    function isAuthorised(minAccessLevel) {
-      let userRef = /databases/$(database)/documents/users/$(request.auth.uid);
-      let userExists = exists(userRef);
-      let userData = get(userRef).data;
-
-      let userAccessLevel = userData.access_level;
-      let userAccessExpires = userData.access_expires;
-
-      return userExists
-                  && userAccessLevel >= minAccessLevel
-              && userAccessExpires >= request.time;
+    function userPath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
     }
 
-    function isUnauthenticatedRegistrationCreate() {
+    function isAuthorised(minimumAccessLevel) {
+      return isSignedIn()
+        && exists(userPath())
+        && get(userPath()).data.access_level is int
+        && get(userPath()).data.access_expires is timestamp
+        && get(userPath()).data.access_level >= minimumAccessLevel
+        && get(userPath()).data.access_expires >= request.time;
+    }
+
+    function isValidPublicRegistrationCreate(eventId, registrationId) {
       let data = request.resource.data;
+      return request.auth == null
+        && eventId == '2026'
+        && data.keys().hasOnly([
+          'event_id',
+          'registration_id',
+          'email',
+          'full_name',
+          'status',
+          'contact_number',
+          'graduating_year',
+          'visiting_teachers',
+          'written_messages',
+          'comments',
+          'arrived_at',
+          'created_at',
+          'updated_at'
+        ])
+        && data.keys().hasAll([
+          'event_id',
+          'registration_id',
+          'email',
+          'full_name',
+          'status',
+          'contact_number',
+          'graduating_year',
+          'visiting_teachers',
+          'written_messages',
+          'comments',
+          'arrived_at',
+          'created_at',
+          'updated_at'
+        ])
+        && data.event_id == eventId
+        && data.registration_id == registrationId
+        && data.registration_id is string
+        && data.registration_id.matches('^[A-HJ-NP-Z]{6}$')
+        && isValidEmail(data.email)
+        && isValidName(data.full_name)
+        && data.status == 'REGISTERED'
+        && data.contact_number is string
+        && data.contact_number.matches('^[89][0-9]{7}$')
+        && data.graduating_year is string
+        && data.graduating_year.matches('^[0-9]{4}$')
+        && isValidTeacherList(data.visiting_teachers)
+        && isValidWrittenMessages(data.written_messages)
+        && data.comments == ''
+        && data.arrived_at == null
+        && data.created_at == request.time
+        && data.updated_at == request.time;
+    }
 
-      let statusOk = data.status == 'REGISTERED';
-      let metaOk =
-        data.comments == '' &&
-        data.arrived_at == null;
+    function isMediatorUpdate(eventId) {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return isAuthorised(2)
+        && changed.hasOnly([
+          'full_name',
+          'contact_number',
+          'graduating_year',
+          'visiting_teachers',
+          'comments',
+          'status',
+          'arrived_at',
+          'updated_at'
+        ])
+        && changed.hasAll(['updated_at'])
+        && request.resource.data.updated_at == request.time
+        && (!changed.hasAny(['full_name']) || isValidName(request.resource.data.full_name))
+        && (!changed.hasAny(['contact_number']) || isValidContactNumber(eventId, request.resource.data.contact_number))
+        && (!changed.hasAny(['graduating_year']) || isValidGraduatingYear(eventId, request.resource.data.graduating_year))
+        && (!changed.hasAny(['visiting_teachers']) || isValidVisitingTeachers(eventId, request.resource.data.visiting_teachers))
+        && (!changed.hasAny(['comments']) || isValidComments(request.resource.data.comments))
+        && (!changed.hasAny(['status']) || isValidStatus(request.resource.data.status))
+        && (!changed.hasAny(['arrived_at']) || isValidArrival(eventId, request.resource.data.arrived_at));
+    }
 
-      let pathOk =
-        data.event_id == eventId &&
-        data.registration_id == registrationId;
+    function isOperatorReceptionUpdate(eventId) {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return isAuthorised(1)
+        && changed.hasAll(['status', 'updated_at'])
+        && request.resource.data.updated_at == request.time
+        && (
+          isOperatorCheckIn(eventId, changed)
+          || isOperatorRejection(changed)
+          || isOperatorConflict(changed)
+        );
+    }
 
-      return pathOk && statusOk && metaOk;
+    function isOperatorCheckIn(eventId, changed) {
+      return request.resource.data.status == 'CHECKED_IN'
+        && changed.hasOnly(['status', 'arrived_at', 'updated_at'])
+        && (
+          (eventId == '2025' && !changed.hasAny(['arrived_at']))
+          || (
+            eventId != '2025'
+            && changed.hasAll(['arrived_at'])
+            && request.resource.data.arrived_at == request.time
+          )
+        );
+    }
+
+    function isOperatorRejection(changed) {
+      return request.resource.data.status == 'REJECTED'
+        && changed.hasOnly(['status', 'updated_at']);
+    }
+
+    function isOperatorConflict(changed) {
+      return request.resource.data.status == 'CONFLICT'
+        && changed.hasOnly(['status', 'comments', 'updated_at'])
+        && changed.hasAll(['comments'])
+        && isValidComments(request.resource.data.comments);
+    }
+
+    function isValidEmail(value) {
+      return value is string
+        && value.size() > 3
+        && value.size() <= 254
+        && value.matches('^[^@]+@[^@]+[.][^@]+$');
+    }
+
+    function isValidName(value) {
+      return value is string && value.size() > 0 && value.size() <= 120;
+    }
+
+    function isValidComments(value) {
+      return value is string && value.size() <= 10000;
+    }
+
+    function isValidStatus(value) {
+      return value in ['REGISTERED', 'CHECKED_IN', 'CONFLICT', 'REJECTED'];
+    }
+
+    function isValidContactNumber(eventId, value) {
+      return (eventId == '2025' && value is int)
+        || (eventId != '2025' && value is string && value.size() > 0 && value.size() <= 30);
+    }
+
+    function isValidGraduatingYear(eventId, value) {
+      return (eventId == '2025' && value is int)
+        || (eventId != '2025' && value is string && value.size() > 0 && value.size() <= 20);
+    }
+
+    function isValidVisitingTeachers(eventId, value) {
+      return (eventId == '2026' && isValidTeacherList(value))
+        || (eventId != '2026' && value is string && value.size() <= 1000);
+    }
+
+    function isValidArrival(eventId, value) {
+      return eventId != '2025' && (value == null || value is timestamp);
+    }
+
+    function isValidTeacherList(value) {
+      return value is list
+        && value.size() > 0
+        && value.size() <= 20
+        && isValidTeacherAt(value, 0)
+        && isValidTeacherAt(value, 1)
+        && isValidTeacherAt(value, 2)
+        && isValidTeacherAt(value, 3)
+        && isValidTeacherAt(value, 4)
+        && isValidTeacherAt(value, 5)
+        && isValidTeacherAt(value, 6)
+        && isValidTeacherAt(value, 7)
+        && isValidTeacherAt(value, 8)
+        && isValidTeacherAt(value, 9)
+        && isValidTeacherAt(value, 10)
+        && isValidTeacherAt(value, 11)
+        && isValidTeacherAt(value, 12)
+        && isValidTeacherAt(value, 13)
+        && isValidTeacherAt(value, 14)
+        && isValidTeacherAt(value, 15)
+        && isValidTeacherAt(value, 16)
+        && isValidTeacherAt(value, 17)
+        && isValidTeacherAt(value, 18)
+        && isValidTeacherAt(value, 19);
+    }
+
+    function isValidTeacherAt(value, index) {
+      return value.size() <= index
+        || (value[index] is string && value[index].size() > 0 && value[index].size() <= 120);
+    }
+
+    function isValidWrittenMessages(value) {
+      return value is list
+        && value.size() <= 2
+        && (value.size() < 1 || isValidWrittenMessage(value[0]))
+        && (value.size() < 2 || isValidWrittenMessage(value[1]));
+    }
+
+    function isValidWrittenMessage(value) {
+      return value is map
+        && value.keys().hasOnly(['teacher_name', 'message'])
+        && value.keys().hasAll(['teacher_name', 'message'])
+        && value.teacher_name is string
+        && value.teacher_name.size() > 0
+        && value.teacher_name.size() <= 120
+        && value.message is string
+        && value.message.size() > 0
+        && value.message.size() <= 2000;
     }
   }
 }

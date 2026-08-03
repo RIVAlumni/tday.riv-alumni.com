@@ -424,14 +424,29 @@
         <h3>Bring</h3>
         <div class="detail-copy">
           <ol class="bring-checklist">
-            <li>Screenshot of the event ticket from your email.</li>
             <li>
-              Photo ID for facial verification, either:
-              <ol>
-                <li>EZ-Link card (must not be faded)</li>
-                <li>NRIC</li>
-                <li>SingPass</li>
-              </ol>
+              <span class="bring-marker">1.</span>
+              <span>Screenshot of the event ticket from your email.</span>
+            </li>
+            <li>
+              <span class="bring-marker">2.</span>
+              <div>
+                Photo ID for facial verification, either:
+                <ol>
+                  <li>
+                    <span class="bring-marker">a.</span>
+                    <span>EZ-Link card (must not be faded)</span>
+                  </li>
+                  <li>
+                    <span class="bring-marker">b.</span>
+                    <span>NRIC</span>
+                  </li>
+                  <li>
+                    <span class="bring-marker">c.</span>
+                    <span>SingPass</span>
+                  </li>
+                </ol>
+              </div>
             </li>
           </ol>
           <p><strong>Note:</strong> A facial verification will be conducted during check-in.</p>
@@ -1359,13 +1374,24 @@
   }
 
   .bring-checklist {
-    padding-left: 1.35em;
+    padding: 0;
+    list-style: none;
   }
 
   .bring-checklist ol {
     margin-top: 0.35rem;
-    padding-left: 1.35em;
-    list-style-type: lower-alpha;
+    padding: 0;
+    list-style: none;
+  }
+
+  .bring-checklist li {
+    display: grid;
+    grid-template-columns: 1.6rem minmax(0, 1fr);
+  }
+
+  .bring-marker {
+    color: #f5f5f2;
+    font-variant-numeric: tabular-nums;
   }
 
   .bring-checklist li + li {

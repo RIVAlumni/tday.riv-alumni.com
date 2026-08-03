@@ -1,52 +1,40 @@
 import type { IconComponent } from '$lib/icons';
+
 import {
   DashboardSquare01Icon,
   Database01Icon,
   FaceIdIcon,
   HelpCircleIcon,
-  LayoutGridIcon,
   CheckmarkCircle01Icon,
   Note01Icon,
   Settings01Icon,
 } from '$lib/icons';
+import { AccessLevel } from '$lib/models/user';
 
 export interface NavItem {
   title: string;
   url: string;
   icon: IconComponent;
+  minimumAccessLevel: AccessLevel;
 }
-
-export interface SidebarUser {
-  name: string;
-  email: string;
-  avatar: string;
-}
-
-// TODO: Replace with Firebase Auth user data
-export const user: SidebarUser = {
-  name: 'RIVAlumni Operator',
-  email: 'operator@riv-alumni.com',
-  avatar: '/avatars/shadcn.jpg',
-};
 
 // prettier-ignore
 export const navMain: NavItem[] = [
-  { title: 'Dashboard',            url: '/workflow/home',      icon: DashboardSquare01Icon   },
-  { title: 'Reception (Check-in)', url: '/workflow/reception', icon: CheckmarkCircle01Icon   },
-  { title: 'Conflict Resolution',  url: '/workflow/resolve',   icon: FaceIdIcon },
+  { title: 'Dashboard',            url: '/workflow/home',      icon: DashboardSquare01Icon,   minimumAccessLevel: AccessLevel.Mediator },
+  { title: 'Reception (Check-in)', url: '/workflow/reception', icon: CheckmarkCircle01Icon,   minimumAccessLevel: AccessLevel.Operator },
+  { title: 'Conflict Resolution',  url: '/workflow/resolve',   icon: FaceIdIcon,               minimumAccessLevel: AccessLevel.Mediator },
 ];
 
 // prettier-ignore
 export const records: NavItem[] = [
-  { title: 'Registrations',   url: '/workflow/records',  icon: Database01Icon },
-  { title: 'Generate Report', url: '/workflow/generate', icon: Note01Icon   },
-  { title: 'Audit Logs',      url: '/workflow/logs',     icon: Note01Icon   },
+  { title: 'Registrations',   url: '/workflow/records',  icon: Database01Icon, minimumAccessLevel: AccessLevel.Mediator },
+  { title: 'Generate Report', url: '/workflow/generate', icon: Note01Icon,     minimumAccessLevel: AccessLevel.Mediator },
 ];
 
 // prettier-ignore
 export const navSecondary: NavItem[] = [
-  { title: 'Settings',        url: '/workflow/settings',   icon: Settings01Icon },
-  { title: 'Getting Started', url: '/workflow/onboarding', icon: HelpCircleIcon     },
+  { title: 'Settings',        url: '/workflow/settings',   icon: Settings01Icon, minimumAccessLevel: AccessLevel.Operator },
+  { title: 'Getting Started', url: '/workflow/onboarding', icon: HelpCircleIcon,  minimumAccessLevel: AccessLevel.Operator },
 ];
 
 /**

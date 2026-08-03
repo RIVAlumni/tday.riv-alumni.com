@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { user } from '$lib/data/nav';
+  import { Toaster } from '$lib/components/ui/sonner';
+  import * as Sidebar from '$lib/components/ui/sidebar';
+  import { userStore } from '$lib/stores/user.svelte';
 
-  import * as Sidebar from '$lib/components/ui/sidebar/index.js';
   import PageHeader from './page-header.svelte';
   import PageSidebarLeft from './page-sidebar-left.svelte';
   import PageWatermark from './page-watermark.svelte';
@@ -15,6 +16,12 @@
   const sidebarRight = setupSidebarRight();
 </script>
 
+<Toaster
+  richColors
+  duration={2_000}
+  offset={{ bottom: 'calc(max(1rem, env(safe-area-inset-bottom)) + 4.25rem)' }}
+  mobileOffset={{ bottom: 'calc(max(1rem, env(safe-area-inset-bottom)) + 4.25rem)' }} />
+
 <Sidebar.Provider
   style="--sidebar-width: calc(var(--spacing) * 72); --header-height: calc(var(--spacing) * 12);">
   <PageSidebarLeft variant="inset" />
@@ -23,8 +30,8 @@
     <div class="flex flex-1 flex-col">
       <div class="@container/main relative flex flex-1 flex-col gap-2">
         <PageWatermark
-          name={user.name}
-          email={user.email} />
+          name={userStore.state?.display_name}
+          email={userStore.state?.email} />
         {@render children()}
       </div>
     </div>

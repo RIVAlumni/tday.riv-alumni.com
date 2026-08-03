@@ -1,10 +1,19 @@
 <script lang="ts">
-  import { cn } from '$lib/utils';
+  import type { Registration } from '$lib/models/registration';
 
-  import * as Card from '$lib/components/ui/card';
-  import { Button } from '$lib/components/ui/button';
+  import { toast } from 'svelte-sonner';
+
+  import * as AlertDialog from '$lib/components/ui/alert-dialog';
   import { Badge } from '$lib/components/ui/badge';
-
+  import { Button } from '$lib/components/ui/button';
+  import * as Card from '$lib/components/ui/card';
+  import {
+    actionMeta,
+    formatTime,
+    statusForAction,
+    statusMeta,
+    type ActionType,
+  } from '$lib/data/reception';
   import {
     Alert02Icon,
     BanIcon,
@@ -12,14 +21,33 @@
     Flag01Icon,
     UserCheck01Icon,
   } from '$lib/icons';
+  import { is2024 } from '$lib/models/registration';
+  import { arrivedAtFor, nricFor, visitingTeachersFor } from '$lib/util/registration';
+  import { cn } from '$lib/utils';
 
-  /**
-   * Tracks which fields the operator has flagged as "at fault".
-   * Clicking (or Enter/Space on) a card toggles its flag; the upcoming
-   * "Send to conflict resolution" action reads this map to know what to flag.
-   */
+  let {
+    registration,
+    disabled = false,
+    onAction,
+  }: {
+    registration: Registration;
+    disabled?: boolean;
+    onAction: (action: ActionType, reason?: string) => Promise<void>;
+  } = $props();
+
+  const selected = $derived(registration);
+  const hasSelection = $derived(selected !== null);
+  const statusBadge = $derived(statusMeta[selected.status]);
+
+  // Fields the operator has flagged as "at fault"; the Conflict action
+  // builds its reason from the flagged set.
   type FieldKey = 'fullName' | 'contactNumber' | 'graduatingYear' | 'teachersVisiting';
-
+  const fieldLabels: Record<FieldKey, string> = {
+    fullName: 'Full name',
+    contactNumber: 'Contact number',
+    graduatingYear: 'Graduating year',
+    teachersVisiting: 'Visiting teachers',
+  };
   const selectedFields = $state<Record<FieldKey, boolean>>({
     fullName: false,
     contactNumber: false,
@@ -37,6 +65,67 @@
       toggleField(field);
     }
   }
+
+  // Reset flags whenever the focused visitor changes.
+  $effect(() => {
+    // touch the id so the effect re-runs on selection change
+    void selected?.registration_id;
+    selectedFields.fullName = false;
+    selectedFields.contactNumber = false;
+    selectedFields.graduatingYear = false;
+    selectedFields.teachersVisiting = false;
+    pending = null;
+    alreadyCheckedInOpen = false;
+    rejectDialogOpen = false;
+  });
+
+  let pending = $state<ActionType | null>(null);
+  let alreadyCheckedInOpen = $state(false);
+  let rejectDialogOpen = $state(false);
+  let checkedInAt = $state('-');
+
+  async function act(action: ActionType) {
+    const r = selected;
+    if (!r || pending || disabled) return;
+    if (action === 'CHECKED_IN' && r.status === 'CHECKED_IN') {
+      checkedInAt = formatTime(arrivedAtFor(r));
+      alreadyCheckedInOpen = true;
+      return;
+    }
+    // Conflict requires at least one flagged field; the reason carries them.
+    const flagged = (Object.keys(selectedFields) as FieldKey[]).filter((k) => selectedFields[k]);
+    if (action === 'CHECKED_IN' && flagged.length > 0) {
+      toast.error('Unable to check-in registrant', {
+        description: 'You selected one or more fields as conflict. Deselect them to check-in.',
+      });
+      return;
+    }
+    if (action === 'CONFLICT' && flagged.length === 0) {
+      toast.error('Unable to flag as conflict', {
+        description: 'Please select the field(s) that are problematic.',
+      });
+      return;
+    }
+    const reason =
+      action === 'CONFLICT'
+        ? `Flagged field(s): ${flagged.map((f) => fieldLabels[f]).join(', ')}`
+        : undefined;
+
+    pending = action;
+    try {
+      await onAction(action, reason);
+      if (action === 'CHECKED_IN') toast.success(actionMeta[action].toastTitle);
+      else toast.error(actionMeta[action].toastTitle);
+      selectedFields.fullName = false;
+      selectedFields.contactNumber = false;
+      selectedFields.graduatingYear = false;
+      selectedFields.teachersVisiting = false;
+    } catch (err) {
+      toast.error('Action failed', { description: (err as Error).message });
+    } finally {
+      pending = null;
+    }
+  }
 </script>
 
 <div class="flex flex-col gap-4 py-4 pb-24 md:gap-6 md:py-6 md:pb-24">
@@ -51,22 +140,23 @@
 
   <div class="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-3 @4xl/main:grid-cols-6">
     <Card.Root
-      role="button"
-      tabindex={0}
-      aria-pressed={selectedFields.fullName}
-      onclick={() => toggleField('fullName')}
-      onkeydown={(event) => handleFieldKeydown(event, 'fullName')}
+      role={hasSelection ? 'button' : undefined}
+      tabindex={hasSelection ? 0 : undefined}
+      aria-pressed={hasSelection ? selectedFields.fullName : undefined}
+      onclick={hasSelection ? () => toggleField('fullName') : undefined}
+      onkeydown={hasSelection ? (event) => handleFieldKeydown(event, 'fullName') : undefined}
       class={cn(
-        '@container/card relative cursor-pointer select-none transition-shadow @xl/main:col-span-3 @4xl/main:col-span-6',
+        '@container/card relative select-none transition-shadow @xl/main:col-span-3 @4xl/main:col-span-6',
+        hasSelection && 'cursor-pointer',
         selectedFields.fullName && 'ring-2 ring-destructive dark:ring-destructive',
       )}>
       <Card.Header>
         <Card.Description>Full Name</Card.Description>
-        <Card.Title class="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-          TEH LING YI ANGEL
+        <Card.Title class={cn('text-2xl font-semibold tabular-nums @[250px]/card:text-3xl')}>
+          {selected ? selected.full_name : 'No visitor record'}
         </Card.Title>
       </Card.Header>
-      {#if selectedFields.fullName}
+      {#if hasSelection && selectedFields.fullName}
         {@render selectedBadge()}
       {/if}
       <Card.Footer class="flex-col items-start gap-1.5 text-sm">
@@ -79,83 +169,110 @@
       </Card.Footer>
     </Card.Root>
 
+    <!-- Contact Number -->
     <Card.Root
-      role="button"
-      tabindex={0}
-      aria-pressed={selectedFields.contactNumber}
-      onclick={() => toggleField('contactNumber')}
-      onkeydown={(event) => handleFieldKeydown(event, 'contactNumber')}
+      role={hasSelection ? 'button' : undefined}
+      tabindex={hasSelection ? 0 : undefined}
+      aria-pressed={hasSelection ? selectedFields.contactNumber : undefined}
+      onclick={hasSelection ? () => toggleField('contactNumber') : undefined}
+      onkeydown={hasSelection ? (event) => handleFieldKeydown(event, 'contactNumber') : undefined}
       class={cn(
-        '@container/card relative cursor-pointer select-none transition-shadow @xl/main:col-span-3 @4xl/main:col-span-3',
+        '@container/card relative select-none transition-shadow @xl/main:col-span-3 @4xl/main:col-span-3',
+        hasSelection && 'cursor-pointer',
         selectedFields.contactNumber && 'ring-2 ring-destructive dark:ring-destructive',
       )}>
       <Card.Header>
         <Card.Description>Contact Number</Card.Description>
-        <Card.Title class="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-          12345678
+        <Card.Title
+          class={cn(
+            'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+            !hasSelection && 'text-muted-foreground',
+          )}>
+          {selected ? String(selected.contact_number) : '-'}
         </Card.Title>
       </Card.Header>
-      {#if selectedFields.contactNumber}
+      {#if hasSelection && selectedFields.contactNumber}
         {@render selectedBadge()}
       {/if}
     </Card.Root>
 
+    <!-- Graduating Year -->
     <Card.Root
-      role="button"
-      tabindex={0}
-      aria-pressed={selectedFields.graduatingYear}
-      onclick={() => toggleField('graduatingYear')}
-      onkeydown={(event) => handleFieldKeydown(event, 'graduatingYear')}
+      role={hasSelection ? 'button' : undefined}
+      tabindex={hasSelection ? 0 : undefined}
+      aria-pressed={hasSelection ? selectedFields.graduatingYear : undefined}
+      onclick={hasSelection ? () => toggleField('graduatingYear') : undefined}
+      onkeydown={hasSelection ? (event) => handleFieldKeydown(event, 'graduatingYear') : undefined}
       class={cn(
-        '@container/card relative cursor-pointer select-none transition-shadow @xl/main:col-span-3 @4xl/main:col-span-3',
+        '@container/card relative select-none transition-shadow @xl/main:col-span-3 @4xl/main:col-span-3',
+        hasSelection && 'cursor-pointer',
         selectedFields.graduatingYear && 'ring-2 ring-destructive dark:ring-destructive',
       )}>
       <Card.Header>
         <Card.Description>Graduating Year</Card.Description>
-        <Card.Title class="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-          2024
+        <Card.Title
+          class={cn(
+            'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+            !hasSelection && 'text-muted-foreground',
+          )}>
+          {selected ? String(selected.graduating_year) : '-'}
         </Card.Title>
       </Card.Header>
-      {#if selectedFields.graduatingYear}
+      {#if hasSelection && selectedFields.graduatingYear}
         {@render selectedBadge()}
       {/if}
     </Card.Root>
 
+    <!-- Visiting Teachers -->
     <Card.Root
-      role="button"
-      tabindex={0}
-      aria-pressed={selectedFields.teachersVisiting}
-      onclick={() => toggleField('teachersVisiting')}
-      onkeydown={(event) => handleFieldKeydown(event, 'teachersVisiting')}
+      role={hasSelection ? 'button' : undefined}
+      tabindex={hasSelection ? 0 : undefined}
+      aria-pressed={hasSelection ? selectedFields.teachersVisiting : undefined}
+      onclick={hasSelection ? () => toggleField('teachersVisiting') : undefined}
+      onkeydown={hasSelection
+        ? (event) => handleFieldKeydown(event, 'teachersVisiting')
+        : undefined}
       class={cn(
-        '@container/card relative cursor-pointer select-none transition-shadow @xl/main:col-span-3 @4xl/main:col-span-6',
+        '@container/card relative select-none transition-shadow @xl/main:col-span-3 @4xl/main:col-span-6',
+        hasSelection && 'cursor-pointer',
         selectedFields.teachersVisiting && 'ring-2 ring-destructive dark:ring-destructive',
       )}>
       <Card.Header>
         <Card.Description>Which Teacher(s) Are They Visiting</Card.Description>
-        <Card.Title class="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-          Mr Zakir, Ms Radha, Ms Tan, Mr Greogry, Mr Lim
+        <Card.Title
+          class={cn(
+            'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+            !hasSelection && 'text-muted-foreground',
+          )}>
+          {selected ? visitingTeachersFor(selected) || '-' : '-'}
         </Card.Title>
       </Card.Header>
-      {#if selectedFields.teachersVisiting}
+      {#if hasSelection && selectedFields.teachersVisiting}
         {@render selectedBadge()}
       {/if}
     </Card.Root>
 
+    {#if selected && is2024(selected)}
+      <Card.Root class="@container/card @xl/main:col-span-3 @4xl/main:col-span-3">
+        <Card.Header>
+          <Card.Description>NRIC</Card.Description>
+          <Card.Title class="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+            {nricFor(selected)}
+          </Card.Title>
+        </Card.Header>
+      </Card.Root>
+    {/if}
+
+    <!-- Status -->
     <Card.Root class="@container/card @xl/main:col-span-3 @4xl/main:col-span-3">
       <Card.Header>
         <Card.Description>Status</Card.Description>
-        <Card.Title class="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-          REJECTED
-        </Card.Title>
-      </Card.Header>
-    </Card.Root>
-
-    <Card.Root class="@container/card @xl/main:col-span-3 @4xl/main:col-span-3">
-      <Card.Header>
-        <Card.Description>Previous Registration Record(s)</Card.Description>
-        <Card.Title class="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-          abc
+        <Card.Title
+          class={cn(
+            'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+            !hasSelection && 'text-muted-foreground',
+          )}>
+          {statusBadge?.label ?? '-'}
         </Card.Title>
       </Card.Header>
     </Card.Root>
@@ -164,12 +281,22 @@
       <Button
         variant="destructive"
         size="lg"
+        disabled={disabled ||
+          pending !== null ||
+          !hasSelection ||
+          selected?.status === statusForAction('REFUSED')}
+        onclick={() => (rejectDialogOpen = true)}
         class="min-h-20 min-w-0 flex-1 flex-col gap-1 whitespace-normal">
         <BanIcon class="size-5" />
-        Refuse Entry
+        Reject
       </Button>
       <Button
         size="lg"
+        disabled={disabled ||
+          pending !== null ||
+          !hasSelection ||
+          selected?.status === statusForAction('CONFLICT')}
+        onclick={() => act('CONFLICT')}
         class={cn(
           'min-h-20 min-w-0 flex-1 flex-col gap-1 whitespace-normal',
           'text-warning bg-warning/10',
@@ -181,6 +308,8 @@
       </Button>
       <Button
         size="lg"
+        disabled={disabled || pending !== null || !hasSelection}
+        onclick={() => act('CHECKED_IN')}
         class={cn(
           'min-h-20 min-w-0 flex-1 flex-col gap-1 whitespace-normal',
           'text-emerald-500 bg-emerald-500/10',
@@ -193,3 +322,38 @@
     </div>
   </div>
 </div>
+
+<AlertDialog.Root bind:open={alreadyCheckedInOpen}>
+  <AlertDialog.Content>
+    <AlertDialog.Header>
+      <AlertDialog.Title>STOP. DO NOT PROCEED.</AlertDialog.Title>
+      <AlertDialog.Description>
+        {`This registrant has already checked in at ${checkedInAt}. Hand their identification card over to the Conflict Resolution team to investigate.`}
+      </AlertDialog.Description>
+    </AlertDialog.Header>
+    <AlertDialog.Footer>
+      <AlertDialog.Action onclick={() => (alreadyCheckedInOpen = false)}
+        >I understand</AlertDialog.Action>
+    </AlertDialog.Footer>
+  </AlertDialog.Content>
+</AlertDialog.Root>
+
+<AlertDialog.Root bind:open={rejectDialogOpen}>
+  <AlertDialog.Content>
+    <AlertDialog.Header>
+      <AlertDialog.Title>Are you sure?</AlertDialog.Title>
+      <AlertDialog.Description>
+        You are about to reject the registrant. This cannot be undone.
+      </AlertDialog.Description>
+    </AlertDialog.Header>
+    <AlertDialog.Footer>
+      <AlertDialog.Cancel onclick={() => (rejectDialogOpen = false)}>Cancel</AlertDialog.Cancel>
+      <AlertDialog.Action
+        variant="destructive"
+        onclick={() => {
+          rejectDialogOpen = false;
+          void act('REFUSED');
+        }}>Reject</AlertDialog.Action>
+    </AlertDialog.Footer>
+  </AlertDialog.Content>
+</AlertDialog.Root>

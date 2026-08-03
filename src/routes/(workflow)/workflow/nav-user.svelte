@@ -10,17 +10,16 @@
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
   import * as Sidebar from '$lib/components/ui/sidebar/index.js';
   import { goto } from '$app/navigation';
-  import { internalAuth } from '$lib/firebase/auth.svelte';
+  import { userStore } from '$lib/stores/user.svelte';
 
-  // Read user data from the internal auth store with fallbacks for SSR / loading
-  const displayName = $derived(internalAuth.user?.displayName ?? 'RIVAlumni Operator');
-  const email = $derived(internalAuth.user?.email ?? 'operator@riv-alumni.com');
-  const photo = $derived(internalAuth.user?.photoURL ?? '/avatars/shadcn.jpg');
+  const displayName = $derived(userStore.state?.display_name ?? 'RIVAlumni Operator');
+  const email = $derived(userStore.state?.email ?? 'operator@riv-alumni.com');
+  const photo = '/avatars/shadcn.jpg';
 
   const sidebar = Sidebar.useSidebar();
 
   async function handleSignOut() {
-    await internalAuth.signOut();
+    await userStore.signOut();
     goto('/auth/login');
   }
 </script>

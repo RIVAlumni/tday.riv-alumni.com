@@ -8,8 +8,32 @@
   import NavUser from './nav-user.svelte';
   import * as Sidebar from '$lib/components/ui/sidebar';
   import { records, navMain, navSecondary } from '$lib/data/nav';
+  import { AccessLevel } from '$lib/models/user';
+  import { userStore } from '$lib/stores/user.svelte';
+  import { isAuthorized } from '$lib/util/user';
 
   let { ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
+
+  const homeHref = $derived(
+    userStore.state && isAuthorized(userStore.state, AccessLevel.Mediator)
+      ? '/workflow/home'
+      : '/workflow/reception',
+  );
+  const visibleMain = $derived(
+    navMain.filter(
+      (item) => userStore.state && isAuthorized(userStore.state, item.minimumAccessLevel),
+    ),
+  );
+  const visibleRecords = $derived(
+    records.filter(
+      (item) => userStore.state && isAuthorized(userStore.state, item.minimumAccessLevel),
+    ),
+  );
+  const visibleSecondary = $derived(
+    navSecondary.filter(
+      (item) => userStore.state && isAuthorized(userStore.state, item.minimumAccessLevel),
+    ),
+  );
 </script>
 
 <Sidebar.Root
@@ -21,7 +45,7 @@
         <Sidebar.MenuButton class="data-[slot=sidebar-menu-button]:p-1.5!">
           {#snippet child({ props })}
             <a
-              href="/workflow/home"
+              href={homeHref}
               {...props}>
               <img
                 src={RIVALogo}
@@ -35,10 +59,12 @@
     </Sidebar.Menu>
   </Sidebar.Header>
   <Sidebar.Content>
-    <NavMain items={navMain} />
-    <NavDocuments items={records} />
+    <NavMain items={visibleMain} />
+    {#if visibleRecords.length > 0}
+      <NavDocuments items={visibleRecords} />
+    {/if}
     <NavSecondary
-      items={navSecondary}
+      items={visibleSecondary}
       class="mt-auto" />
   </Sidebar.Content>
   <Sidebar.Footer>
