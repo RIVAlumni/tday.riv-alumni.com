@@ -42,12 +42,11 @@ function registrationRef(eventId: string, registrationId: string) {
 
 type DocLike = { data(): unknown };
 
-function docToRegistration(snapshot: DocLike): Registration | null {
+function docToRegistration(snapshot: DocLike, eventId: string): Registration | null {
   const data = snapshot.data();
   if (!data || typeof data !== 'object') return null;
 
   const registration: Record<string, unknown> = { ...data };
-  const eventId = registration.event_id as string;
 
   if (eventId === '2026') {
     registration.visiting_teachers = Array.isArray(registration.visiting_teachers)
@@ -75,9 +74,12 @@ function docToRegistration(snapshot: DocLike): Registration | null {
   return registration as unknown as Registration;
 }
 
-function registrationsFromSnapshot(snapshot: Awaited<ReturnType<typeof getDocs>>): Registration[] {
+function registrationsFromSnapshot(
+  snapshot: Awaited<ReturnType<typeof getDocs>>,
+  eventId: string,
+): Registration[] {
   return snapshot.docs
-    .map((document) => docToRegistration(document))
+    .map((document) => docToRegistration(document, eventId))
     .filter((registration): registration is Registration => registration !== null);
 }
 
@@ -85,7 +87,7 @@ export async function fetchRegistrationPage(eventId: string): Promise<Registrati
   const snapshot = await getDocs(
     query(registrationsCollection(eventId), orderBy(documentId()), limit(REGISTRATION_PAGE_SIZE)),
   );
-  return registrationsFromSnapshot(snapshot);
+  return registrationsFromSnapshot(snapshot, eventId);
 }
 
 export async function searchRegistrationsById(
@@ -95,7 +97,7 @@ export async function searchRegistrationsById(
   const snapshot = await getDocs(
     query(registrationsCollection(eventId), where(documentId(), '==', registrationId), limit(1)),
   );
-  return registrationsFromSnapshot(snapshot);
+  return registrationsFromSnapshot(snapshot, eventId);
 }
 
 export async function fetchConflictRegistrations(eventId: string): Promise<Registration[]> {
@@ -107,7 +109,7 @@ export async function fetchConflictRegistrations(eventId: string): Promise<Regis
       limit(REGISTRATION_PAGE_SIZE),
     ),
   );
-  return registrationsFromSnapshot(snapshot);
+  return registrationsFromSnapshot(snapshot, eventId);
 }
 
 export async function fetchRegistration(
@@ -115,7 +117,7 @@ export async function fetchRegistration(
   registrationId: string,
 ): Promise<Registration | null> {
   const snapshot = await getDoc(registrationRef(eventId, registrationId));
-  return docToRegistration(snapshot);
+  return docToRegistration(snapshot, eventId);
 }
 
 export async function fetchEventStats(eventId: string): Promise<EventStats> {
