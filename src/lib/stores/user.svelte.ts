@@ -10,7 +10,7 @@ import {
 } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 
-import { getInternalApp } from '$lib/firebase/app';
+import { getFirebaseApp } from '$lib/firebase/app';
 import { getInternalFirestore } from '$lib/firebase/firestore';
 
 class UserStore {
@@ -25,7 +25,7 @@ class UserStore {
     if (this.authUnsubscribe) return;
 
     this.state = undefined;
-    const auth = getAuth(getInternalApp());
+    const auth = getAuth(getFirebaseApp());
     this.authUnsubscribe = onAuthStateChanged(
       auth,
       (authUser) => this.handleAuthChange(authUser),
@@ -42,7 +42,7 @@ class UserStore {
 
   async signInWithGoogle(): Promise<FirebaseUser> {
     this.init();
-    const auth = getAuth(getInternalApp());
+    const auth = getAuth(getFirebaseApp());
     const result = await signInWithPopup(auth, new GoogleAuthProvider());
     return result.user;
   }
@@ -50,7 +50,7 @@ class UserStore {
   async signOut(): Promise<void> {
     this.unsubscribe();
     try {
-      await firebaseSignOut(getAuth(getInternalApp()));
+      await firebaseSignOut(getAuth(getFirebaseApp()));
     } catch (error) {
       this.init();
       throw error;

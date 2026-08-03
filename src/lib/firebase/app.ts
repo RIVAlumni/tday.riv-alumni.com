@@ -1,11 +1,14 @@
+import type { FirebaseApp } from 'firebase/app';
+
 import { browser } from '$app/env';
-import { initializeApp, getApps, type FirebaseApp, type FirebaseOptions } from 'firebase/app';
+import { getApps, initializeApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
-import { VISITOR_CONFIG, INTERNAL_CONFIG, USE_EMULATORS } from './config';
-import type { FirebaseAppName } from './types';
 
-let _emulatorsConnected = false;
+import { FIREBASE_CONFIG, USE_EMULATORS } from './config';
+
+const APP_NAME = 'tday';
+let emulatorsConnected = false;
 
 function ensureBrowser(): void {
   if (!browser) {
@@ -16,37 +19,19 @@ function ensureBrowser(): void {
   }
 }
 
-function getOrInitApp(config: FirebaseOptions, name: FirebaseAppName): FirebaseApp {
+function connectEmulators(app: FirebaseApp): void {
+  if (emulatorsConnected || !USE_EMULATORS) return;
+
+  connectAuthEmulator(getAuth(app), 'http://localhost:9099', { disableWarnings: true });
+  connectFirestoreEmulator(getFirestore(app), 'localhost', 8080);
+  emulatorsConnected = true;
+}
+
+export function getFirebaseApp(): FirebaseApp {
   ensureBrowser();
-  const existing = getApps().find((a) => a.name === name);
-  if (existing) return existing;
-  return initializeApp(config, name);
-}
-
-function connectEmulators(): void {
-  if (_emulatorsConnected || !USE_EMULATORS) return;
-
-  for (const appName of ['visitor', 'internal'] as const) {
-    const app = getOrInitApp(appName === 'visitor' ? VISITOR_CONFIG : INTERNAL_CONFIG, appName);
-    connectAuthEmulator(getAuth(app), 'http://localhost:9099', { disableWarnings: true });
-    connectFirestoreEmulator(getFirestore(app), 'localhost', 8080);
-  }
-
-  _emulatorsConnected = true;
-}
-
-export function getVisitorApp(): FirebaseApp {
-  const app = getOrInitApp(VISITOR_CONFIG, 'visitor');
-  connectEmulators();
+  const app =
+    getApps().find((candidate) => candidate.name === APP_NAME) ??
+    initializeApp(FIREBASE_CONFIG, APP_NAME);
+  connectEmulators(app);
   return app;
-}
-
-export function getInternalApp(): FirebaseApp {
-  const app = getOrInitApp(INTERNAL_CONFIG, 'internal');
-  connectEmulators();
-  return app;
-}
-
-export function getApp(name: FirebaseAppName): FirebaseApp {
-  return name === 'visitor' ? getVisitorApp() : getInternalApp();
 }

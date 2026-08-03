@@ -1,8 +1,9 @@
-export { VISITOR_CONFIG, INTERNAL_CONFIG, USE_EMULATORS } from './config';
+export { FIREBASE_CONFIG, USE_EMULATORS } from './config';
 export type { FirebaseProjectConfig } from './config';
-export { getVisitorApp, getInternalApp, getApp } from './app';
+export { getFirebaseApp } from './app';
 export { visitorAuth } from './auth.svelte';
-export { getFirestoreForApp, getVisitorFirestore, getInternalFirestore } from './firestore';
+export { getInternalFirestore } from './firestore';
+export { getCallableFunctions } from './functions';
 export {
   createRegistrationRecord,
   RegistrationWriteError,
@@ -16,4 +17,4 @@ export {
   flagConflict,
   updateRegistrationFields,
 } from './registrations';
-export type { FirebaseAppName, AuthStore } from './types';
+export type { AuthStore } from './types';

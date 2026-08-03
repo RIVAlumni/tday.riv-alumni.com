@@ -9,8 +9,8 @@ import {
   signOut as firebaseSignOut,
 } from 'firebase/auth';
 
-import { getApp } from './app';
-import type { AuthStore, FirebaseAppName } from './types';
+import { getFirebaseApp } from './app';
+import type { AuthStore } from './types';
 
 /**
  * Svelte 5 rune-based auth store for a Firebase app.
@@ -25,18 +25,12 @@ class FirebaseAuthStore implements AuthStore {
   error = $state<Error | null>(null);
 
   private _unsubscribe: (() => void) | null = null;
-  private _appName: FirebaseAppName;
-
-  constructor(appName: FirebaseAppName) {
-    this._appName = appName;
-  }
 
   /** Start the auth state observer. Idempotent - safe to call multiple times. */
   init(): void {
     if (this._unsubscribe) return;
 
-    const app = getApp(this._appName);
-    const auth = getAuth(app);
+    const auth = getAuth(getFirebaseApp());
 
     this._unsubscribe = onAuthStateChanged(
       auth,
@@ -59,8 +53,7 @@ class FirebaseAuthStore implements AuthStore {
 
   /** Trigger Google Sign-In popup. */
   async signInWithGoogle(): Promise<User> {
-    const app = getApp(this._appName);
-    const auth = getAuth(app);
+    const auth = getAuth(getFirebaseApp());
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
     return result.user;
@@ -68,11 +61,10 @@ class FirebaseAuthStore implements AuthStore {
 
   /** Sign out the current user. */
   async signOut(): Promise<void> {
-    const app = getApp(this._appName);
-    const auth = getAuth(app);
+    const auth = getAuth(getFirebaseApp());
     await firebaseSignOut(auth);
   }
 }
 
 // Call `init()` from onMount() before this is usable.
-export const visitorAuth = new FirebaseAuthStore('visitor');
+export const visitorAuth = new FirebaseAuthStore();

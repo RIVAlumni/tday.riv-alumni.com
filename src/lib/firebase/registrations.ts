@@ -1,6 +1,5 @@
-import type { Registration } from '$lib/models/registration';
+import type { Registration, Registration2026Submission } from '$lib/models/registration';
 import type { EventStats } from '$lib/util/registration';
-import type { RegistrationFormInput } from '$lib/util/registration.schema';
 
 import {
   collection,
@@ -14,16 +13,13 @@ import {
   query,
   runTransaction,
   serverTimestamp,
-  setDoc,
   updateDoc,
   where,
 } from 'firebase/firestore';
-
-import { createRegistration } from '$lib/util/registration';
+import { httpsCallable } from 'firebase/functions';
 
 import { getInternalFirestore } from './firestore';
-
-const MAX_COLLISION_RETRIES = 3;
+import { getCallableFunctions } from './functions';
 const REGISTRATION_PAGE_SIZE = 20;
 
 export class RegistrationWriteError extends Error {
@@ -198,49 +194,28 @@ export async function updateRegistrationFields(
   });
 }
 
+interface CreateRegistrationResponse {
+  registrationId: string;
+}
+
 export async function createRegistrationRecord(
-  eventId: string,
-  input: RegistrationFormInput,
+  registration: Registration2026Submission,
 ): Promise<string> {
-  const firestore = getInternalFirestore();
-
-  for (let attempt = 0; attempt < MAX_COLLISION_RETRIES; attempt++) {
-    const registration = createRegistration(input, eventId);
-    const reference = doc(
-      firestore,
-      'events',
-      eventId,
-      'registrations',
-      String(registration.registration_id),
-    );
-
-    try {
-      const fields = { ...registration } as unknown as Record<string, unknown>;
-      delete fields.created_at;
-      delete fields.updated_at;
-      await setDoc(reference, {
-        ...fields,
-        created_at: serverTimestamp(),
-        updated_at: serverTimestamp(),
-      });
-      return String(registration.registration_id);
-    } catch (error: unknown) {
-      const firebaseError = error as { code?: string; message?: string };
-      const code = firebaseError.code ?? 'unknown';
-
-      if (code === 'unavailable' || code === 'deadline-exceeded') continue;
-
-      throw new RegistrationWriteError(
-        code === 'permission-denied'
-          ? `This registration could not be accepted. The data may not meet the requirements, or a registration for this event already exists.\n\nDetails: ${firebaseError.message ?? code}`
-          : ((error as Error).message ?? 'Unexpected Firestore error'),
-        code,
-      );
-    }
-  }
-
-  throw new RegistrationWriteError(
-    'Registration failed after multiple network attempts.',
-    'network-exhausted',
+  const createRegistration = httpsCallable<Registration2026Submission, CreateRegistrationResponse>(
+    getCallableFunctions(),
+    'createRegistration2026',
   );
+
+  try {
+    const result = await createRegistration(registration);
+    return result.data.registrationId;
+  } catch (error: unknown) {
+    const firebaseError = error as { code?: string; message?: string };
+    const code = firebaseError.code ?? 'functions/unknown';
+
+    throw new RegistrationWriteError(
+      firebaseError.message ?? 'This registration could not be accepted. Please try again.',
+      code,
+    );
+  }
 }

@@ -90,7 +90,7 @@
     console.debug('[register] zod output', JSON.parse(JSON.stringify(result.data)));
 
     try {
-      const id = await createRegistrationRecord('2026', result.data);
+      const id = await createRegistrationRecord(result.data);
       submittedId = id;
     } catch (err) {
       if (err instanceof RegistrationWriteError) {

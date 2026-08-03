@@ -80,6 +80,28 @@ function authenticatedFirestore(uid: string) {
     .firestore();
 }
 
+function publicRegistration(
+  registrationId = 'BCDEFG',
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return {
+    event_id: '2026',
+    registration_id: registrationId,
+    email: 'new@example.com',
+    full_name: 'NEW VISITOR',
+    status: 'REGISTERED',
+    comments: '',
+    created_at: serverTimestamp(),
+    updated_at: serverTimestamp(),
+    contact_number: '92345678',
+    graduating_year: '2021',
+    visiting_teachers: ['Mr Lim'],
+    written_messages: [],
+    arrived_at: null,
+    ...overrides,
+  };
+}
+
 describe.skipIf(!RUN_RULES_TESTS)('Firestore registration rules', () => {
   beforeAll(async () => {
     const rules = await readFile(new URL('../../../firestore.rules', import.meta.url), 'utf8');
@@ -164,27 +186,26 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore registration rules', () => {
     expect(true).toBe(true);
   });
 
-  it('accepts a bounded public 2026 registration', async () => {
-    const firestore = testEnvironment.unauthenticatedContext().firestore();
-    const reference = doc(firestore, 'events', '2026', 'registrations', 'BCDEFG');
-
-    await assertSucceeds(
-      setDoc(reference, {
-        event_id: '2026',
-        registration_id: 'BCDEFG',
-        email: 'new@example.com',
-        full_name: 'NEW VISITOR',
-        status: 'REGISTERED',
-        contact_number: '92345678',
-        graduating_year: '2021',
-        visiting_teachers: ['Mr Lim'],
-        written_messages: [],
-        comments: '',
-        arrived_at: null,
-        created_at: serverTimestamp(),
-        updated_at: serverTimestamp(),
-      }),
+  it('denies direct registration creates', async () => {
+    const unauthenticatedFirestore = testEnvironment.unauthenticatedContext().firestore();
+    const authenticatedRegistrationFirestore = authenticatedFirestore('visitor');
+    const unauthenticatedReference = doc(
+      unauthenticatedFirestore,
+      'events',
+      '2026',
+      'registrations',
+      'BCDEFG',
     );
+    const authenticatedReference = doc(
+      authenticatedRegistrationFirestore,
+      'events',
+      '2026',
+      'registrations',
+      'CDEFGH',
+    );
+
+    await assertFails(setDoc(unauthenticatedReference, publicRegistration('BCDEFG')));
+    await assertFails(setDoc(authenticatedReference, publicRegistration('CDEFGH')));
 
     expect(true).toBe(true);
   });

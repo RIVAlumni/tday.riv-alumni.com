@@ -57,6 +57,11 @@ export interface Registration2026 extends BaseRegistration {
   arrived_at: Timestamp | null;
 }
 
+export type Registration2026Submission = Pick<
+  Registration2026,
+  'full_name' | 'contact_number' | 'graduating_year' | 'visiting_teachers' | 'written_messages'
+>;
+
 export type Registration = Registration2024 | Registration2025 | Registration2026;
 
 export function is2024(r: Registration): r is Registration2024 {

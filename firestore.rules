@@ -14,7 +14,7 @@ service cloud.firestore {
       allow get: if isAuthorised(1);
 
       match /registrations/{registrationId} {
-        allow create: if isValidPublicRegistrationCreate(eventId, registrationId);
+        allow create: if false;
         allow get: if isAuthorised(1);
         allow list: if isAuthorised(2);
         allow update: if isMediatorUpdate(eventId) || isOperatorReceptionUpdate(eventId);
@@ -36,59 +36,6 @@ service cloud.firestore {
         && get(userPath()).data.access_expires is timestamp
         && get(userPath()).data.access_level >= minimumAccessLevel
         && get(userPath()).data.access_expires >= request.time;
-    }
-
-    function isValidPublicRegistrationCreate(eventId, registrationId) {
-      let data = request.resource.data;
-      return request.auth == null
-        && eventId == '2026'
-        && data.keys().hasOnly([
-          'event_id',
-          'registration_id',
-          'email',
-          'full_name',
-          'status',
-          'contact_number',
-          'graduating_year',
-          'visiting_teachers',
-          'written_messages',
-          'comments',
-          'arrived_at',
-          'created_at',
-          'updated_at'
-        ])
-        && data.keys().hasAll([
-          'event_id',
-          'registration_id',
-          'email',
-          'full_name',
-          'status',
-          'contact_number',
-          'graduating_year',
-          'visiting_teachers',
-          'written_messages',
-          'comments',
-          'arrived_at',
-          'created_at',
-          'updated_at'
-        ])
-        && data.event_id == eventId
-        && data.registration_id == registrationId
-        && data.registration_id is string
-        && data.registration_id.matches('^[A-HJ-NP-Z]{6}$')
-        && isValidEmail(data.email)
-        && isValidName(data.full_name)
-        && data.status == 'REGISTERED'
-        && data.contact_number is string
-        && data.contact_number.matches('^[89][0-9]{7}$')
-        && data.graduating_year is string
-        && data.graduating_year.matches('^[0-9]{4}$')
-        && isValidTeacherList(data.visiting_teachers)
-        && isValidWrittenMessages(data.written_messages)
-        && data.comments == ''
-        && data.arrived_at == null
-        && data.created_at == request.time
-        && data.updated_at == request.time;
     }
 
     function isMediatorUpdate(eventId) {
@@ -152,13 +99,6 @@ service cloud.firestore {
         && isValidComments(request.resource.data.comments);
     }
 
-    function isValidEmail(value) {
-      return value is string
-        && value.size() > 3
-        && value.size() <= 254
-        && value.matches('^[^@]+@[^@]+[.][^@]+$');
-    }
-
     function isValidName(value) {
       return value is string && value.size() > 0 && value.size() <= 120;
     }
@@ -191,53 +131,64 @@ service cloud.firestore {
     }
 
     function isValidTeacherList(value) {
-      return value is list
-        && value.size() > 0
-        && value.size() <= 20
-        && isValidTeacherAt(value, 0)
-        && isValidTeacherAt(value, 1)
-        && isValidTeacherAt(value, 2)
-        && isValidTeacherAt(value, 3)
-        && isValidTeacherAt(value, 4)
-        && isValidTeacherAt(value, 5)
-        && isValidTeacherAt(value, 6)
-        && isValidTeacherAt(value, 7)
-        && isValidTeacherAt(value, 8)
-        && isValidTeacherAt(value, 9)
-        && isValidTeacherAt(value, 10)
-        && isValidTeacherAt(value, 11)
-        && isValidTeacherAt(value, 12)
-        && isValidTeacherAt(value, 13)
-        && isValidTeacherAt(value, 14)
-        && isValidTeacherAt(value, 15)
-        && isValidTeacherAt(value, 16)
-        && isValidTeacherAt(value, 17)
-        && isValidTeacherAt(value, 18)
-        && isValidTeacherAt(value, 19);
+      let listTypeOk = value is list;
+      let listMinSizeOk = value.size() > 0;
+      let listMaxSizeOk = value.size() <= 20;
+      let listUniqueOk = value.toSet().size() == value.size();
+      let firstRangeOk = areValidTeachers0To9(value);
+      let secondRangeOk = areValidTeachers10To19(value);
+      return listTypeOk
+        && listMinSizeOk
+        && listMaxSizeOk
+        && listUniqueOk
+        && firstRangeOk
+        && secondRangeOk;
     }
 
-    function isValidTeacherAt(value, index) {
-      return value.size() <= index
-        || (value[index] is string && value[index].size() > 0 && value[index].size() <= 120);
+    function areValidTeachers0To9(value) {
+      let teacher0Ok = value.size() <= 0 || (value[0] is string && value[0].matches('^.{1,120}$'));
+      let teacher1Ok = value.size() <= 1 || (value[1] is string && value[1].matches('^.{1,120}$'));
+      let teacher2Ok = value.size() <= 2 || (value[2] is string && value[2].matches('^.{1,120}$'));
+      let teacher3Ok = value.size() <= 3 || (value[3] is string && value[3].matches('^.{1,120}$'));
+      let teacher4Ok = value.size() <= 4 || (value[4] is string && value[4].matches('^.{1,120}$'));
+      let teacher5Ok = value.size() <= 5 || (value[5] is string && value[5].matches('^.{1,120}$'));
+      let teacher6Ok = value.size() <= 6 || (value[6] is string && value[6].matches('^.{1,120}$'));
+      let teacher7Ok = value.size() <= 7 || (value[7] is string && value[7].matches('^.{1,120}$'));
+      let teacher8Ok = value.size() <= 8 || (value[8] is string && value[8].matches('^.{1,120}$'));
+      let teacher9Ok = value.size() <= 9 || (value[9] is string && value[9].matches('^.{1,120}$'));
+      return teacher0Ok
+        && teacher1Ok
+        && teacher2Ok
+        && teacher3Ok
+        && teacher4Ok
+        && teacher5Ok
+        && teacher6Ok
+        && teacher7Ok
+        && teacher8Ok
+        && teacher9Ok;
     }
 
-    function isValidWrittenMessages(value) {
-      return value is list
-        && value.size() <= 2
-        && (value.size() < 1 || isValidWrittenMessage(value[0]))
-        && (value.size() < 2 || isValidWrittenMessage(value[1]));
-    }
-
-    function isValidWrittenMessage(value) {
-      return value is map
-        && value.keys().hasOnly(['teacher_name', 'message'])
-        && value.keys().hasAll(['teacher_name', 'message'])
-        && value.teacher_name is string
-        && value.teacher_name.size() > 0
-        && value.teacher_name.size() <= 120
-        && value.message is string
-        && value.message.size() > 0
-        && value.message.size() <= 2000;
+    function areValidTeachers10To19(value) {
+      let teacher10Ok = value.size() <= 10 || (value[10] is string && value[10].matches('^.{1,120}$'));
+      let teacher11Ok = value.size() <= 11 || (value[11] is string && value[11].matches('^.{1,120}$'));
+      let teacher12Ok = value.size() <= 12 || (value[12] is string && value[12].matches('^.{1,120}$'));
+      let teacher13Ok = value.size() <= 13 || (value[13] is string && value[13].matches('^.{1,120}$'));
+      let teacher14Ok = value.size() <= 14 || (value[14] is string && value[14].matches('^.{1,120}$'));
+      let teacher15Ok = value.size() <= 15 || (value[15] is string && value[15].matches('^.{1,120}$'));
+      let teacher16Ok = value.size() <= 16 || (value[16] is string && value[16].matches('^.{1,120}$'));
+      let teacher17Ok = value.size() <= 17 || (value[17] is string && value[17].matches('^.{1,120}$'));
+      let teacher18Ok = value.size() <= 18 || (value[18] is string && value[18].matches('^.{1,120}$'));
+      let teacher19Ok = value.size() <= 19 || (value[19] is string && value[19].matches('^.{1,120}$'));
+      return teacher10Ok
+        && teacher11Ok
+        && teacher12Ok
+        && teacher13Ok
+        && teacher14Ok
+        && teacher15Ok
+        && teacher16Ok
+        && teacher17Ok
+        && teacher18Ok
+        && teacher19Ok;
     }
   }
 }
