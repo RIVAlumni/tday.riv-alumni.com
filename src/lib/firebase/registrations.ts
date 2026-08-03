@@ -62,6 +62,7 @@ function docToRegistration(snapshot: DocLike): Registration | null {
   } else if (eventId === '2024') {
     registration.arrived_at = registration.arrived_at ?? null;
   } else if (eventId === '2025') {
+    if (registration.status === '') registration.status = 'REGISTERED';
     registration.registration_id = Number(registration.registration_id);
     registration.contact_number = Number(registration.contact_number);
     registration.contact_number_short = Number(registration.contact_number_short);

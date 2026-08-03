@@ -327,6 +327,9 @@
     rel="canonical"
     href="https://tday.riv-alumni.com/register" />
   <meta
+    property="og:site_name"
+    content="RIVA" />
+  <meta
     property="og:title"
     content="Teachers' Day Alumni Visitations 2026 - RIVA x RIVPS" />
   <meta
