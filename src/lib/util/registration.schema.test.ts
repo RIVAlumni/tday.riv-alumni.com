@@ -13,8 +13,8 @@ const VALID_FORM = {
   full_name: ' Example Visitor ',
   contact_number: '91234567',
   graduating_year: '2021',
-  visiting_teachers: 'Mdm Chan, Mr Lim\nMrs Thomas',
-  teacher1_name: ' Mr Lim ',
+  visiting_teachers: ['MDM CHAN', 'MR LIM', 'MRS THOMAS'],
+  teacher1_name: ' MR LIM ',
   teacher1_message: ' Thank you! ',
   teacher2_name: '',
   teacher2_message: '',
@@ -47,8 +47,8 @@ describe('registrationFormSchema', () => {
       full_name: 'EXAMPLE VISITOR',
       contact_number: '91234567',
       graduating_year: '2021',
-      visiting_teachers: ['Mdm Chan', 'Mr Lim', 'Mrs Thomas'],
-      written_messages: [{ teacher_name: 'Mr Lim', message: 'Thank you!' }],
+      visiting_teachers: ['MDM CHAN', 'MR LIM', 'MRS THOMAS'],
+      written_messages: [{ teacher_name: 'MR LIM', message: 'Thank you!' }],
     });
     expect(registration2026SubmissionSchema.safeParse(result.data).success).toBe(true);
   });
@@ -87,7 +87,7 @@ describe('registrationFormSchema', () => {
     });
     const duplicateTeachers = registrationFormSchema.safeParse({
       ...VALID_FORM,
-      visiting_teachers: 'Mr Lim, Mr Lim',
+      visiting_teachers: ['MR LIM', 'MR LIM'],
     });
 
     expect(invalidContact.success).toBe(false);
@@ -108,7 +108,7 @@ describe('registrationFormSchema', () => {
       ...VALID_FORM,
       teacher1_name: '',
       teacher1_message: '',
-      teacher2_name: 'Mr Lim',
+      teacher2_name: 'MR LIM',
       teacher2_message: OVER_WORD_LIMIT_MESSAGE,
     });
 
@@ -127,17 +127,17 @@ describe('registrationFormSchema', () => {
     );
   });
 
-  it('maps an oversized visiting teacher entry to the textarea field', () => {
+  it('maps an oversized visiting teacher entry to the selector field', () => {
     const result = registrationFormSchema.safeParse({
       ...VALID_FORM,
       full_name: "') or ('1'='1--",
       contact_number: '80000000',
       graduating_year: '1999',
-      visiting_teachers: LONG_TEACHER_TEXT,
-      teacher1_name: 'mr mah',
+      visiting_teachers: ['MDM CHAN', 'MR LIM', 'MRS THOMAS', LONG_TEACHER_TEXT],
+      teacher1_name: 'MR LIM',
       teacher1_message: LONG_TEACHER_TEXT,
-      teacher2_name: "') or ('1'='1--",
-      teacher2_message: "') or ('1'='1--",
+      teacher2_name: '',
+      teacher2_message: '',
     });
 
     expect(result.success).toBe(false);
@@ -147,6 +147,29 @@ describe('registrationFormSchema', () => {
       expect.objectContaining({ path: ['visiting_teachers', 3] }),
     ]);
     expect(registrationFormFieldName(result.error.issues[0].path)).toBe('visiting_teachers');
+  });
+
+  it('rejects teachers that are not available in the selectors', () => {
+    const invalidVisitingTeacher = registrationFormSchema.safeParse({
+      ...VALID_FORM,
+      visiting_teachers: ['MR LIM', 'MR UNKNOWN'],
+    });
+    const invalidMessageTeacher = registrationFormSchema.safeParse({
+      ...VALID_FORM,
+      teacher1_name: 'MR UNKNOWN',
+    });
+
+    expect(invalidVisitingTeacher.success).toBe(false);
+    expect(invalidMessageTeacher.success).toBe(false);
+    if (invalidVisitingTeacher.success || invalidMessageTeacher.success) {
+      throw new Error('Expected unknown teachers to fail');
+    }
+    expect(invalidVisitingTeacher.error.issues).toEqual(
+      expect.arrayContaining([expect.objectContaining({ path: ['visiting_teachers', 1] })]),
+    );
+    expect(invalidMessageTeacher.error.issues).toEqual(
+      expect.arrayContaining([expect.objectContaining({ path: ['teacher1_name'] })]),
+    );
   });
 
   it('keeps the full persisted model strict', () => {

@@ -1,0 +1,17 @@
+export const TEACHER_OPTIONS = [
+  'MDM CHAN',
+  'MDM CHIAH',
+  'MDM LI',
+  'MR FIRDAUS',
+  'MR HO',
+  'MR KHAIR',
+  'MR LIM',
+  'MR RAZIF',
+  'MR RIDUAN',
+  'MR SEAH',
+  'MR YEE',
+  'MR ZAKIR',
+  'MRS THOMAS',
+  'MS FRONIA',
+  'MS SAKINA',
+] as const;

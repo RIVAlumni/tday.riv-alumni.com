@@ -3,6 +3,7 @@ import type {
   Registration2026Submission,
   WrittenMessage,
 } from '$lib/models/registration';
+import { TEACHER_OPTIONS } from '$lib/data/teachers';
 
 import { Timestamp } from 'firebase/firestore';
 import { z } from 'zod';
@@ -56,7 +57,15 @@ export const registration2026SubmissionSchema = registration2026Schema.pick({
   written_messages: true,
 }) satisfies z.ZodType<Registration2026Submission>;
 
-const optionalFormField = z.string().trim().optional().default('');
+const optionalTeacherFormField = z
+  .string()
+  .trim()
+  .refine(
+    (teacher) => !teacher || TEACHER_OPTIONS.includes(teacher as (typeof TEACHER_OPTIONS)[number]),
+    'Select a teacher from the list',
+  )
+  .optional()
+  .default('');
 const optionalMessageFormField = z
   .string()
   .trim()
@@ -88,29 +97,16 @@ export const registrationFormSchema = z
       .trim()
       .regex(/^(1999|20(0[0-9]|1[0-9]|2[0-6]))$/, 'Select a valid graduating year'),
     visiting_teachers: z
-      .string()
-      .trim()
+      .array(z.enum(TEACHER_OPTIONS))
       .min(1, 'At least one teacher is required')
-      .max(1000)
-      .transform((value) =>
-        value
-          .split(/[\n,]+/)
-          .map((teacher) => teacher.trim())
-          .filter(Boolean),
-      )
-      .pipe(
-        z
-          .array(z.string().min(1).max(120))
-          .min(1, 'At least one teacher is required')
-          .max(20, 'Maximum 20 teachers')
-          .refine(
-            (teachers) => new Set(teachers).size === teachers.length,
-            'Duplicate teacher names found',
-          ),
+      .max(20, 'Maximum 20 teachers')
+      .refine(
+        (teachers) => new Set(teachers).size === teachers.length,
+        'Duplicate teacher names found',
       ),
-    teacher1_name: optionalFormField,
+    teacher1_name: optionalTeacherFormField,
     teacher1_message: optionalMessageFormField,
-    teacher2_name: optionalFormField,
+    teacher2_name: optionalTeacherFormField,
     teacher2_message: optionalMessageFormField,
   })
   .strict()

@@ -1,7 +1,14 @@
 <script lang="ts">
   import CheckIcon from '$lib/components/icons/CheckIcon.svelte';
   import { getCountdownState } from '$lib/data/countdown';
-  import { ArrowLeft01Icon, ArrowUpRight01Icon } from '$lib/icons';
+  import { TEACHER_OPTIONS } from '$lib/data/teachers';
+  import {
+    ArrowDown01Icon,
+    ArrowLeft01Icon,
+    ArrowUpRight01Icon,
+    Cancel01Icon,
+    Search01Icon,
+  } from '$lib/icons';
   import * as Alert from '$lib/components/ui/alert/index.js';
   import { visitorAuth } from '$lib/firebase/auth.svelte';
   import { onMount, tick } from 'svelte';
@@ -9,28 +16,38 @@
   import { createRegistrationRecord, RegistrationWriteError } from '$lib/firebase';
 
   const graduationYears = Array.from({ length: 28 }, (_, index) => 2026 - index);
-  const teacherOptions = [
-    'Mdm Chan',
-    'Mdm Chiah',
-    'Mdm Li',
-    'Mr Firdaus',
-    'Mr Ho',
-    'Mr Khair',
-    'Mr Lim',
-    'Mr Razif',
-    'Mr Riduan',
-    'Mr Seah',
-    'Mr Yee',
-    'Mr Zakir',
-    'Mrs Thomas',
-    'Ms Fronia',
-    'Ms Sakina',
-  ].sort((first, second) => first.localeCompare(second));
+  type WrittenTeacherSlot = 1 | 2;
+
   let countdown = $state(getCountdownState());
   let heroMotionReady = $state(false);
   let heroImageVisible = $state(false);
+  let teacherMenuOpen = $state(false);
+  let teacherSearch = $state('');
+  let selectedTeachers = $state<string[]>([]);
+  let teacherSearchInput = $state<HTMLInputElement | null>(null);
+  let teacherSelectorElement = $state<HTMLElement | null>(null);
+  let teacherSelectorTrigger = $state<HTMLButtonElement | null>(null);
+  let writtenTeacherMenuOpen = $state<WrittenTeacherSlot | null>(null);
+  let writtenTeacherSearches = $state<Record<WrittenTeacherSlot, string>>({ 1: '', 2: '' });
+  let selectedWrittenTeachers = $state<Record<WrittenTeacherSlot, string>>({ 1: '', 2: '' });
 
-  const registrationOpen = $derived(countdown.phase === 'pre-registration');
+  const filteredTeacherOptions = $derived(
+    TEACHER_OPTIONS.filter((teacher) => teacher.includes(teacherSearch.trim().toUpperCase())),
+  );
+  const filteredTeacherOneOptions = $derived(
+    TEACHER_OPTIONS.filter((teacher) =>
+      teacher.includes(writtenTeacherSearches[1].trim().toUpperCase()),
+    ),
+  );
+  const filteredTeacherTwoOptions = $derived(
+    TEACHER_OPTIONS.filter((teacher) =>
+      teacher.includes(writtenTeacherSearches[2].trim().toUpperCase()),
+    ),
+  );
+
+  const registrationOpen = $derived(
+    countdown.phase === 'pre-registration' || countdown.phase === 'vacate',
+  );
 
   // ---- Zod validation state ---------------------------------------------
   type FieldErrors = Partial<Record<string, string>>;
@@ -43,6 +60,101 @@
     if (fieldErrors[field]) {
       fieldErrors = { ...fieldErrors, [field]: undefined };
     }
+  }
+
+  async function toggleTeacherMenu() {
+    teacherMenuOpen = !teacherMenuOpen;
+    if (teacherMenuOpen) {
+      closeWrittenTeacherMenu();
+      await tick();
+      teacherSearchInput?.focus();
+    } else {
+      teacherSearch = '';
+    }
+  }
+
+  function toggleTeacherSelection(teacher: string) {
+    selectedTeachers = selectedTeachers.includes(teacher)
+      ? selectedTeachers.filter((selectedTeacher) => selectedTeacher !== teacher)
+      : [...selectedTeachers, teacher];
+    clearFieldError('visiting_teachers');
+  }
+
+  function removeTeacher(teacher: string) {
+    selectedTeachers = selectedTeachers.filter((selectedTeacher) => selectedTeacher !== teacher);
+    clearFieldError('visiting_teachers');
+  }
+
+  function writtenTeacherField(slot: WrittenTeacherSlot) {
+    return `teacher${slot}_name` as const;
+  }
+
+  function closeWrittenTeacherMenu() {
+    if (writtenTeacherMenuOpen) {
+      writtenTeacherSearches[writtenTeacherMenuOpen] = '';
+      writtenTeacherMenuOpen = null;
+    }
+  }
+
+  async function toggleWrittenTeacherMenu(slot: WrittenTeacherSlot) {
+    const opening = writtenTeacherMenuOpen !== slot;
+    closeWrittenTeacherMenu();
+    teacherMenuOpen = false;
+    teacherSearch = '';
+    if (!opening) return;
+
+    writtenTeacherMenuOpen = slot;
+    await tick();
+    document.getElementById(`teacher-${slot}-search`)?.focus();
+  }
+
+  function selectWrittenTeacher(slot: WrittenTeacherSlot, teacher: string) {
+    selectedWrittenTeachers[slot] = teacher;
+    clearFieldError(writtenTeacherField(slot));
+    closeWrittenTeacherMenu();
+  }
+
+  function removeWrittenTeacher(slot: WrittenTeacherSlot) {
+    selectedWrittenTeachers[slot] = '';
+    clearFieldError(writtenTeacherField(slot));
+  }
+
+  function handleDocumentPointerDown(event: PointerEvent) {
+    if (
+      teacherMenuOpen &&
+      event.target instanceof Node &&
+      !teacherSelectorElement?.contains(event.target)
+    ) {
+      teacherMenuOpen = false;
+      teacherSearch = '';
+    }
+
+    if (writtenTeacherMenuOpen && event.target instanceof Node) {
+      const selector = document.querySelector(
+        `[data-written-teacher-selector="${writtenTeacherMenuOpen}"]`,
+      );
+      if (!selector?.contains(event.target)) {
+        closeWrittenTeacherMenu();
+      }
+    }
+  }
+
+  function handleTeacherSelectorKeydown(event: KeyboardEvent) {
+    if (event.key !== 'Escape') return;
+
+    if (writtenTeacherMenuOpen) {
+      event.preventDefault();
+      const slot = writtenTeacherMenuOpen;
+      closeWrittenTeacherMenu();
+      document.getElementById(`teacher-${slot}-trigger`)?.focus();
+      return;
+    }
+
+    if (!teacherMenuOpen) return;
+    event.preventDefault();
+    teacherMenuOpen = false;
+    teacherSearch = '';
+    teacherSelectorTrigger?.focus();
   }
 
   function scrollToElement(element: Element, block: ScrollLogicalPosition = 'center') {
@@ -96,7 +208,7 @@
       full_name: (formData.get('full_name') as string) ?? '',
       contact_number: (formData.get('contact_number') as string) ?? '',
       graduating_year: (formData.get('graduating_year') as string) ?? '',
-      visiting_teachers: (formData.get('visiting_teachers') as string) ?? '',
+      visiting_teachers: formData.getAll('visiting_teachers').map((teacher) => String(teacher)),
       teacher1_name: (formData.get('teacher1_name') as string) ?? '',
       teacher1_message: (formData.get('teacher1_message') as string) ?? '',
       teacher2_name: (formData.get('teacher2_name') as string) ?? '',
@@ -115,7 +227,15 @@
       }
       fieldErrors = errors;
       await tick();
-      const firstInvalidControl = form.elements.namedItem(Object.keys(errors)[0]);
+      const firstInvalidField = Object.keys(errors)[0];
+      const firstInvalidControl =
+        firstInvalidField === 'visiting_teachers'
+          ? teacherSelectorTrigger
+          : firstInvalidField === 'teacher1_name'
+            ? document.getElementById('teacher-1-trigger')
+            : firstInvalidField === 'teacher2_name'
+              ? document.getElementById('teacher-2-trigger')
+              : form.elements.namedItem(firstInvalidField);
       if (firstInvalidControl instanceof HTMLElement) {
         focusFormControl(firstInvalidControl);
       }
@@ -170,6 +290,7 @@
 
   onMount(() => {
     visitorAuth.init();
+    document.addEventListener('pointerdown', handleDocumentPointerDown);
     const countdownInterval = window.setInterval(() => {
       countdown = getCountdownState();
     }, 1_000);
@@ -179,11 +300,14 @@
     });
 
     return () => {
+      document.removeEventListener('pointerdown', handleDocumentPointerDown);
       window.clearInterval(countdownInterval);
       window.cancelAnimationFrame(heroAnimationFrame);
     };
   });
 </script>
+
+<svelte:window onkeydown={handleTeacherSelectorKeydown} />
 
 <svelte:head>
   <title>Attendance Registration - Teachers' Day 2026</title>
@@ -481,32 +605,125 @@
 
               <label class="form-field">
                 <span>Graduating year</span>
-                <select
-                  name="graduating_year"
-                  onchange={() => clearFieldError('graduating_year')}
-                  required>
-                  <option value="">Select year</option>
-                  {#each graduationYears as year (year)}
-                    <option value={String(year)}>{year}</option>
-                  {/each}
-                </select>
+                <div class="select-control">
+                  <select
+                    name="graduating_year"
+                    onchange={() => clearFieldError('graduating_year')}
+                    required>
+                    <option value="">Select year</option>
+                    {#each graduationYears as year (year)}
+                      <option value={String(year)}>{year}</option>
+                    {/each}
+                  </select>
+                  <ArrowDown01Icon
+                    size={18}
+                    strokeWidth={1.8} />
+                </div>
                 {#if fieldErrors['graduating_year']}
                   <small class="field-error">{fieldErrors['graduating_year']}</small>
                 {/if}
               </label>
 
-              <label class="form-field">
-                <span>Which teacher(s) would you like to meet?</span>
-                <textarea
-                  name="visiting_teachers"
-                  rows="5"
-                  maxlength="1000"
-                  placeholder="Enter one or more teacher names, separated by commas or new lines"
-                  aria-describedby="teachers-disclaimer teachers-help"
-                  oninput={() => clearFieldError('visiting_teachers')}
-                  required></textarea>
+              <fieldset class="form-field teacher-field">
+                <legend>Which teacher(s) would you like to meet?</legend>
+                <div
+                  bind:this={teacherSelectorElement}
+                  class="teacher-selector"
+                  data-invalid={fieldErrors['visiting_teachers'] ? 'true' : undefined}>
+                  <button
+                    bind:this={teacherSelectorTrigger}
+                    class="teacher-selector-trigger"
+                    type="button"
+                    aria-expanded={teacherMenuOpen}
+                    aria-controls="visiting-teacher-menu"
+                    aria-describedby={fieldErrors['visiting_teachers']
+                      ? 'teachers-disclaimer teachers-help visiting-teachers-error'
+                      : 'teachers-disclaimer teachers-help'}
+                    onclick={toggleTeacherMenu}>
+                    <span>
+                      {selectedTeachers.length === 0
+                        ? 'Select teachers'
+                        : `${selectedTeachers.length} teacher${selectedTeachers.length === 1 ? '' : 's'} selected`}
+                    </span>
+                    <ArrowDown01Icon
+                      size={18}
+                      strokeWidth={1.8} />
+                  </button>
+
+                  {#if selectedTeachers.length > 0}
+                    <ul
+                      class="selected-teachers"
+                      aria-label="Selected teachers">
+                      {#each selectedTeachers as teacher (teacher)}
+                        <li>
+                          <span>{teacher}</span>
+                          <button
+                            type="button"
+                            aria-label={`Remove ${teacher}`}
+                            onclick={() => removeTeacher(teacher)}>
+                            <Cancel01Icon
+                              size={14}
+                              strokeWidth={2} />
+                          </button>
+                        </li>
+                      {/each}
+                    </ul>
+                  {/if}
+
+                  {#if teacherMenuOpen}
+                    <div
+                      id="visiting-teacher-menu"
+                      class="teacher-menu">
+                      <label class="teacher-search">
+                        <span class="sr-only">Search teachers</span>
+                        <Search01Icon
+                          size={18}
+                          strokeWidth={1.8} />
+                        <input
+                          bind:this={teacherSearchInput}
+                          type="search"
+                          value={teacherSearch}
+                          placeholder="Search teachers"
+                          autocomplete="off"
+                          oninput={(event) => (teacherSearch = event.currentTarget.value)} />
+                      </label>
+
+                      <div
+                        class="teacher-options"
+                        aria-label="Teacher options">
+                        {#each filteredTeacherOptions as teacher (teacher)}
+                          <label class="teacher-option">
+                            <input
+                              type="checkbox"
+                              checked={selectedTeachers.includes(teacher)}
+                              onchange={() => toggleTeacherSelection(teacher)} />
+                            <span
+                              class="teacher-option-checkbox"
+                              aria-hidden="true">
+                              <CheckIcon
+                                size={15}
+                                strokeWidth={2.4} />
+                            </span>
+                            <span>{teacher}</span>
+                          </label>
+                        {:else}
+                          <p class="teacher-empty">No teachers match your search.</p>
+                        {/each}
+                      </div>
+                    </div>
+                  {/if}
+                </div>
+
+                {#each selectedTeachers as teacher (teacher)}
+                  <input
+                    type="hidden"
+                    name="visiting_teachers"
+                    value={teacher} />
+                {/each}
                 {#if fieldErrors['visiting_teachers']}
-                  <small class="field-error">{fieldErrors['visiting_teachers']}</small>
+                  <small
+                    id="visiting-teachers-error"
+                    class="field-error">{fieldErrors['visiting_teachers']}</small>
                 {/if}
                 <span class="field-notes">
                   <small
@@ -525,7 +742,7 @@
                     and we will let you know if your teacher is still with us!
                   </small>
                 </span>
-              </label>
+              </fieldset>
             </div>
           </section>
 
@@ -546,24 +763,100 @@
             </div>
 
             <div class="section-fields">
-              <datalist id="teacher-options">
-                {#each teacherOptions as teacher (teacher)}
-                  <option value={teacher}></option>
-                {/each}
-              </datalist>
+              <fieldset class="form-field teacher-field written-teacher-field">
+                <legend>Name of Teacher 1</legend>
+                <div
+                  class="teacher-selector"
+                  data-written-teacher-selector="1"
+                  data-invalid={fieldErrors['teacher1_name'] ? 'true' : undefined}>
+                  <button
+                    id="teacher-1-trigger"
+                    class="teacher-selector-trigger"
+                    type="button"
+                    aria-expanded={writtenTeacherMenuOpen === 1}
+                    aria-controls="teacher-1-menu"
+                    aria-describedby={fieldErrors['teacher1_name']
+                      ? 'teacher-one-help teacher-one-error'
+                      : 'teacher-one-help'}
+                    onclick={() => toggleWrittenTeacherMenu(1)}>
+                    <span>{selectedWrittenTeachers[1] || 'Select a teacher'}</span>
+                    <ArrowDown01Icon
+                      size={18}
+                      strokeWidth={1.8} />
+                  </button>
 
-              <label class="form-field">
-                <span>Name of Teacher 1</span>
+                  {#if selectedWrittenTeachers[1]}
+                    <ul
+                      class="selected-teachers"
+                      aria-label="Selected teacher for message one">
+                      <li>
+                        <span>{selectedWrittenTeachers[1]}</span>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${selectedWrittenTeachers[1]}`}
+                          onclick={() => removeWrittenTeacher(1)}>
+                          <Cancel01Icon
+                            size={14}
+                            strokeWidth={2} />
+                        </button>
+                      </li>
+                    </ul>
+                  {/if}
+
+                  {#if writtenTeacherMenuOpen === 1}
+                    <div
+                      id="teacher-1-menu"
+                      class="teacher-menu">
+                      <label class="teacher-search">
+                        <span class="sr-only">Search teachers for message one</span>
+                        <Search01Icon
+                          size={18}
+                          strokeWidth={1.8} />
+                        <input
+                          id="teacher-1-search"
+                          type="search"
+                          value={writtenTeacherSearches[1]}
+                          placeholder="Search teachers"
+                          autocomplete="off"
+                          oninput={(event) =>
+                            (writtenTeacherSearches[1] = event.currentTarget.value)} />
+                      </label>
+
+                      <div
+                        class="teacher-options"
+                        aria-label="Teacher options for message one">
+                        {#each filteredTeacherOneOptions as teacher (teacher)}
+                          <label class="teacher-option">
+                            <input
+                              type="radio"
+                              name="teacher1_option"
+                              checked={selectedWrittenTeachers[1] === teacher}
+                              onchange={() => selectWrittenTeacher(1, teacher)} />
+                            <span
+                              class="teacher-option-checkbox"
+                              aria-hidden="true">
+                              <CheckIcon
+                                size={15}
+                                strokeWidth={2.4} />
+                            </span>
+                            <span>{teacher}</span>
+                          </label>
+                        {:else}
+                          <p class="teacher-empty">No teachers match your search.</p>
+                        {/each}
+                      </div>
+                    </div>
+                  {/if}
+                </div>
+
                 <input
-                  type="text"
+                  type="hidden"
                   name="teacher1_name"
-                  list="teacher-options"
-                  maxlength="120"
-                  placeholder="Enter or search for a teacher"
-                  oninput={() => clearFieldError('teacher1_name')}
-                  aria-describedby="teacher-one-help" />
+                  value={selectedWrittenTeachers[1]} />
                 {#if fieldErrors['teacher1_name']}
-                  <small class="field-error">{fieldErrors['teacher1_name']}</small>
+                  <small
+                    id="teacher-one-error"
+                    class="field-error">{fieldErrors['teacher1_name']}</small>
                 {/if}
                 <small
                   id="teacher-one-help"
@@ -579,7 +872,7 @@
                     >RIVA Community Outreach WhatsApp number</a
                   >.
                 </small>
-              </label>
+              </fieldset>
 
               <label class="form-field">
                 <span>Message for Teacher 1</span>
@@ -594,18 +887,100 @@
                 {/if}
               </label>
 
-              <label class="form-field">
-                <span>Name of Teacher 2</span>
+              <fieldset class="form-field teacher-field written-teacher-field">
+                <legend>Name of Teacher 2</legend>
+                <div
+                  class="teacher-selector"
+                  data-written-teacher-selector="2"
+                  data-invalid={fieldErrors['teacher2_name'] ? 'true' : undefined}>
+                  <button
+                    id="teacher-2-trigger"
+                    class="teacher-selector-trigger"
+                    type="button"
+                    aria-expanded={writtenTeacherMenuOpen === 2}
+                    aria-controls="teacher-2-menu"
+                    aria-describedby={fieldErrors['teacher2_name']
+                      ? 'teacher-two-help teacher-two-error'
+                      : 'teacher-two-help'}
+                    onclick={() => toggleWrittenTeacherMenu(2)}>
+                    <span>{selectedWrittenTeachers[2] || 'Select a teacher'}</span>
+                    <ArrowDown01Icon
+                      size={18}
+                      strokeWidth={1.8} />
+                  </button>
+
+                  {#if selectedWrittenTeachers[2]}
+                    <ul
+                      class="selected-teachers"
+                      aria-label="Selected teacher for message two">
+                      <li>
+                        <span>{selectedWrittenTeachers[2]}</span>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${selectedWrittenTeachers[2]}`}
+                          onclick={() => removeWrittenTeacher(2)}>
+                          <Cancel01Icon
+                            size={14}
+                            strokeWidth={2} />
+                        </button>
+                      </li>
+                    </ul>
+                  {/if}
+
+                  {#if writtenTeacherMenuOpen === 2}
+                    <div
+                      id="teacher-2-menu"
+                      class="teacher-menu">
+                      <label class="teacher-search">
+                        <span class="sr-only">Search teachers for message two</span>
+                        <Search01Icon
+                          size={18}
+                          strokeWidth={1.8} />
+                        <input
+                          id="teacher-2-search"
+                          type="search"
+                          value={writtenTeacherSearches[2]}
+                          placeholder="Search teachers"
+                          autocomplete="off"
+                          oninput={(event) =>
+                            (writtenTeacherSearches[2] = event.currentTarget.value)} />
+                      </label>
+
+                      <div
+                        class="teacher-options"
+                        aria-label="Teacher options for message two">
+                        {#each filteredTeacherTwoOptions as teacher (teacher)}
+                          <label class="teacher-option">
+                            <input
+                              type="radio"
+                              name="teacher2_option"
+                              checked={selectedWrittenTeachers[2] === teacher}
+                              onchange={() => selectWrittenTeacher(2, teacher)} />
+                            <span
+                              class="teacher-option-checkbox"
+                              aria-hidden="true">
+                              <CheckIcon
+                                size={15}
+                                strokeWidth={2.4} />
+                            </span>
+                            <span>{teacher}</span>
+                          </label>
+                        {:else}
+                          <p class="teacher-empty">No teachers match your search.</p>
+                        {/each}
+                      </div>
+                    </div>
+                  {/if}
+                </div>
+
                 <input
-                  type="text"
+                  type="hidden"
                   name="teacher2_name"
-                  list="teacher-options"
-                  maxlength="120"
-                  placeholder="Enter or search for a teacher"
-                  oninput={() => clearFieldError('teacher2_name')}
-                  aria-describedby="teacher-two-help" />
+                  value={selectedWrittenTeachers[2]} />
                 {#if fieldErrors['teacher2_name']}
-                  <small class="field-error">{fieldErrors['teacher2_name']}</small>
+                  <small
+                    id="teacher-two-error"
+                    class="field-error">{fieldErrors['teacher2_name']}</small>
                 {/if}
                 <small
                   id="teacher-two-help"
@@ -621,7 +996,7 @@
                     >RIVA Community Outreach WhatsApp number</a
                   >.
                 </small>
-              </label>
+              </fieldset>
 
               <label class="form-field">
                 <span>Message for Teacher 2</span>
@@ -1125,6 +1500,224 @@
     gap: 0.7rem;
   }
 
+  .teacher-field {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .teacher-field > legend {
+    margin-bottom: 0.7rem;
+  }
+
+  .select-control {
+    position: relative;
+  }
+
+  .select-control select {
+    padding-right: 3rem;
+    appearance: none;
+  }
+
+  .select-control > :global(svg) {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    pointer-events: none;
+    transform: translateY(-50%);
+  }
+
+  .teacher-selector {
+    display: grid;
+    gap: 0.7rem;
+  }
+
+  .teacher-selector-trigger {
+    width: 100%;
+    min-height: 3.5rem;
+    padding: 0 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 0;
+    background: var(--surface);
+    color: var(--paper);
+    text-align: left;
+    font: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+    transition:
+      border-color 180ms ease,
+      background 180ms ease;
+  }
+
+  .teacher-selector-trigger[aria-expanded='true'],
+  .teacher-selector-trigger:focus-visible,
+  .teacher-selector[data-invalid='true'] .teacher-selector-trigger {
+    border-color: var(--red);
+    background: rgba(235, 47, 6, 0.07);
+    outline: 2px solid var(--red);
+    outline-offset: -2px;
+  }
+
+  .teacher-selector-trigger :global(svg) {
+    flex: 0 0 auto;
+    transition: transform 180ms ease;
+  }
+
+  .teacher-selector-trigger[aria-expanded='true'] :global(svg) {
+    transform: rotate(180deg);
+  }
+
+  .selected-teachers {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    list-style: none;
+  }
+
+  .selected-teachers li {
+    min-height: 2rem;
+    padding: 0.35rem 0.45rem 0.35rem 0.65rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    border: 1px solid rgba(235, 47, 6, 0.45);
+    background: rgba(235, 47, 6, 0.1);
+    font-size: 0.72rem;
+    font-weight: 650;
+  }
+
+  .selected-teachers button {
+    width: 1.35rem;
+    height: 1.35rem;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border: 0;
+    background: transparent;
+    color: var(--paper);
+    cursor: pointer;
+  }
+
+  .selected-teachers button:focus-visible {
+    outline: 2px solid var(--red);
+    outline-offset: 2px;
+  }
+
+  .teacher-menu {
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: #111;
+  }
+
+  .teacher-search {
+    min-height: 3.5rem;
+    padding-inline: 1rem;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    color: var(--muted);
+  }
+
+  .teacher-search input {
+    min-height: 3.4rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .teacher-search input:focus,
+  .teacher-search input:focus-visible {
+    border: 0;
+    background: transparent;
+    outline: 0;
+  }
+
+  .teacher-search:has(input:focus-visible) {
+    outline: 2px solid var(--red);
+    outline-offset: -2px;
+  }
+
+  .teacher-options {
+    max-height: 18rem;
+    padding: 0.4rem;
+    display: grid;
+    gap: 0.2rem;
+    overflow-y: auto;
+  }
+
+  .teacher-option {
+    position: relative;
+    min-height: 2.85rem;
+    padding: 0.65rem 0.75rem;
+    display: grid;
+    grid-template-columns: 1.2rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+    color: #e7e7e2;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .teacher-option:hover,
+  .teacher-option:has(input:checked) {
+    background: rgba(235, 47, 6, 0.1);
+  }
+
+  .teacher-option:has(input:focus-visible) {
+    outline: 2px solid var(--red);
+    outline-offset: -2px;
+  }
+
+  .teacher-option input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    min-height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .teacher-option-checkbox {
+    width: 1.2rem;
+    height: 1.2rem;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.36);
+    color: #fff;
+  }
+
+  .teacher-option-checkbox :global(svg) {
+    opacity: 0;
+  }
+
+  .teacher-option input:checked + .teacher-option-checkbox {
+    border-color: var(--red);
+    background: var(--red);
+  }
+
+  .teacher-option input:checked + .teacher-option-checkbox :global(svg) {
+    opacity: 1;
+  }
+
+  .teacher-empty {
+    margin: 0;
+    padding: 1.2rem 0.75rem;
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+
   .form-field > span,
   .form-field legend {
     padding: 0;
@@ -1193,7 +1786,6 @@
   }
 
   select {
-    appearance: auto;
     color-scheme: dark;
   }
 
