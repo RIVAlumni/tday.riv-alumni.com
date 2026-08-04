@@ -64,6 +64,8 @@ async function seedData(): Promise<void> {
         written_messages: [],
         comments: '',
         arrived_at: null,
+        search_ngrams: ['e', 'ex', 'v', 'vi'],
+        updates: [],
         created_at: now,
         updated_at: now,
       }),
@@ -284,6 +286,17 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore registration rules', () => {
         full_name: 'UPDATED VISITOR',
         search_ngrams: ['u', 'up', 'upd'],
         updated_at: serverTimestamp(),
+        updates: [
+          {
+            action: 'UPDATED',
+            by: {
+              name: 'Test Mediator',
+              email: 'mediator@example.com',
+            },
+            at: Timestamp.now(),
+            details: "full_name: 'EXAMPLE VISITOR' -> 'UPDATED VISITOR'",
+          },
+        ],
       }),
     );
 
@@ -317,11 +330,11 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore registration rules', () => {
     expect(snapshot.data()?.full_name).toBe('UPDATED VISITOR');
   });
 
-  it('allows legacy registration edits without search n-grams', async () => {
+  it('denies writes to legacy events but allows reads', async () => {
     const firestore = authenticatedFirestore('mediator');
     const reference = doc(firestore, 'events', '2025', 'registrations', '1001');
 
-    await assertSucceeds(
+    await assertFails(
       updateDoc(reference, {
         full_name: 'UPDATED LEGACY VISITOR',
         updated_at: serverTimestamp(),
@@ -329,7 +342,7 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore registration rules', () => {
     );
 
     const snapshot = await assertSucceeds(getDoc(reference));
-    expect(snapshot.data()?.full_name).toBe('UPDATED LEGACY VISITOR');
+    expect(snapshot.data()?.full_name).toBe('LEGACY VISITOR');
   });
 
   it('denies reads after access expires', async () => {

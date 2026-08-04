@@ -11,16 +11,27 @@ service cloud.firestore {
     }
 
     match /events/{eventId} {
-      allow get: if isAuthorised(1);
+      allow get: if isAuthorised('OPERATOR');
 
       match /registrations/{registrationId} {
+        // Reads
+        allow get: if isAuthorised('OPERATOR');
+        allow list: if isAuthorised('MEDIATOR');
+
+        // Writes — admins inherit both Operator and Mediator paths via level
+        // thresholds, plus exclusive delete below.
         allow create: if false;
-        allow get: if isAuthorised(1);
-        allow list: if isAuthorised(2);
-        allow update: if isMediatorUpdate(eventId);
-        allow update: if isOperatorReceptionUpdate(eventId);
+        allow update: if isCurrentEvent(eventId) && (
+          (isAuthorised('OPERATOR') && isOperatorReceptionUpdate()) ||
+          (isAuthorised('MEDIATOR') && isMediatorUpdate())
+        );
+        allow delete: if isCurrentEvent(eventId) && isAuthorised('ADMINISTRATOR');
       }
     }
+
+    // ─── Functions ───────────────────────────────────────────────────────────
+
+    // -- Auth -----------------------------------------------------------------
 
     function isSignedIn() {
       return request.auth != null && request.auth.token.email_verified == true;
@@ -30,84 +41,133 @@ service cloud.firestore {
       return /databases/$(database)/documents/users/$(request.auth.uid);
     }
 
-    function isAuthorised(minimumAccessLevel) {
+    function accessLevelValue(level) {
+      return level == 'OPERATOR' ? 1 :
+        level == 'MEDIATOR' ? 2 :
+        level == 'ADMINISTRATOR' ? 3 : 0;
+    }
+
+    function isAuthorised(level) {
       return isSignedIn()
         && exists(userPath())
         && get(userPath()).data.access_level is int
         && get(userPath()).data.access_expires is timestamp
-        && get(userPath()).data.access_level >= minimumAccessLevel
+        && get(userPath()).data.access_level >= accessLevelValue(level)
         && get(userPath()).data.access_expires >= request.time;
     }
 
-    function isMediatorUpdate(eventId) {
-      let changed = request.resource.data.diff(resource.data).affectedKeys();
-      return isAuthorised(2)
-        && changed.hasOnly([
-          'full_name',
-          'contact_number',
-          'graduating_year',
-          'visiting_teachers',
-          'comments',
-          'status',
-          'arrived_at',
-          'updated_at',
-          'search_ngrams',
-          'updates'
-        ])
-        && changed.hasAll(['updated_at'])
-        && request.resource.data.updated_at == request.time
-        && (!changed.hasAny(['updates']) || (eventId == '2026' && isValidUpdatesChange()))
-        && (!changed.hasAny(['full_name']) || isValidName(request.resource.data.full_name))
-        && (!changed.hasAny(['contact_number']) || isValidContactNumber(eventId, request.resource.data.contact_number))
-        && (eventId != '2026' || !changed.hasAny(['full_name', 'contact_number']) || changed.hasAll(['search_ngrams']))
-        && (!changed.hasAny(['search_ngrams']) || (eventId == '2026' && changed.hasAny(['full_name', 'contact_number'])))
-        && (!changed.hasAny(['search_ngrams']) || isValidSearchNgrams(request.resource.data.search_ngrams))
-        && (!changed.hasAny(['graduating_year']) || isValidGraduatingYear(eventId, request.resource.data.graduating_year))
-        && (!changed.hasAny(['visiting_teachers']) || isValidVisitingTeachers(eventId, request.resource.data.visiting_teachers))
-        && (!changed.hasAny(['comments']) || isValidComments(request.resource.data.comments))
-        && (!changed.hasAny(['status']) || isValidStatus(request.resource.data.status))
-        && (!changed.hasAny(['arrived_at']) || isValidArrival(eventId, request.resource.data.arrived_at));
+    // -- Events ---------------------------------------------------------------
+
+    function isCurrentEvent(eventId) {
+      return eventId >= '2026';
     }
 
-    function isOperatorReceptionUpdate(eventId) {
+    // -- Operator reception update --------------------------------------------
+
+    function isOperatorReceptionUpdate() {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       let appendsUpdate = isValidUpdatesChange();
-      return isAuthorised(1)
-        && changed.hasAll(['status', 'updated_at'])
+      return changed.hasAll(['status', 'updated_at', 'updates'])
         && changed.hasOnly(['status', 'arrived_at', 'updated_at', 'updates'])
         && request.resource.data.updated_at == request.time
-        && (eventId == '2026' || !changed.hasAny(['updates']))
         && (
-          isOperatorCheckIn(eventId, changed, appendsUpdate)
-          || isOperatorRejection(eventId, changed, appendsUpdate)
-          || isOperatorConflict(eventId, changed, appendsUpdate)
+          isOperatorCheckIn(changed, appendsUpdate)
+          || isOperatorRejection(changed, appendsUpdate)
+          || isOperatorConflict(changed, appendsUpdate)
         );
     }
 
-    function isOperatorCheckIn(eventId, changed, appendsUpdate) {
+    function isOperatorCheckIn(changed, appendsUpdate) {
       return request.resource.data.status == 'CHECKED_IN'
-        && (
-          (eventId == '2025' && !changed.hasAny(['arrived_at']))
-          || (
-            eventId != '2025'
-            && changed.hasAll(['arrived_at'])
-            && request.resource.data.arrived_at == request.time
-          )
-        )
-        && (eventId != '2026' || appendsUpdate);
+        && changed.hasAll(['arrived_at'])
+        && request.resource.data.arrived_at == request.time
+        && appendsUpdate;
     }
 
-    function isOperatorRejection(eventId, changed, appendsUpdate) {
+    function isOperatorRejection(changed, appendsUpdate) {
       return request.resource.data.status == 'REJECTED'
         && !changed.hasAny(['arrived_at'])
-        && (eventId != '2026' || appendsUpdate);
+        && appendsUpdate;
     }
 
-    function isOperatorConflict(eventId, changed, appendsUpdate) {
+    function isOperatorConflict(changed, appendsUpdate) {
       return request.resource.data.status == 'CONFLICT'
         && !changed.hasAny(['arrived_at'])
-        && (eventId != '2026' || appendsUpdate);
+        && appendsUpdate;
     }
+
+    // -- Mediator update -------------------------------------------------------
+
+    function isMediatorUpdate() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return changed.hasAll(['updated_at', 'updates'])
+        && changed.hasOnly([
+          'full_name',
+          'comments',
+          'email',
+          'contact_number',
+          'graduating_year',
+          'search_ngrams',
+          'status',
+          'arrived_at',
+          'updated_at',
+          'updates',
+        ])
+        && request.resource.data.updated_at == request.time
+        && isValidUpdatesChange()
+        && (!changed.hasAny(['full_name', 'contact_number', 'email']) || changed.hasAll(['search_ngrams']))
+        && (!changed.hasAny(['full_name']) || isValidName(request.resource.data.full_name))
+        && (!changed.hasAny(['comments']) || isValidComments(request.resource.data.comments))
+        && (!changed.hasAny(['email']) || isValidEmail(request.resource.data.email))
+        && (!changed.hasAny(['contact_number']) || isValidContactNumber(request.resource.data.contact_number))
+        && (!changed.hasAny(['graduating_year']) || isValidGraduatingYear(request.resource.data.graduating_year))
+        && (!changed.hasAny(['search_ngrams']) || isValidSearchNgrams(request.resource.data.search_ngrams))
+        && (!changed.hasAny(['status']) || isValidStatus(request.resource.data.status))
+        && (!changed.hasAny(['arrived_at']) || isValidArrival(request.resource.data.arrived_at));
+    }
+
+    // -- Field validators -----------------------------------------------------
+
+    function isValidName(value) {
+      return value is string && value.size() > 0 && value.size() <= 120;
+    }
+
+    function isValidComments(value) {
+      return value is string && value.size() <= 10000;
+    }
+
+    function isValidEmail(value) {
+      return value is string
+        && value.size() > 0
+        && value.size() <= 254
+        && value.matches('^.+@.+\\..+$');
+    }
+
+    function isValidContactNumber(value) {
+      return value is string && value.matches('^[89][0-9]{7}$');
+    }
+
+    function isValidGraduatingYear(value) {
+      return value is string && value.matches('^[0-9]{4}$');
+    }
+
+    function isValidSearchNgrams(value) {
+      return value is list
+        && value.size() > 0
+        && value.size() <= 1500
+        && value[0] is string
+        && value.toSet().size() == value.size();
+    }
+
+    function isValidStatus(value) {
+      return value in ['REGISTERED', 'CHECKED_IN', 'CONFLICT', 'REJECTED'];
+    }
+
+    function isValidArrival(value) {
+      return value == null || value is timestamp;
+    }
+
+    // -- Updates log ----------------------------------------------------------
 
     function isValidUpdatesChange() {
       let existingUpdates = resource.data.get('updates', []);
@@ -127,106 +187,8 @@ service cloud.firestore {
         && entry.by.email is string
         && entry.by.email == request.auth.token.email
         && entry.at is timestamp
+        && entry.details is string
         && entry.details.size() <= 1000;
-    }
-
-    function isValidName(value) {
-      return value is string && value.size() > 0 && value.size() <= 120;
-    }
-
-    function isValidComments(value) {
-      return value is string && value.size() <= 10000;
-    }
-
-    function isValidStatus(value) {
-      return value in ['REGISTERED', 'CHECKED_IN', 'CONFLICT', 'REJECTED'];
-    }
-
-    function isValidSearchNgrams(value) {
-      return value is list
-        && value.size() > 0
-        && value.size() <= 1500
-        && value.toSet().size() == value.size();
-    }
-
-    function isValidContactNumber(eventId, value) {
-      return (eventId == '2025' && value is int)
-        || (eventId != '2025' && value is string && value.size() > 0 && value.size() <= 30);
-    }
-
-    function isValidGraduatingYear(eventId, value) {
-      return (eventId == '2025' && value is int)
-        || (eventId != '2025' && value is string && value.size() > 0 && value.size() <= 20);
-    }
-
-    function isValidVisitingTeachers(eventId, value) {
-      return (eventId == '2026' && isValidTeacherList(value))
-        || (eventId != '2026' && value is string && value.size() <= 1000);
-    }
-
-    function isValidArrival(eventId, value) {
-      return eventId != '2025' && (value == null || value is timestamp);
-    }
-
-    function isValidTeacherList(value) {
-      let listTypeOk = value is list;
-      let listMinSizeOk = value.size() > 0;
-      let listMaxSizeOk = value.size() <= 20;
-      let listUniqueOk = value.toSet().size() == value.size();
-      let firstRangeOk = areValidTeachers0To9(value);
-      let secondRangeOk = areValidTeachers10To19(value);
-      return listTypeOk
-        && listMinSizeOk
-        && listMaxSizeOk
-        && listUniqueOk
-        && firstRangeOk
-        && secondRangeOk;
-    }
-
-    function areValidTeachers0To9(value) {
-      let teacher0Ok = value.size() <= 0 || (value[0] is string && value[0].matches('^.{1,120}$'));
-      let teacher1Ok = value.size() <= 1 || (value[1] is string && value[1].matches('^.{1,120}$'));
-      let teacher2Ok = value.size() <= 2 || (value[2] is string && value[2].matches('^.{1,120}$'));
-      let teacher3Ok = value.size() <= 3 || (value[3] is string && value[3].matches('^.{1,120}$'));
-      let teacher4Ok = value.size() <= 4 || (value[4] is string && value[4].matches('^.{1,120}$'));
-      let teacher5Ok = value.size() <= 5 || (value[5] is string && value[5].matches('^.{1,120}$'));
-      let teacher6Ok = value.size() <= 6 || (value[6] is string && value[6].matches('^.{1,120}$'));
-      let teacher7Ok = value.size() <= 7 || (value[7] is string && value[7].matches('^.{1,120}$'));
-      let teacher8Ok = value.size() <= 8 || (value[8] is string && value[8].matches('^.{1,120}$'));
-      let teacher9Ok = value.size() <= 9 || (value[9] is string && value[9].matches('^.{1,120}$'));
-      return teacher0Ok
-        && teacher1Ok
-        && teacher2Ok
-        && teacher3Ok
-        && teacher4Ok
-        && teacher5Ok
-        && teacher6Ok
-        && teacher7Ok
-        && teacher8Ok
-        && teacher9Ok;
-    }
-
-    function areValidTeachers10To19(value) {
-      let teacher10Ok = value.size() <= 10 || (value[10] is string && value[10].matches('^.{1,120}$'));
-      let teacher11Ok = value.size() <= 11 || (value[11] is string && value[11].matches('^.{1,120}$'));
-      let teacher12Ok = value.size() <= 12 || (value[12] is string && value[12].matches('^.{1,120}$'));
-      let teacher13Ok = value.size() <= 13 || (value[13] is string && value[13].matches('^.{1,120}$'));
-      let teacher14Ok = value.size() <= 14 || (value[14] is string && value[14].matches('^.{1,120}$'));
-      let teacher15Ok = value.size() <= 15 || (value[15] is string && value[15].matches('^.{1,120}$'));
-      let teacher16Ok = value.size() <= 16 || (value[16] is string && value[16].matches('^.{1,120}$'));
-      let teacher17Ok = value.size() <= 17 || (value[17] is string && value[17].matches('^.{1,120}$'));
-      let teacher18Ok = value.size() <= 18 || (value[18] is string && value[18].matches('^.{1,120}$'));
-      let teacher19Ok = value.size() <= 19 || (value[19] is string && value[19].matches('^.{1,120}$'));
-      return teacher10Ok
-        && teacher11Ok
-        && teacher12Ok
-        && teacher13Ok
-        && teacher14Ok
-        && teacher15Ok
-        && teacher16Ok
-        && teacher17Ok
-        && teacher18Ok
-        && teacher19Ok;
     }
   }
 }
