@@ -184,6 +184,7 @@ describe('registrationFormSchema', () => {
       event_id: '2026',
       registration_id: 'ABCDEF',
       email: 'visitor@example.com',
+      photo_url: '',
       status: 'REGISTERED',
       comments: '',
       created_at: now,

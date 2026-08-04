@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   generateRegistrationId,
   getVerifiedEmail,
+  getVerifiedProfile,
   registrationSubmissionSchema,
 } from './registration.js';
 
@@ -35,6 +36,7 @@ function verifiedAuth() {
       email: ' Visitor@Example.com ',
       email_verified: true,
       firebase: { sign_in_provider: 'google.com' },
+      picture: 'https://example.com/photo.jpg',
     },
   };
 }
@@ -107,6 +109,19 @@ test('generates valid registration IDs', () => {
   for (let index = 0; index < 100; index++) {
     assert.match(generateRegistrationId(), /^[A-HJ-NP-Z]{6}$/);
   }
+});
+
+test('collects the Google profile photo from the verified token', () => {
+  assert.deepEqual(getVerifiedProfile(verifiedAuth()), {
+    email: 'visitor@example.com',
+    picture: 'https://example.com/photo.jpg',
+  });
+  assert.deepEqual(
+    getVerifiedProfile({
+      token: { ...verifiedAuth().token, picture: undefined },
+    }),
+    { email: 'visitor@example.com', picture: '' },
+  );
 });
 
 test('uses only verified Google account emails', () => {

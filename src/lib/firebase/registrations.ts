@@ -49,6 +49,7 @@ function docToRegistration(snapshot: DocLike, eventId: string): Registration | n
   const registration: Record<string, unknown> = { ...data };
 
   if (eventId === '2026') {
+    registration.photo_url = registration.photo_url ?? '';
     registration.visiting_teachers = Array.isArray(registration.visiting_teachers)
       ? registration.visiting_teachers
       : registration.visiting_teachers != null

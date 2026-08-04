@@ -7,16 +7,36 @@
     ArrowLeft01Icon,
     ArrowUpRight01Icon,
     Cancel01Icon,
+    Logout02Icon,
     Search01Icon,
   } from '$lib/icons';
-  import * as Alert from '$lib/components/ui/alert/index.js';
+  import * as Alert from '$lib/components/ui/alert';
+  import * as Avatar from '$lib/components/ui/avatar';
+  import * as Item from '$lib/components/ui/item';
   import { visitorAuth } from '$lib/firebase/auth.svelte';
   import { onMount, tick } from 'svelte';
   import { registrationFormFieldName, registrationFormSchema } from '$lib/util/registration.schema';
   import { createRegistrationRecord, RegistrationWriteError } from '$lib/firebase';
+  import Button from '$lib/components/ui/button/button.svelte';
 
   const graduationYears = Array.from({ length: 28 }, (_, index) => 2026 - index);
   type WrittenTeacherSlot = 1 | 2;
+
+  const userInitials = $derived.by(() => {
+    const user = visitorAuth.user;
+    if (!user) return '';
+    const name = user.displayName?.trim();
+    if (name) {
+      const initials = name
+        .split(/\s+/)
+        .map((part) => part[0] ?? '')
+        .join('')
+        .slice(0, 2)
+        .toUpperCase();
+      if (initials) return initials;
+    }
+    return (user.email ?? '?').slice(0, 2).toUpperCase();
+  });
 
   let countdown = $state(getCountdownState());
   let heroMotionReady = $state(false);
@@ -278,13 +298,13 @@
     }
   }
 
-  async function handleChangeEmail() {
+  async function handleSignOut() {
     authError = null;
     try {
       await visitorAuth.signOut();
     } catch (err) {
       console.error('Google sign-out failed:', err);
-      authError = 'We could not change your Google account. Please try again.';
+      authError = 'We could not sign you out. Please try again.';
     }
   }
 
@@ -513,18 +533,39 @@
               {#if visitorAuth.loading}
                 <p class="google-auth-status">Checking your Google account...</p>
               {:else if visitorAuth.user?.email}
-                <div class="verified-email">
-                  <p>
-                    We will send the event ticket to
-                    <strong>{visitorAuth.user.email}</strong>.
-                  </p>
-                  <p>
-                    Incorrect?
-                    <button
-                      class="change-email-button"
-                      type="button"
-                      onclick={handleChangeEmail}>Change email</button>
-                  </p>
+                <div class="flex items-center gap-3">
+                  <Item.Root variant="outline">
+                    <Item.Media>
+                      <Avatar.Root class="size-10">
+                        <Avatar.Image
+                          src={visitorAuth.user.photoURL ?? undefined}
+                          alt={visitorAuth.user.displayName ?? 'Visitor'} />
+                        <Avatar.Fallback>{userInitials}</Avatar.Fallback>
+                      </Avatar.Root>
+                    </Item.Media>
+
+                    <Item.Content>
+                      <Item.Title>
+                        {`You are signed in as ${visitorAuth.user.displayName}` ||
+                          'You are signed in'}
+                      </Item.Title>
+                      <Item.Description class="line-clamp-none wrap-break-word">
+                        We will send the event ticket to
+                        <strong>{visitorAuth.user.email}.</strong>
+                      </Item.Description>
+                      <Item.Description>Use the logout button to switch accounts.</Item.Description>
+                    </Item.Content>
+                    <Item.Actions>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        class="rounded-full cursor-pointer"
+                        aria-label="Sign out"
+                        onclick={handleSignOut}>
+                        <Logout02Icon />
+                      </Button>
+                    </Item.Actions>
+                  </Item.Root>
                 </div>
               {:else}
                 <button

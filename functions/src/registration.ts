@@ -55,6 +55,7 @@ const callableAuthSchema = z
             sign_in_provider: z.literal('google.com'),
           })
           .passthrough(),
+        picture: z.string().max(2048).optional(),
       })
       .passthrough(),
   })
@@ -75,11 +76,11 @@ export function generateRegistrationId(): string {
 }
 
 /**
- * Extracts the verified Google email from callable authentication data.
+ * Extracts the verified Google profile from callable authentication data.
  * @param {unknown} auth Callable authentication data.
- * @return {string} The normalized verified email.
+ * @return {{email: string, picture: string}} The normalized verified email and profile photo URL.
  */
-export function getVerifiedEmail(auth: unknown): string {
+export function getVerifiedProfile(auth: unknown): { email: string; picture: string } {
   const result = callableAuthSchema.safeParse(auth);
   if (!result.success) {
     throw new HttpsError(
@@ -87,7 +88,19 @@ export function getVerifiedEmail(auth: unknown): string {
       'Sign in with a verified Google account before registering.',
     );
   }
-  return result.data.token.email.trim().toLowerCase();
+  return {
+    email: result.data.token.email.trim().toLowerCase(),
+    picture: result.data.token.picture ?? '',
+  };
+}
+
+/**
+ * Extracts the verified Google email from callable authentication data.
+ * @param {unknown} auth Callable authentication data.
+ * @return {string} The normalized verified email.
+ */
+export function getVerifiedEmail(auth: unknown): string {
+  return getVerifiedProfile(auth).email;
 }
 
 /**
@@ -105,11 +118,13 @@ function isAlreadyExists(error: unknown): boolean {
  * Writes a validated registration with server-controlled fields.
  * @param {RegistrationSubmission} submission Validated visitor fields.
  * @param {string} email Verified account email.
+ * @param {string} picture Google profile photo URL.
  * @return {Promise<string>} The allocated registration ID.
  */
 async function writeRegistration(
   submission: RegistrationSubmission,
   email: string,
+  picture: string,
 ): Promise<string> {
   const app = getApps()[0] ?? initializeApp();
   const firestore = getFirestore(app);
@@ -123,6 +138,7 @@ async function writeRegistration(
         event_id: '2026',
         registration_id: registrationId,
         email,
+        photo_url: picture,
         full_name: submission.full_name,
         status: 'REGISTERED',
         comments: '',
@@ -149,7 +165,7 @@ async function writeRegistration(
 }
 
 export const createRegistration2026 = onCall(async (request) => {
-  const email = getVerifiedEmail(request.auth);
+  const { email, picture } = getVerifiedProfile(request.auth);
   const result = registrationSubmissionSchema.safeParse(request.data);
   if (!result.success) {
     throw new HttpsError(
@@ -158,6 +174,6 @@ export const createRegistration2026 = onCall(async (request) => {
     );
   }
 
-  const registrationId = await writeRegistration(result.data, email);
+  const registrationId = await writeRegistration(result.data, email, picture);
   return { registrationId };
 });

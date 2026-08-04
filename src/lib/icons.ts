@@ -52,6 +52,7 @@ export { default as LayoutGridIcon } from '$lib/components/icons/LayoutGridIcon.
 export { default as Loading01Icon } from '$lib/components/icons/Loading01Icon.svelte';
 export { default as Loading02Icon } from '$lib/components/icons/Loading02Icon.svelte';
 export { default as Logout01Icon } from '$lib/components/icons/Logout01Icon.svelte';
+export { default as Logout02Icon } from '$lib/components/icons/Logout02Icon.svelte';
 export { default as Logout03Icon } from '$lib/components/icons/Logout03Icon.svelte';
 export { default as Mail01Icon } from '$lib/components/icons/Mail01Icon.svelte';
 export { default as MapPinIcon } from '$lib/components/icons/MapPinIcon.svelte';

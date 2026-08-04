@@ -9,8 +9,8 @@ export interface BaseRegistration {
   full_name: string;
   status: RegistrationStatus;
   comments: string;
-  created_at: Timestamp;
   updated_at: Timestamp;
+  created_at: Timestamp;
 }
 
 export interface Registration2024 extends BaseRegistration {
@@ -23,11 +23,11 @@ export interface Registration2024 extends BaseRegistration {
   graduating_class: string;
   graduating_year: string;
   current_institution: string;
-  emergency_contact_nok: string;
-  name_of_nok: string;
-  relationship_with_nok: string;
   form_teachers: string;
   visiting_teachers: string;
+  name_of_nok: string;
+  relationship_with_nok: string;
+  emergency_contact_nok: string;
   arrived_at: Timestamp | null;
 }
 
@@ -41,20 +41,21 @@ export interface Registration2025 extends BaseRegistration {
   visiting_teachers: string;
 }
 
-export interface WrittenMessage {
-  teacher_name: string;
-  message: string;
-}
-
 export interface Registration2026 extends BaseRegistration {
   event_id: '2026';
   registration_id: string;
   email: string;
+  photo_url: string;
   contact_number: string;
   graduating_year: string;
   visiting_teachers: string[];
   written_messages: WrittenMessage[];
   arrived_at: Timestamp | null;
+}
+
+export interface WrittenMessage {
+  teacher_name: string;
+  message: string;
 }
 
 export type Registration2026Submission = Pick<

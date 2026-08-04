@@ -32,6 +32,7 @@ export const registration2026Schema = z
     event_id: z.literal('2026'),
     registration_id: z.string().regex(/^[A-HJ-NP-Z]{6}$/),
     email: z.email().max(254),
+    photo_url: z.string().max(2048),
     full_name: z.string().min(1).max(120),
     status: z.enum(['REGISTERED', 'CHECKED_IN', 'CONFLICT', 'REJECTED']),
     comments: z.string().max(10000),
