@@ -42,7 +42,6 @@ export const registration2026Schema = z
     visiting_teachers: z
       .array(z.string().min(1).max(120))
       .min(1)
-      .max(20)
       .refine((teachers) => new Set(teachers).size === teachers.length),
     written_messages: z.array(writtenMessageSchema).max(2),
     arrived_at: z.instanceof(Timestamp).nullable(),
@@ -99,7 +98,6 @@ export const registrationFormSchema = z
     visiting_teachers: z
       .array(z.enum(TEACHER_OPTIONS))
       .min(1, 'At least one teacher is required')
-      .max(20, 'Maximum 20 teachers')
       .refine(
         (teachers) => new Set(teachers).size === teachers.length,
         'Duplicate teacher names found',

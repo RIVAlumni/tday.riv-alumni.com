@@ -39,7 +39,6 @@ export const registrationSubmissionSchema = z
     visiting_teachers: z
       .array(z.string().trim().min(1).max(120))
       .min(1)
-      .max(20)
       .refine((teachers) => new Set(teachers).size === teachers.length),
     written_messages: z.array(writtenMessageSchema).max(2),
   })

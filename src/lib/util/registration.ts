@@ -46,6 +46,21 @@ export function visitingTeachersFor(r: Registration | null | undefined): string 
   return Array.isArray(vt) ? vt.join(', ') : vt;
 }
 
+/** First visiting teacher, with a '... (N more)' suffix - 2024/2025 store a comma-joined string, 2026 an array. */
+export function visitingTeachersPreviewFor(r: Registration | null | undefined): string {
+  if (!r) return '';
+  const vt = r.visiting_teachers;
+  const teachers = Array.isArray(vt)
+    ? vt
+    : vt
+        .split(',')
+        .map((teacher) => teacher.trim())
+        .filter(Boolean);
+  if (teachers.length === 0) return '';
+  const remaining = teachers.length - 1;
+  return remaining > 0 ? `${teachers[0]}... (${remaining} more)` : teachers[0];
+}
+
 /** Arrival timestamp - 2024 and 2026 registrations carry it, 2025 does not. */
 export function arrivedAtFor(r: Registration | null | undefined): Timestamp | null {
   if (!r) return null;

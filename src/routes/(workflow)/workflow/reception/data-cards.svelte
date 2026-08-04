@@ -21,10 +21,8 @@
     Flag01Icon,
     UserCheck01Icon,
   } from '$lib/icons';
-  import { is2024 } from '$lib/models/registration';
-  import { arrivedAtFor, nricFor, visitingTeachersFor } from '$lib/util/registration';
+  import { arrivedAtFor, visitingTeachersPreviewFor } from '$lib/util/registration';
   import { cn } from '$lib/utils';
-
   let {
     registration,
     disabled = false,
@@ -223,46 +221,6 @@
       {/if}
     </Card.Root>
 
-    <!-- Visiting Teachers -->
-    <Card.Root
-      role={hasSelection ? 'button' : undefined}
-      tabindex={hasSelection ? 0 : undefined}
-      aria-pressed={hasSelection ? selectedFields.teachersVisiting : undefined}
-      onclick={hasSelection ? () => toggleField('teachersVisiting') : undefined}
-      onkeydown={hasSelection
-        ? (event) => handleFieldKeydown(event, 'teachersVisiting')
-        : undefined}
-      class={cn(
-        '@container/card relative select-none transition-shadow @xl/main:col-span-3 @4xl/main:col-span-6',
-        hasSelection && 'cursor-pointer',
-        selectedFields.teachersVisiting && 'ring-2 ring-destructive dark:ring-destructive',
-      )}>
-      <Card.Header>
-        <Card.Description>Which Teacher(s) Are They Visiting</Card.Description>
-        <Card.Title
-          class={cn(
-            'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-            !hasSelection && 'text-muted-foreground',
-          )}>
-          {selected ? visitingTeachersFor(selected) || '-' : '-'}
-        </Card.Title>
-      </Card.Header>
-      {#if hasSelection && selectedFields.teachersVisiting}
-        {@render selectedBadge()}
-      {/if}
-    </Card.Root>
-
-    {#if selected && is2024(selected)}
-      <Card.Root class="@container/card @xl/main:col-span-3 @4xl/main:col-span-3">
-        <Card.Header>
-          <Card.Description>NRIC</Card.Description>
-          <Card.Title class="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {nricFor(selected)}
-          </Card.Title>
-        </Card.Header>
-      </Card.Root>
-    {/if}
-
     <!-- Status -->
     <Card.Root class="@container/card @xl/main:col-span-3 @4xl/main:col-span-3">
       <Card.Header>
@@ -275,6 +233,35 @@
           {statusBadge?.label ?? '-'}
         </Card.Title>
       </Card.Header>
+    </Card.Root>
+
+    <!-- Visiting Teachers -->
+    <Card.Root
+      role={hasSelection ? 'button' : undefined}
+      tabindex={hasSelection ? 0 : undefined}
+      aria-pressed={hasSelection ? selectedFields.teachersVisiting : undefined}
+      onclick={hasSelection ? () => toggleField('teachersVisiting') : undefined}
+      onkeydown={hasSelection
+        ? (event) => handleFieldKeydown(event, 'teachersVisiting')
+        : undefined}
+      class={cn(
+        '@container/card relative select-none transition-shadow @xl/main:col-span-3 @4xl/main:col-span-3',
+        hasSelection && 'cursor-pointer',
+        selectedFields.teachersVisiting && 'ring-2 ring-destructive dark:ring-destructive',
+      )}>
+      <Card.Header>
+        <Card.Description>Which teacher(s) are they visiting?</Card.Description>
+        <Card.Title
+          class={cn(
+            'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+            !hasSelection && 'text-muted-foreground',
+          )}>
+          {selected ? visitingTeachersPreviewFor(selected) || '-' : '-'}
+        </Card.Title>
+      </Card.Header>
+      {#if hasSelection && selectedFields.teachersVisiting}
+        {@render selectedBadge()}
+      {/if}
     </Card.Root>
 
     <div class="flex gap-2 @xl/main:col-span-3 @4xl/main:col-span-6">

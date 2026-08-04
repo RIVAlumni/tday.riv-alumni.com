@@ -13,8 +13,8 @@ const VALID_FORM = {
   full_name: ' Example Visitor ',
   contact_number: '91234567',
   graduating_year: '2021',
-  visiting_teachers: ['MDM CHAN', 'MR LIM', 'MRS THOMAS'],
-  teacher1_name: ' MR LIM ',
+  visiting_teachers: ['MDM NG HWEE KOON', 'MR LIM ZE WEI', 'MDM CHAN PUI YONG'],
+  teacher1_name: ' MR LIM ZE WEI ',
   teacher1_message: ' Thank you! ',
   teacher2_name: '',
   teacher2_message: '',
@@ -47,8 +47,8 @@ describe('registrationFormSchema', () => {
       full_name: 'EXAMPLE VISITOR',
       contact_number: '91234567',
       graduating_year: '2021',
-      visiting_teachers: ['MDM CHAN', 'MR LIM', 'MRS THOMAS'],
-      written_messages: [{ teacher_name: 'MR LIM', message: 'Thank you!' }],
+      visiting_teachers: ['MDM NG HWEE KOON', 'MR LIM ZE WEI', 'MDM CHAN PUI YONG'],
+      written_messages: [{ teacher_name: 'MR LIM ZE WEI', message: 'Thank you!' }],
     });
     expect(registration2026SubmissionSchema.safeParse(result.data).success).toBe(true);
   });
@@ -87,7 +87,7 @@ describe('registrationFormSchema', () => {
     });
     const duplicateTeachers = registrationFormSchema.safeParse({
       ...VALID_FORM,
-      visiting_teachers: ['MR LIM', 'MR LIM'],
+      visiting_teachers: ['MR LIM ZE WEI', 'MR LIM ZE WEI'],
     });
 
     expect(invalidContact.success).toBe(false);
@@ -108,7 +108,7 @@ describe('registrationFormSchema', () => {
       ...VALID_FORM,
       teacher1_name: '',
       teacher1_message: '',
-      teacher2_name: 'MR LIM',
+      teacher2_name: 'MR LIM ZE WEI',
       teacher2_message: OVER_WORD_LIMIT_MESSAGE,
     });
 
@@ -133,8 +133,13 @@ describe('registrationFormSchema', () => {
       full_name: "') or ('1'='1--",
       contact_number: '80000000',
       graduating_year: '1999',
-      visiting_teachers: ['MDM CHAN', 'MR LIM', 'MRS THOMAS', LONG_TEACHER_TEXT],
-      teacher1_name: 'MR LIM',
+      visiting_teachers: [
+        'MDM NG HWEE KOON',
+        'MR LIM ZE WEI',
+        'MDM CHAN PUI YONG',
+        LONG_TEACHER_TEXT,
+      ],
+      teacher1_name: 'MR LIM ZE WEI',
       teacher1_message: LONG_TEACHER_TEXT,
       teacher2_name: '',
       teacher2_message: '',
@@ -152,7 +157,7 @@ describe('registrationFormSchema', () => {
   it('rejects teachers that are not available in the selectors', () => {
     const invalidVisitingTeacher = registrationFormSchema.safeParse({
       ...VALID_FORM,
-      visiting_teachers: ['MR LIM', 'MR UNKNOWN'],
+      visiting_teachers: ['MR LIM ZE WEI', 'MR UNKNOWN'],
     });
     const invalidMessageTeacher = registrationFormSchema.safeParse({
       ...VALID_FORM,

@@ -56,10 +56,10 @@ test('normalizes valid registration submissions', () => {
   });
 });
 
-test('accepts the maximum bounded lists', () => {
+test('accepts lists beyond the previous 20-teacher bound', () => {
   const result = registrationSubmissionSchema.safeParse({
     ...VALID_SUBMISSION,
-    visiting_teachers: Array.from({ length: 20 }, (_, index) => `Teacher ${index}`),
+    visiting_teachers: Array.from({ length: 30 }, (_, index) => `Teacher ${index}`),
     written_messages: [
       { teacher_name: 'Teacher 1', message: 'Thank you!' },
       { teacher_name: 'Teacher 2', message: 'Thank you again!' },
