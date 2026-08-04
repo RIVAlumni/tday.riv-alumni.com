@@ -104,22 +104,23 @@
   ];
 
   const teacherNames = [
-    'MR FIRDAUS',
     'MR ZAKIR',
-    'MR RAZIF',
-    'MDM CHAN',
-    'MS FRONIA',
+    'MRS ANGIE LIU',
     'MR KHAIR',
-    'MR HO',
+    'MR RAZIF',
+    'MS ANG HUI NEE (洪老师)',
+    'MDM GERALDINE',
     'MS SAKINA',
-    'MR RIDUAN',
+    'MDM TAN KOK TENG (陈老师)',
+    'MDM MARLINA',
+    'MDM CHAN',
+    'MDM HUDA',
+    'MDM LIANG',
     'MR SEAH',
-    'MDM CHIAH',
-    'MR LIM',
-    'MR YEE',
-    'MRS THOMAS',
-    'MDM LI',
-    'AND MANY MORE TEACHERS',
+    'MR FIRDAUS',
+    'MDM CANDICE',
+    'MDM NURSHAMIRA',
+    '... AND MANY MORE 😇',
   ];
 
   const tickerItems = [
