@@ -34,6 +34,7 @@ export { default as Delete02Icon } from '$lib/components/icons/Delete02Icon.svel
 export { default as Door01Icon } from '$lib/components/icons/Door01Icon.svelte';
 export { default as DragDropIcon } from '$lib/components/icons/DragDropIcon.svelte';
 export { default as FaceIdIcon } from '$lib/components/icons/FaceIdIcon.svelte';
+export { default as FilterIcon } from '$lib/components/icons/FilterIcon.svelte';
 export { default as Flag01Icon } from '$lib/components/icons/Flag01Icon.svelte';
 export { default as Folder01Icon } from '$lib/components/icons/Folder01Icon.svelte';
 export { default as FocusIcon } from '$lib/components/icons/FocusIcon.svelte';
