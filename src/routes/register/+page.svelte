@@ -16,6 +16,13 @@
   import { visitorAuth } from '$lib/firebase/auth.svelte';
   import { onMount, tick } from 'svelte';
   import { registrationFormFieldName, registrationFormSchema } from '$lib/util/registration.schema';
+  import {
+    clearRegistrationDraft,
+    emptyRegistrationDraft,
+    loadRegistrationDraft,
+    saveRegistrationDraft,
+    type RegistrationDraft,
+  } from '$lib/util/registration-draft';
   import { createRegistrationRecord, RegistrationWriteError } from '$lib/firebase';
   import Button from '$lib/components/ui/button/button.svelte';
 
@@ -38,6 +45,7 @@
     return (user.email ?? '?').slice(0, 2).toUpperCase();
   });
 
+  let formElement = $state<HTMLFormElement | null>(null);
   let countdown = $state(getCountdownState());
   let heroMotionReady = $state(false);
   let heroImageVisible = $state(false);
@@ -82,6 +90,53 @@
     }
   }
 
+  // ---- Draft persistence ---------------------------------------------------
+  function currentDraft(): RegistrationDraft {
+    const draft = emptyRegistrationDraft();
+    if (!formElement) return draft;
+    const formData = new FormData(formElement);
+    draft.full_name = String(formData.get('full_name') ?? '');
+    draft.contact_number = String(formData.get('contact_number') ?? '');
+    draft.graduating_year = String(formData.get('graduating_year') ?? '');
+    draft.visiting_teachers = [...selectedTeachers];
+    draft.teacher1_name = selectedWrittenTeachers[1];
+    draft.teacher1_message = String(formData.get('teacher1_message') ?? '');
+    draft.teacher2_name = selectedWrittenTeachers[2];
+    draft.teacher2_message = String(formData.get('teacher2_message') ?? '');
+    draft.privacyConsent = formData.get('privacyConsent') === 'on';
+    return draft;
+  }
+
+  function persistDraft() {
+    saveRegistrationDraft(currentDraft());
+  }
+
+  function restoreDraft(draft: RegistrationDraft) {
+    selectedTeachers = draft.visiting_teachers;
+    selectedWrittenTeachers = { 1: draft.teacher1_name, 2: draft.teacher2_name };
+    if (!formElement) return;
+
+    const setValue = (name: string, value: string) => {
+      const control = formElement?.elements.namedItem(name);
+      if (
+        control instanceof HTMLInputElement ||
+        control instanceof HTMLSelectElement ||
+        control instanceof HTMLTextAreaElement
+      ) {
+        control.value = value;
+      }
+    };
+    setValue('full_name', draft.full_name);
+    setValue('contact_number', draft.contact_number);
+    setValue('graduating_year', draft.graduating_year);
+    setValue('teacher1_message', draft.teacher1_message);
+    setValue('teacher2_message', draft.teacher2_message);
+    const consent = formElement.elements.namedItem('privacyConsent');
+    if (consent instanceof HTMLInputElement) {
+      consent.checked = draft.privacyConsent;
+    }
+  }
+
   async function toggleTeacherMenu() {
     teacherMenuOpen = !teacherMenuOpen;
     if (teacherMenuOpen) {
@@ -103,6 +158,7 @@
   function removeTeacher(teacher: string) {
     selectedTeachers = selectedTeachers.filter((selectedTeacher) => selectedTeacher !== teacher);
     clearFieldError('visiting_teachers');
+    persistDraft();
   }
 
   function writtenTeacherField(slot: WrittenTeacherSlot) {
@@ -137,6 +193,7 @@
   function removeWrittenTeacher(slot: WrittenTeacherSlot) {
     selectedWrittenTeachers[slot] = '';
     clearFieldError(writtenTeacherField(slot));
+    persistDraft();
   }
 
   function handleDocumentPointerDown(event: PointerEvent) {
@@ -269,6 +326,7 @@
 
     try {
       const id = await createRegistrationRecord(result.data);
+      clearRegistrationDraft();
       submittedId = id;
       await tick();
       const confirmation = document.getElementById('registration-success');
@@ -284,6 +342,11 @@
     } finally {
       submitting = false;
     }
+  }
+
+  function handleClearDraft() {
+    clearRegistrationDraft();
+    window.location.reload();
   }
 
   let authError = $state<string | null>(null);
@@ -310,6 +373,7 @@
 
   onMount(() => {
     visitorAuth.init();
+    restoreDraft(loadRegistrationDraft());
     document.addEventListener('pointerdown', handleDocumentPointerDown);
     const countdownInterval = window.setInterval(() => {
       countdown = getCountdownState();
@@ -514,8 +578,11 @@
         </section>
       {:else}
         <form
+          bind:this={formElement}
           onsubmit={handleSubmit}
-          oninvalidcapture={handleInvalid}>
+          oninvalidcapture={handleInvalid}
+          oninput={persistDraft}
+          onchange={persistDraft}>
           <section
             id="verify-email"
             class="form-section google-section"
@@ -1129,6 +1196,14 @@
           <p class="privacy-note">
             Registrations are subject to review at RIVAlumni's discretion and may be rejected
             without cause. Your event ticket will be emailed to your Google-verified email address.
+          </p>
+
+          <p class="draft-clear-note">
+            Answers are saved in this browser. If something looks wrong or you can't submit, you can
+            <button
+              type="button"
+              onclick={handleClearDraft}>clear the saved draft</button>
+            and start over.
           </p>
         </form>
       {/if}
@@ -1953,6 +2028,33 @@
   .privacy-note {
     max-width: 43rem;
     margin: -1.2rem 0 0;
+  }
+
+  .draft-clear-note {
+    margin: -2.1rem 0 0;
+    color: var(--muted);
+    font-size: 0.72rem;
+    line-height: 1.45;
+  }
+
+  .draft-clear-note button {
+    padding: 0;
+    border: 0;
+    border-bottom: 1px solid currentColor;
+    background: transparent;
+    color: var(--paper);
+    font: inherit;
+    font-size: inherit;
+    cursor: pointer;
+  }
+
+  .draft-clear-note button:hover {
+    color: #ff6c4c;
+  }
+
+  .draft-clear-note button:focus-visible {
+    outline: 2px solid var(--red);
+    outline-offset: 2px;
   }
 
   .confirmation {
