@@ -1,42 +1,59 @@
-# sv
+# RIVAlumni Teachers' Day
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Reception system for checking in and out former students visiting their alma mater during Teachers' Day.
 
-## Creating a project
+## Access Levels
 
-If you're seeing this, you've probably already done this step. Congrats!
+| Level | Role | `/events/{eventId}` | `/events/{eventId}/registrations/{registrationId}` |
+|---|---|---|---|
+| 0 | None | — | — |
+| 1 | Operator | `get` | `get`, update reception state (check-in / reject / conflict) |
+| 2 | Mediator | `get` | `get`, `list`, edit profile fields |
+| 3 | Administrator | `get` | `get`, `list`, edit profile fields, reception actions, `delete` |
 
-```sh
-# create a new project
-npx sv create my-app
-```
+### Operation details
 
-To recreate this project with the same configuration:
+**Reception actions (Operator+)** — allowed on events >= 2026 only:
 
-```sh
-# recreate this project
-pnpm dlx sv@0.16.1 create --template minimal --types ts --add prettier eslint vitest="usages:unit,component" playwright tailwindcss="plugins:forms,typography" sveltekit-adapter="adapter:auto" mdsvex paraglide="languageTags:en, zh-cn+demo:yes" mcp="ide:opencode,vscode,other+setup:local" experimental="versions:kit+features:async,remoteFunctions,explicitEnvironmentVariables,handleRenderingErrors" --install pnpm .
-```
+| Action | Fields written | Constraints |
+|---|---|---|
+| Check-in | `status`, `arrived_at`, `updated_at`, `updates` | `status = CHECKED_IN`, `arrived_at = request.time` |
+| Reject | `status`, `updated_at`, `updates` | `status = REJECTED`, `arrived_at` unchanged |
+| Flag conflict | `status`, `updated_at`, `updates` | `status = CONFLICT`, `arrived_at` unchanged |
+
+Every reception action appends exactly one audit entry to `updates`, authenticated against the operator's verified email.
+
+**Profile edits (Mediator+)** — allowed on events >= 2026 only:
+
+| Editable fields | Constraints |
+|---|---|
+| `full_name`, `comments`, `email`, `contact_number`, `graduating_year` | Validated individually (see `firestore.rules`) |
+| `search_ngrams` | Required whenever `full_name`, `contact_number`, or `email` changes |
+| `status`, `arrived_at` | Same validators as Operator path |
+
+Every mediator update appends exactly one audit entry to `updates`.
+
+**Legacy events** (2024, 2025): `get` and `list` are allowed at the same access levels. All writes are denied.
+
+## Tech Stack
+
+- SvelteKit + Svelte 5 + TypeScript
+- Tailwind CSS
+- Firebase Authentication, Firestore, Functions (2nd gen), Admin SDK
+- Cloud Run deployment
+- pnpm
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
 ```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+pnpm install
+pnpm run dev
 ```
 
-## Building
+## Firestore Rules Tests
 
-To create a production version of your app:
+Requires the Firestore emulator running on `127.0.0.1:8180`:
 
 ```sh
-npm run build
+FIRESTORE_RULES_TESTS=1 pnpm run test
 ```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
