@@ -1,10 +1,12 @@
 <script lang="ts">
-  import type { Registration } from '$lib/models/registration';
   import type { ColumnFiltersState } from '@tanstack/table-core';
 
-  import { browser } from '$app/env';
-  import { goto } from '$app/navigation';
+  import type { Registration } from '$lib/models/registration';
 
+  import { onMount } from 'svelte';
+
+  import { goto } from '$app/navigation';
+  import { createSvelteTable } from '$lib/components/ui/data-table/data-table.svelte.js';
   import { fetchConflictRegistrations, searchRegistrationsById } from '$lib/firebase';
   import { eventStore } from '$lib/stores/event.svelte';
 
@@ -17,8 +19,7 @@
   let loading = $state(false);
   let error = $state<Error | null>(null);
   let columnFilters = $state<ColumnFiltersState>([{ id: 'status', value: 'CONFLICT' }]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let table = $state<any>(null);
+  let table = $state<ReturnType<typeof createSvelteTable<Registration>>>();
   let requestSequence = 0;
 
   async function runQuery(eventId: string, registrationId: string): Promise<void> {
@@ -44,14 +45,22 @@
     }
   }
 
-  $effect(() => {
-    const eventId = eventStore.activeEventId;
-    if (!browser) return;
-
+  function loadEvent(eventId: string): void {
     searchValue = '';
     submittedSearch = '';
     columnFilters = [{ id: 'status', value: 'CONFLICT' }];
     void runQuery(eventId, '');
+  }
+
+  onMount(() => {
+    let mounted = true;
+    // Parent layout hydrates eventStore in its onMount callback.
+    queueMicrotask(() => {
+      if (mounted) loadEvent(eventStore.activeEventId);
+    });
+    return () => {
+      mounted = false;
+    };
   });
 
   async function search(rawValue: string): Promise<void> {
@@ -78,11 +87,13 @@
 
   {#if table}
     <RecordsToolbar
-      {registrations}
       bind:searchValue
       bind:columnFilters
       {table}
       {loading}
+      searchDescription="Enter a complete registration ID."
+      searchPlaceholder="Search by registration ID"
+      onEventChange={loadEvent}
       onSearch={search}
       onReload={reload} />
   {/if}

@@ -189,6 +189,7 @@ describe('registrationFormSchema', () => {
       comments: '',
       created_at: now,
       updated_at: now,
+      search_ngrams: ['v', 'vi', 'vis'],
       arrived_at: null,
       ...submission,
     });

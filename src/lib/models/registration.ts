@@ -50,6 +50,7 @@ export interface Registration2026 extends BaseRegistration {
   graduating_year: string;
   visiting_teachers: string[];
   written_messages: WrittenMessage[];
+  search_ngrams: string[];
   arrived_at: Timestamp | null;
 }
 

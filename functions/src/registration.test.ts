@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  buildRegistrationSearchNgrams,
   generateRegistrationId,
   getVerifiedEmail,
   getVerifiedProfile,
@@ -103,6 +104,20 @@ test('rejects invalid and unexpected submission data', () => {
   assert.equal(invalidContact.success, false);
   assert.equal(duplicateTeachers.success, false);
   assert.equal(extraField.success, false);
+});
+
+test('builds search n-grams for registration fields', () => {
+  const ngrams = buildRegistrationSearchNgrams([
+    'MD HAIKAL BIN ABDUL',
+    '91234567',
+    'Haikal@Example.com',
+  ]);
+
+  assert.ok(ngrams.includes('hai'));
+  assert.ok(ngrams.includes('ika'));
+  assert.ok(ngrams.includes('123'));
+  assert.ok(ngrams.includes('@ex'));
+  assert.equal(new Set(ngrams).size, ngrams.length);
 });
 
 test('generates valid registration IDs', () => {

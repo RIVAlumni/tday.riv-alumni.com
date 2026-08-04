@@ -17,7 +17,6 @@ export interface ReceptionEvent {
   year: string;
   title: string;
   date: string;
-  venue: string;
   status: EventStatus;
 }
 
@@ -27,7 +26,6 @@ export const events: ReceptionEvent[] = [
     year: '2024',
     title: "Teachers' Day 2024",
     date: '2024-09-06',
-    venue: 'RIVA Heritage Hall',
     status: 'completed',
   },
   {
@@ -35,7 +33,6 @@ export const events: ReceptionEvent[] = [
     year: '2025',
     title: "Teachers' Day 2025",
     date: '2025-09-05',
-    venue: 'RIVA Heritage Hall',
     status: 'completed',
   },
   {
@@ -43,7 +40,6 @@ export const events: ReceptionEvent[] = [
     year: '2026',
     title: "Teachers' Day 2026",
     date: '2026-09-03',
-    venue: 'Rivervale Primary School',
     status: 'active',
   },
   {
@@ -51,7 +47,6 @@ export const events: ReceptionEvent[] = [
     year: '2027',
     title: "Teachers' Day 2027",
     date: '2027-06-25',
-    venue: 'To be confirmed',
     status: 'upcoming',
   },
 ];

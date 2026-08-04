@@ -38,6 +38,7 @@ export const registration2026Schema = z
     comments: z.string().max(10000),
     created_at: z.instanceof(Timestamp),
     updated_at: z.instanceof(Timestamp),
+    search_ngrams: z.array(z.string().min(1).max(12)).max(1500),
     contact_number: z.string().regex(/^[89][0-9]{7}$/),
     graduating_year: z.string().regex(/^(1999|20(0[0-9]|1[0-9]|2[0-6]))$/),
     visiting_teachers: z

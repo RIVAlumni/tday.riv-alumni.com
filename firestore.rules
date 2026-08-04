@@ -49,12 +49,16 @@ service cloud.firestore {
           'comments',
           'status',
           'arrived_at',
-          'updated_at'
+          'updated_at',
+          'search_ngrams'
         ])
         && changed.hasAll(['updated_at'])
         && request.resource.data.updated_at == request.time
         && (!changed.hasAny(['full_name']) || isValidName(request.resource.data.full_name))
         && (!changed.hasAny(['contact_number']) || isValidContactNumber(eventId, request.resource.data.contact_number))
+        && (eventId != '2026' || !changed.hasAny(['full_name', 'contact_number']) || changed.hasAll(['search_ngrams']))
+        && (!changed.hasAny(['search_ngrams']) || (eventId == '2026' && changed.hasAny(['full_name', 'contact_number'])))
+        && (!changed.hasAny(['search_ngrams']) || isValidSearchNgrams(request.resource.data.search_ngrams))
         && (!changed.hasAny(['graduating_year']) || isValidGraduatingYear(eventId, request.resource.data.graduating_year))
         && (!changed.hasAny(['visiting_teachers']) || isValidVisitingTeachers(eventId, request.resource.data.visiting_teachers))
         && (!changed.hasAny(['comments']) || isValidComments(request.resource.data.comments))
@@ -109,6 +113,13 @@ service cloud.firestore {
 
     function isValidStatus(value) {
       return value in ['REGISTERED', 'CHECKED_IN', 'CONFLICT', 'REJECTED'];
+    }
+
+    function isValidSearchNgrams(value) {
+      return value is list
+        && value.size() > 0
+        && value.size() <= 1500
+        && value.toSet().size() == value.size();
     }
 
     function isValidContactNumber(eventId, value) {

@@ -25,6 +25,7 @@
   // --- shadcn-svelte ---
   import * as Table from '$lib/components/ui/table/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
+  import * as Empty from '$lib/components/ui/empty/index.js';
   import * as Select from '$lib/components/ui/select/index.js';
   import { Label } from '$lib/components/ui/label/index.js';
 
@@ -47,23 +48,34 @@
     registrations,
     globalFilter = $bindable(''),
     columnFilters = $bindable([]),
-    table = $bindable(null as unknown as ReturnType<typeof createSvelteTable<Registration>>),
+    pagination = $bindable({ pageIndex: 0, pageSize: 15 }),
+    table = $bindable(),
+    totalCount = 0,
+    manualPagination = false,
+    loading = false,
+    onPaginationChange,
     onNavigate,
   }: {
     registrations: Registration[];
     globalFilter?: string;
     columnFilters?: ColumnFiltersState;
+    pagination?: PaginationState;
     table?: ReturnType<typeof createSvelteTable<Registration>>;
+    totalCount?: number;
+    manualPagination?: boolean;
+    loading?: boolean;
+    onPaginationChange?: (
+      pagination: PaginationState,
+      previousPagination: PaginationState,
+    ) => void | Promise<void>;
     onNavigate: (registrationId: string) => void;
   } = $props();
 
   // --- Table state ---
-  let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 15 });
   let sorting = $state<SortingState>([{ id: 'registration_id', desc: false }]);
 
   const VISIBILITY_KEY = 'records:column-visibility';
   let columnVisibility = $state<VisibilityState>({});
-  let visibilityLoaded = $state(false);
 
   onMount(() => {
     try {
@@ -72,17 +84,16 @@
     } catch {
       /* noop */
     }
-    visibilityLoaded = true;
   });
 
-  $effect(() => {
-    if (!visibilityLoaded) return;
+  function updateColumnVisibility(value: VisibilityState): void {
+    columnVisibility = value;
     try {
-      localStorage.setItem(VISIBILITY_KEY, JSON.stringify(columnVisibility));
+      localStorage.setItem(VISIBILITY_KEY, JSON.stringify(value));
     } catch {
       /* noop */
     }
-  });
+  }
 
   // --- Columns ---
   const columns: ColumnDef<Registration>[] = [
@@ -174,6 +185,12 @@
     getRowId: (row) => String(row.registration_id),
     enableRowSelection: false,
     autoResetPageIndex: false,
+    get manualPagination() {
+      return manualPagination;
+    },
+    get pageCount() {
+      return manualPagination ? Math.ceil(totalCount / pagination.pageSize) : undefined;
+    },
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -182,8 +199,16 @@
     getFilteredRowModel: getFilteredRowModel(),
     globalFilterFn: 'auto',
     onPaginationChange: (updater) => {
-      if (typeof updater === 'function') pagination = updater(pagination);
-      else pagination = updater;
+      if (loading) return;
+      const previousPagination = pagination;
+      const updatedPagination =
+        typeof updater === 'function' ? updater(previousPagination) : updater;
+      const nextPagination =
+        updatedPagination.pageSize !== previousPagination.pageSize
+          ? { ...updatedPagination, pageIndex: 0 }
+          : updatedPagination;
+      pagination = nextPagination;
+      void onPaginationChange?.(nextPagination, previousPagination);
     },
     onSortingChange: (updater) => {
       if (typeof updater === 'function') sorting = updater(sorting);
@@ -194,8 +219,7 @@
       else columnFilters = updater;
     },
     onColumnVisibilityChange: (updater) => {
-      if (typeof updater === 'function') columnVisibility = updater(columnVisibility);
-      else columnVisibility = updater;
+      updateColumnVisibility(typeof updater === 'function' ? updater(columnVisibility) : updater);
     },
   });
 
@@ -270,13 +294,15 @@
           <Table.Cell
             colspan={columns.length}
             class="h-32 text-center">
-            <div class="flex flex-col items-center gap-2">
-              <UserIcon class="text-muted-foreground size-8" />
-              <p class="text-muted-foreground text-sm font-medium">No registrations found</p>
-              {#if globalFilter}
-                <p class="text-muted-foreground text-xs">Try adjusting your search or filter.</p>
-              {/if}
-            </div>
+            <Empty.Root>
+              <Empty.Header>
+                <Empty.Media variant="icon">
+                  <UserIcon />
+                </Empty.Media>
+                <Empty.Title>No registrations found</Empty.Title>
+                <Empty.Description>Try adjusting your search or filters.</Empty.Description>
+              </Empty.Header>
+            </Empty.Root>
           </Table.Cell>
         </Table.Row>
       {/if}
@@ -287,8 +313,11 @@
 <!-- Pagination -->
 <div class="flex items-center justify-between">
   <div class="text-muted-foreground hidden flex-1 text-sm lg:flex">
-    {table.getFilteredRowModel().rows.length} of
-    {registrations.length} registration(s)
+    {#if manualPagination}
+      {registrations.length} of {totalCount} registration(s)
+    {:else}
+      {table.getFilteredRowModel().rows.length} of {registrations.length} registration(s)
+    {/if}
   </div>
   <div class="flex w-full items-center gap-6 lg:w-fit">
     <div class="hidden items-center gap-2 lg:flex">
@@ -297,6 +326,7 @@
         class="text-sm font-medium">Rows per page</Label>
       <Select.Root
         type="single"
+        disabled={loading}
         bind:value={pageSizeBind.get, pageSizeBind.set}>
         <Select.Trigger
           size="sm"
@@ -322,7 +352,7 @@
         variant="outline"
         class="hidden size-8 p-0 lg:flex"
         onclick={() => table.setPageIndex(0)}
-        disabled={!table.getCanPreviousPage()}>
+        disabled={loading || !table.getCanPreviousPage()}>
         <span class="sr-only">Go to first page</span>
         <ArrowLeftDoubleIcon />
       </Button>
@@ -331,7 +361,7 @@
         class="size-8"
         size="icon"
         onclick={() => table.previousPage()}
-        disabled={!table.getCanPreviousPage()}>
+        disabled={loading || !table.getCanPreviousPage()}>
         <span class="sr-only">Go to previous page</span>
         <ArrowLeft01Icon />
       </Button>
@@ -340,7 +370,7 @@
         class="size-8"
         size="icon"
         onclick={() => table.nextPage()}
-        disabled={!table.getCanNextPage()}>
+        disabled={loading || !table.getCanNextPage()}>
         <span class="sr-only">Go to next page</span>
         <ArrowRight01Icon />
       </Button>
@@ -349,7 +379,7 @@
         class="hidden size-8 p-0 lg:flex"
         size="icon"
         onclick={() => table.setPageIndex(table.getPageCount() - 1)}
-        disabled={!table.getCanNextPage()}>
+        disabled={loading || !table.getCanNextPage()}>
         <span class="sr-only">Go to last page</span>
         <ArrowRightDoubleIcon />
       </Button>

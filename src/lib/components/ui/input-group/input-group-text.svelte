@@ -7,13 +7,13 @@
 		class: className,
 		children,
 		...restProps
-	}: WithElementRef<HTMLAttributes<HTMLDivElement>> = $props();
+	}: WithElementRef<HTMLAttributes<HTMLSpanElement>> = $props();
 </script>
 
-<div
+<span
 	bind:this={ref}
-	class={cn("relative flex flex-col gap-4 md:flex-row", className)}
+	class={cn("gap-2 text-sm text-muted-foreground [&_svg:not([class*='size-'])]:size-4 flex items-center [&_svg]:pointer-events-none", className)}
 	{...restProps}
 >
 	{@render children?.()}
-</div>
+</span>

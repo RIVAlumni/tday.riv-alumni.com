@@ -67,6 +67,18 @@ async function seedData(): Promise<void> {
         created_at: now,
         updated_at: now,
       }),
+      setDoc(doc(firestore, 'events', '2025', 'registrations', '1001'), {
+        event_id: '2025',
+        registration_id: 1001,
+        full_name: 'LEGACY VISITOR',
+        status: 'REGISTERED',
+        contact_number: 91234567,
+        graduating_year: 2020,
+        visiting_teachers: 'Mr Lim',
+        comments: '',
+        created_at: now,
+        updated_at: now,
+      }),
     ]);
   });
 }
@@ -167,14 +179,42 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore registration rules', () => {
     const reference = doc(registrations, REGISTRATION_ID);
 
     const snapshot = await assertSucceeds(getDocs(registrations));
+    await assertFails(
+      updateDoc(reference, {
+        search_ngrams: ['p', 'po', 'poi'],
+        updated_at: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        full_name: 'UNINDEXED VISITOR',
+        updated_at: serverTimestamp(),
+      }),
+    );
     await assertSucceeds(
       updateDoc(reference, {
         full_name: 'UPDATED VISITOR',
+        search_ngrams: ['u', 'up', 'upd'],
         updated_at: serverTimestamp(),
       }),
     );
 
     expect(snapshot.size).toBe(1);
+  });
+
+  it('allows legacy registration edits without search n-grams', async () => {
+    const firestore = authenticatedFirestore('mediator');
+    const reference = doc(firestore, 'events', '2025', 'registrations', '1001');
+
+    await assertSucceeds(
+      updateDoc(reference, {
+        full_name: 'UPDATED LEGACY VISITOR',
+        updated_at: serverTimestamp(),
+      }),
+    );
+
+    const snapshot = await assertSucceeds(getDoc(reference));
+    expect(snapshot.data()?.full_name).toBe('UPDATED LEGACY VISITOR');
   });
 
   it('denies reads after access expires', async () => {

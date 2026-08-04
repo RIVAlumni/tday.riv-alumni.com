@@ -11,10 +11,18 @@ export {
   fetchEventStats,
   fetchRegistration,
   fetchRegistrationPage,
+  searchRegistrations,
   searchRegistrationsById,
   checkInRegistration,
   refuseRegistration,
   flagConflict,
   updateRegistrationFields,
+} from './registrations';
+export type {
+  RegistrationPageCursor,
+  RegistrationPageDirection,
+  RegistrationPageOptions,
+  RegistrationPageResult,
+  RegistrationQueryFilters,
 } from './registrations';
 export type { AuthStore } from './types';

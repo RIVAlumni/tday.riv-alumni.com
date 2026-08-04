@@ -12,6 +12,7 @@ const REGISTRATION_ID_LENGTH = 6;
 const MAX_ID_ATTEMPTS = 3;
 const MAX_MESSAGE_CHARACTERS = 10_000;
 const MAX_MESSAGE_WORDS = 150;
+const MAX_SEARCH_NGRAM_LENGTH = 3;
 
 const writtenMessageSchema = z
   .object({
@@ -62,6 +63,39 @@ const callableAuthSchema = z
   .passthrough();
 
 export type RegistrationSubmission = z.infer<typeof registrationSubmissionSchema>;
+
+/**
+ * Builds normalized n-grams used by Firestore registration search.
+ * @param {unknown[]} values Registration fields to index.
+ * @return {string[]} Unique search n-grams.
+ */
+export function buildRegistrationSearchNgrams(values: unknown[]): string[] {
+  const ngrams = new Set<string>();
+
+  for (const value of values) {
+    const tokens = String(value ?? '')
+      .normalize('NFKC')
+      .trim()
+      .toLocaleLowerCase('en-SG')
+      .split(/\s+/)
+      .filter(Boolean);
+
+    for (const token of tokens) {
+      const characters = Array.from(token);
+      for (let start = 0; start < characters.length; start++) {
+        for (
+          let length = 1;
+          length <= MAX_SEARCH_NGRAM_LENGTH && start + length <= characters.length;
+          length++
+        ) {
+          ngrams.add(characters.slice(start, start + length).join(''));
+        }
+      }
+    }
+  }
+
+  return [...ngrams].sort();
+}
 
 /**
  * Generates a six-letter public registration ID.
@@ -144,6 +178,12 @@ async function writeRegistration(
         comments: '',
         contact_number: submission.contact_number,
         graduating_year: submission.graduating_year,
+        search_ngrams: buildRegistrationSearchNgrams([
+          registrationId,
+          email,
+          submission.full_name,
+          submission.contact_number,
+        ]),
         visiting_teachers: submission.visiting_teachers,
         written_messages: submission.written_messages,
         arrived_at: null,
