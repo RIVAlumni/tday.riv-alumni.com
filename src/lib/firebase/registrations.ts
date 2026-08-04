@@ -2,13 +2,13 @@ import type {
   DocumentData,
   QueryDocumentSnapshot,
   QueryFilterConstraint,
-  Timestamp,
 } from 'firebase/firestore';
 
 import type {
   Registration,
   Registration2026Submission,
   RegistrationStatus,
+  RegistrationUpdateAction,
 } from '$lib/models/registration';
 import type { EventStats } from '$lib/util/registration';
 
@@ -29,10 +29,12 @@ import {
   runTransaction,
   serverTimestamp,
   startAfter,
+  Timestamp,
   updateDoc,
   where,
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
+import { userStore } from '$lib/stores/user.svelte';
 
 import {
   buildRegistrationSearchNgrams,
@@ -114,6 +116,7 @@ function docToRegistration(snapshot: DocLike, eventId: string): Registration | n
     registration.written_messages = Array.isArray(registration.written_messages)
       ? registration.written_messages
       : [];
+    registration.updates = Array.isArray(registration.updates) ? registration.updates : [];
     registration.arrived_at = registration.arrived_at ?? null;
   } else if (eventId === '2024') {
     registration.arrived_at = registration.arrived_at ?? null;
@@ -434,28 +437,41 @@ export async function fetchEventStats(eventId: string): Promise<EventStats> {
   };
 }
 
-export async function checkInRegistration(eventId: string, registrationId: string): Promise<void> {
-  const patch: Record<string, unknown> = {
-    status: 'CHECKED_IN',
-    updated_at: serverTimestamp(),
+function registrationUpdateEntry(
+  action: RegistrationUpdateAction,
+  details: string,
+): Record<string, unknown> {
+  const authUser = userStore.authUser;
+  const email = authUser?.email;
+  if (!email) throw new Error('You must be signed in to record this action');
+  return {
+    action,
+    by: {
+      name: userStore.state?.display_name || authUser.displayName || email,
+      email,
+    },
+    at: Timestamp.now(),
+    details,
   };
-  if (eventId !== '2025') patch.arrived_at = serverTimestamp();
-
-  await updateDoc(registrationRef(eventId, registrationId), patch);
 }
 
-export async function refuseRegistration(eventId: string, registrationId: string): Promise<void> {
-  await updateDoc(registrationRef(eventId, registrationId), {
-    status: 'REJECTED',
-    updated_at: serverTimestamp(),
-  });
-}
-
-export async function flagConflict(
+async function applyRegistrationAction(
   eventId: string,
   registrationId: string,
-  reason: string,
+  status: RegistrationStatus,
+  details: string,
 ): Promise<void> {
+  const patch: Record<string, unknown> = {
+    status,
+    updated_at: serverTimestamp(),
+  };
+  if (status === 'CHECKED_IN' && eventId !== '2025') patch.arrived_at = serverTimestamp();
+
+  if (eventId !== '2026') {
+    await updateDoc(registrationRef(eventId, registrationId), patch);
+    return;
+  }
+
   const firestore = getInternalFirestore();
   const reference = registrationRef(eventId, registrationId);
 
@@ -463,17 +479,53 @@ export async function flagConflict(
     const snapshot = await transaction.get(reference);
     if (!snapshot.exists()) throw new Error('Registration not found');
 
-    const previousComments = (snapshot.data().comments as string | undefined) ?? '';
-    const timestamp = new Date().toLocaleString('en-SG');
-    const comment = `[FLAGGED ${timestamp}] ${reason.trim()}`;
-    const comments = previousComments ? `${previousComments}\n\n${comment}` : comment;
-
+    const updates = Array.isArray(snapshot.data().updates) ? snapshot.data().updates : [];
     transaction.update(reference, {
-      status: 'CONFLICT',
-      comments,
-      updated_at: serverTimestamp(),
+      ...patch,
+      updates: [...updates, registrationUpdateEntry(status, details)],
     });
   });
+}
+
+export async function checkInRegistration(eventId: string, registrationId: string): Promise<void> {
+  await applyRegistrationAction(eventId, registrationId, 'CHECKED_IN', '');
+}
+
+export async function refuseRegistration(eventId: string, registrationId: string): Promise<void> {
+  await applyRegistrationAction(eventId, registrationId, 'REJECTED', '');
+}
+
+export async function flagConflict(
+  eventId: string,
+  registrationId: string,
+  reason: string,
+): Promise<void> {
+  await applyRegistrationAction(eventId, registrationId, 'CONFLICT', reason.trim());
+}
+
+function describeFieldChanges(
+  before: Record<string, unknown>,
+  after: Record<string, unknown>,
+): string {
+  const changed = Object.keys(after).filter(
+    (key) =>
+      key !== 'updated_at' &&
+      key !== 'search_ngrams' &&
+      JSON.stringify(before[key]) !== JSON.stringify(after[key]),
+  );
+  if (changed.length === 0) return '';
+
+  const formatValue = (value: unknown): string => {
+    const raw =
+      value === undefined ? 'undefined' : typeof value === 'string' ? value : JSON.stringify(value);
+    const text = raw.length > 60 ? `${raw.slice(0, 60)}...` : raw;
+    return `'${text}'`;
+  };
+
+  return changed
+    .map((key) => `${key}: ${formatValue(before[key])} -> ${formatValue(after[key])}`)
+    .join(', ')
+    .slice(0, 950);
 }
 
 export async function updateRegistrationFields(
@@ -483,32 +535,37 @@ export async function updateRegistrationFields(
 ): Promise<void> {
   const reference = registrationRef(eventId, registrationId);
 
-  if (
-    eventId === '2026' &&
-    ('full_name' in patch || 'contact_number' in patch || 'email' in patch)
-  ) {
-    await runTransaction(getInternalFirestore(), async (transaction) => {
-      const snapshot = await transaction.get(reference);
-      if (!snapshot.exists()) throw new Error('Registration not found');
-
-      const registration = { ...snapshot.data(), ...patch };
-      transaction.update(reference, {
-        ...patch,
-        search_ngrams: buildRegistrationSearchNgrams([
-          registration.registration_id ?? registrationId,
-          registration.email,
-          registration.full_name,
-          registration.contact_number,
-        ]),
-        updated_at: serverTimestamp(),
-      });
+  if (eventId !== '2026') {
+    await updateDoc(reference, {
+      ...patch,
+      updated_at: serverTimestamp(),
     });
     return;
   }
 
-  await updateDoc(reference, {
-    ...patch,
-    updated_at: serverTimestamp(),
+  await runTransaction(getInternalFirestore(), async (transaction) => {
+    const snapshot = await transaction.get(reference);
+    if (!snapshot.exists()) throw new Error('Registration not found');
+
+    const registration = { ...snapshot.data(), ...patch };
+    const write: Record<string, unknown> = { ...patch, updated_at: serverTimestamp() };
+
+    if ('full_name' in patch || 'contact_number' in patch || 'email' in patch) {
+      write.search_ngrams = buildRegistrationSearchNgrams([
+        registration.registration_id ?? registrationId,
+        registration.email,
+        registration.full_name,
+        registration.contact_number,
+      ]);
+    }
+
+    const details = describeFieldChanges(snapshot.data(), patch);
+    if (details) {
+      const updates = Array.isArray(snapshot.data().updates) ? snapshot.data().updates : [];
+      write.updates = [...updates, registrationUpdateEntry('UPDATED', details)];
+    }
+
+    transaction.update(reference, write);
   });
 }
 

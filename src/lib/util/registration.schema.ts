@@ -1,6 +1,7 @@
 import type {
   Registration2026,
   Registration2026Submission,
+  RegistrationUpdate,
   WrittenMessage,
 } from '$lib/models/registration';
 import { TEACHER_OPTIONS } from '$lib/data/teachers';
@@ -27,6 +28,20 @@ export const writtenMessageSchema = z
   })
   .strict() satisfies z.ZodType<WrittenMessage>;
 
+export const registrationUpdateSchema = z
+  .object({
+    action: z.enum(['REGISTERED', 'CHECKED_IN', 'CONFLICT', 'REJECTED', 'UPDATED']),
+    by: z
+      .object({
+        name: z.string().min(1).max(120),
+        email: z.email().max(254),
+      })
+      .strict(),
+    at: z.instanceof(Timestamp),
+    details: z.string().max(1000),
+  })
+  .strict() satisfies z.ZodType<RegistrationUpdate>;
+
 export const registration2026Schema = z
   .object({
     event_id: z.literal('2026'),
@@ -46,6 +61,7 @@ export const registration2026Schema = z
       .min(1)
       .refine((teachers) => new Set(teachers).size === teachers.length),
     written_messages: z.array(writtenMessageSchema).max(2),
+    updates: z.array(registrationUpdateSchema),
     arrived_at: z.instanceof(Timestamp).nullable(),
   })
   .strict() satisfies z.ZodType<Registration2026>;

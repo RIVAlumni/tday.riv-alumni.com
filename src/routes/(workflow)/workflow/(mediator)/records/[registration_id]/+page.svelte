@@ -5,12 +5,21 @@
 
   import { statusMeta } from '$lib/data/reception';
   import { fetchRegistration, updateRegistrationFields } from '$lib/firebase';
-  import { is2024, is2025, is2026, type Registration } from '$lib/models/registration';
+  import {
+    is2024,
+    is2025,
+    is2026,
+    type Registration,
+    type RegistrationUpdate,
+    type RegistrationUpdateAction,
+  } from '$lib/models/registration';
   import { AccessLevel } from '$lib/models/user';
   import { eventStore } from '$lib/stores/event.svelte';
   import { userStore } from '$lib/stores/user.svelte';
   import { arrivedAtFor, visitingTeachersFor } from '$lib/util/registration';
   import { isAuthorized } from '$lib/util/user';
+  import { cn } from '$lib/utils';
+  import type { Component } from 'svelte';
   import { Timestamp } from 'firebase/firestore';
   import { setPageTitle } from '$lib/data/page-title.svelte.js';
 
@@ -21,7 +30,7 @@
   import { Textarea } from '$lib/components/ui/textarea/index.js';
   import { Badge } from '$lib/components/ui/badge/index.js';
 
-  import { ArrowLeft01Icon, CheckIcon, UserIcon } from '$lib/icons';
+  import { ArrowLeft01Icon, CheckIcon, PencilEdit01Icon, UserIcon } from '$lib/icons';
 
   const id = $derived(page.params.registration_id ?? '');
 
@@ -164,6 +173,33 @@
       minute: '2-digit',
       hour12: true,
     });
+  }
+
+  const updateTone: Record<RegistrationUpdateAction, string> = {
+    REGISTERED: 'border-sky-500/30 bg-sky-500/10 text-sky-500',
+    CHECKED_IN: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500',
+    CONFLICT: 'border-amber-500/30 bg-amber-500/10 text-amber-500',
+    REJECTED: 'border-red-500/30 bg-red-500/10 text-red-500',
+    UPDATED: 'border-slate-500/30 bg-slate-500/10 text-slate-500',
+  };
+
+  const updateMeta: Record<RegistrationUpdateAction, { label: string; icon: Component }> = {
+    REGISTERED: { label: statusMeta.REGISTERED.label, icon: statusMeta.REGISTERED.icon },
+    CHECKED_IN: { label: statusMeta.CHECKED_IN.label, icon: statusMeta.CHECKED_IN.icon },
+    CONFLICT: { label: statusMeta.CONFLICT.label, icon: statusMeta.CONFLICT.icon },
+    REJECTED: { label: statusMeta.REJECTED.label, icon: statusMeta.REJECTED.icon },
+    UPDATED: { label: 'Details updated', icon: PencilEdit01Icon },
+  };
+
+  // pre-nested entries stored the actor as a bare uid string
+  function updateActorName(update: RegistrationUpdate): string {
+    const by = update.by;
+    return typeof by === 'object' ? by.name || by.email : by;
+  }
+
+  function updateActorEmail(update: RegistrationUpdate): string {
+    const by = update.by;
+    return typeof by === 'object' ? by.email : '';
   }
 </script>
 
@@ -339,5 +375,55 @@
         {/if}
       </Card.Content>
     </Card.Root>
+
+    <!-- Audit trail -->
+    {#if is2026(record)}
+      <Card.Root>
+        <Card.Header>
+          <Card.Title>Audit Trail</Card.Title>
+          <Card.Description>Status changes and who performed them.</Card.Description>
+        </Card.Header>
+        <Card.Content>
+          {#if record.updates.length === 0}
+            <p class="text-muted-foreground text-sm">No activity recorded yet.</p>
+          {:else}
+            <ol class="relative space-y-4">
+              <span
+                aria-hidden="true"
+                class="pointer-events-none absolute inset-s-3 top-2 bottom-2 w-px -translate-x-1/2 bg-border"
+              ></span>
+              {#each [...record.updates].reverse() as update, i (record.updates.length - 1 - i)}
+                {@const actorName = updateActorName(update)}
+                {@const actorEmail = updateActorEmail(update)}
+                {@const Icon = updateMeta[update.action].icon}
+                <li class="relative flex gap-3">
+                  <span
+                    class={cn(
+                      'relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full border',
+                      updateTone[update.action],
+                    )}>
+                    <Icon class="size-3.5" />
+                  </span>
+                  <div class="min-w-0 flex-1 pb-1">
+                    <div class="flex flex-wrap items-baseline gap-x-2">
+                      <span class="text-sm font-medium">{updateMeta[update.action].label}</span>
+                      <span
+                        class="text-muted-foreground text-xs"
+                        title={actorEmail}>{actorName}</span>
+                    </div>
+                    {#if update.details}
+                      <p class="text-muted-foreground mt-0.5 text-xs">{update.details}</p>
+                    {/if}
+                    <p class="text-muted-foreground/80 mt-0.5 text-[0.7rem]">
+                      {formatDate(update.at)}
+                    </p>
+                  </div>
+                </li>
+              {/each}
+            </ol>
+          {/if}
+        </Card.Content>
+      </Card.Root>
+    {/if}
   {/if}
 </div>

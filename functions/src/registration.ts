@@ -186,6 +186,7 @@ async function writeRegistration(
         ]),
         visiting_teachers: submission.visiting_teachers,
         written_messages: submission.written_messages,
+        updates: [],
         arrived_at: null,
         updated_at: FieldValue.serverTimestamp(),
         created_at: FieldValue.serverTimestamp(),

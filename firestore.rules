@@ -17,7 +17,8 @@ service cloud.firestore {
         allow create: if false;
         allow get: if isAuthorised(1);
         allow list: if isAuthorised(2);
-        allow update: if isMediatorUpdate(eventId) || isOperatorReceptionUpdate(eventId);
+        allow update: if isMediatorUpdate(eventId);
+        allow update: if isOperatorReceptionUpdate(eventId);
       }
     }
 
@@ -50,10 +51,12 @@ service cloud.firestore {
           'status',
           'arrived_at',
           'updated_at',
-          'search_ngrams'
+          'search_ngrams',
+          'updates'
         ])
         && changed.hasAll(['updated_at'])
         && request.resource.data.updated_at == request.time
+        && (!changed.hasAny(['updates']) || (eventId == '2026' && isValidUpdatesChange()))
         && (!changed.hasAny(['full_name']) || isValidName(request.resource.data.full_name))
         && (!changed.hasAny(['contact_number']) || isValidContactNumber(eventId, request.resource.data.contact_number))
         && (eventId != '2026' || !changed.hasAny(['full_name', 'contact_number']) || changed.hasAll(['search_ngrams']))
@@ -68,19 +71,21 @@ service cloud.firestore {
 
     function isOperatorReceptionUpdate(eventId) {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
+      let appendsUpdate = isValidUpdatesChange();
       return isAuthorised(1)
         && changed.hasAll(['status', 'updated_at'])
+        && changed.hasOnly(['status', 'arrived_at', 'updated_at', 'updates'])
         && request.resource.data.updated_at == request.time
+        && (eventId == '2026' || !changed.hasAny(['updates']))
         && (
-          isOperatorCheckIn(eventId, changed)
-          || isOperatorRejection(changed)
-          || isOperatorConflict(changed)
+          isOperatorCheckIn(eventId, changed, appendsUpdate)
+          || isOperatorRejection(eventId, changed, appendsUpdate)
+          || isOperatorConflict(eventId, changed, appendsUpdate)
         );
     }
 
-    function isOperatorCheckIn(eventId, changed) {
+    function isOperatorCheckIn(eventId, changed, appendsUpdate) {
       return request.resource.data.status == 'CHECKED_IN'
-        && changed.hasOnly(['status', 'arrived_at', 'updated_at'])
         && (
           (eventId == '2025' && !changed.hasAny(['arrived_at']))
           || (
@@ -88,19 +93,41 @@ service cloud.firestore {
             && changed.hasAll(['arrived_at'])
             && request.resource.data.arrived_at == request.time
           )
-        );
+        )
+        && (eventId != '2026' || appendsUpdate);
     }
 
-    function isOperatorRejection(changed) {
+    function isOperatorRejection(eventId, changed, appendsUpdate) {
       return request.resource.data.status == 'REJECTED'
-        && changed.hasOnly(['status', 'updated_at']);
+        && !changed.hasAny(['arrived_at'])
+        && (eventId != '2026' || appendsUpdate);
     }
 
-    function isOperatorConflict(changed) {
+    function isOperatorConflict(eventId, changed, appendsUpdate) {
       return request.resource.data.status == 'CONFLICT'
-        && changed.hasOnly(['status', 'comments', 'updated_at'])
-        && changed.hasAll(['comments'])
-        && isValidComments(request.resource.data.comments);
+        && !changed.hasAny(['arrived_at'])
+        && (eventId != '2026' || appendsUpdate);
+    }
+
+    function isValidUpdatesChange() {
+      let existingUpdates = resource.data.get('updates', []);
+      let nextUpdates = request.resource.data.get('updates', []);
+      return nextUpdates is list
+        && existingUpdates is list
+        && nextUpdates.size() == existingUpdates.size() + 1
+        && isValidUpdateEntry(nextUpdates[nextUpdates.size() - 1]);
+    }
+
+    function isValidUpdateEntry(entry) {
+      return entry is map
+        && entry.action in ['CHECKED_IN', 'REJECTED', 'CONFLICT', 'UPDATED']
+        && entry.by is map
+        && entry.by.name is string
+        && entry.by.name.size() <= 120
+        && entry.by.email is string
+        && entry.by.email == request.auth.token.email
+        && entry.at is timestamp
+        && entry.details.size() <= 1000;
     }
 
     function isValidName(value) {

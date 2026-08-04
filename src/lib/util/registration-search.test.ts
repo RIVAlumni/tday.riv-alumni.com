@@ -43,6 +43,7 @@ const REGISTRATION: Registration2026 = {
   visiting_teachers: ['Mr Lim'],
   written_messages: [],
   search_ngrams: ['h', 'ha', 'hai'],
+  updates: [],
   arrived_at: null,
 };
 

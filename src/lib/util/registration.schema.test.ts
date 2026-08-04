@@ -191,6 +191,7 @@ describe('registrationFormSchema', () => {
       updated_at: now,
       search_ngrams: ['v', 'vi', 'vis'],
       arrived_at: null,
+      updates: [],
       ...submission,
     });
     const extraSubmissionField = registration2026SubmissionSchema.safeParse({

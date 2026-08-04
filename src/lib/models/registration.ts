@@ -51,12 +51,25 @@ export interface Registration2026 extends BaseRegistration {
   visiting_teachers: string[];
   written_messages: WrittenMessage[];
   search_ngrams: string[];
+  updates: RegistrationUpdate[];
   arrived_at: Timestamp | null;
 }
 
 export interface WrittenMessage {
   teacher_name: string;
   message: string;
+}
+
+export type RegistrationUpdateAction = RegistrationStatus | 'UPDATED';
+
+export interface RegistrationUpdate {
+  by: {
+    name: string;
+    email: string;
+  };
+  action: RegistrationUpdateAction;
+  details: string;
+  at: Timestamp;
 }
 
 export type Registration2026Submission = Pick<

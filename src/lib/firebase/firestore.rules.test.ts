@@ -152,11 +152,99 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore registration rules', () => {
         status: 'CHECKED_IN',
         arrived_at: serverTimestamp(),
         updated_at: serverTimestamp(),
+        updates: [
+          {
+            action: 'CHECKED_IN',
+            by: {
+              name: 'Test Operator',
+              email: 'operator@example.com',
+            },
+            at: Timestamp.now(),
+            details: '',
+          },
+        ],
       }),
     );
 
     const snapshot = await assertSucceeds(getDoc(reference));
     expect(snapshot.data()?.status).toBe('CHECKED_IN');
+  });
+
+  it('denies an audit entry carrying a forged operator email', async () => {
+    const firestore = authenticatedFirestore('operator');
+    const reference = doc(firestore, 'events', '2026', 'registrations', REGISTRATION_ID);
+
+    await assertFails(
+      updateDoc(reference, {
+        status: 'CHECKED_IN',
+        arrived_at: serverTimestamp(),
+        updated_at: serverTimestamp(),
+        updates: [
+          {
+            action: 'CHECKED_IN',
+            by: {
+              name: 'Forged Operator',
+              email: 'other@example.com',
+            },
+            at: Timestamp.now(),
+            details: '',
+          },
+        ],
+      }),
+    );
+
+    expect(true).toBe(true);
+  });
+
+  it('allows an operator to reject or flag conflicts with audit entries', async () => {
+    const firestore = authenticatedFirestore('operator');
+    const reference = doc(firestore, 'events', '2026', 'registrations', REGISTRATION_ID);
+
+    await assertSucceeds(
+      updateDoc(reference, {
+        status: 'REJECTED',
+        updated_at: serverTimestamp(),
+        updates: [
+          {
+            action: 'REJECTED',
+            by: {
+              name: 'Test Operator',
+              email: 'operator@example.com',
+            },
+            at: Timestamp.now(),
+            details: '',
+          },
+        ],
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(reference, {
+        status: 'CONFLICT',
+        updated_at: serverTimestamp(),
+        updates: [
+          {
+            action: 'REJECTED',
+            by: {
+              name: 'Test Operator',
+              email: 'operator@example.com',
+            },
+            at: Timestamp.now(),
+            details: '',
+          },
+          {
+            action: 'CONFLICT',
+            by: {
+              name: 'Test Operator',
+              email: 'operator@example.com',
+            },
+            at: Timestamp.now(),
+            details: 'Flagged field(s): Full name',
+          },
+        ],
+      }),
+    );
+
+    expect(true).toBe(true);
   });
 
   it('denies operator edits to identity fields', async () => {
@@ -200,6 +288,33 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore registration rules', () => {
     );
 
     expect(snapshot.size).toBe(1);
+  });
+
+  it('allows a mediator to record field edits in the audit trail', async () => {
+    const firestore = authenticatedFirestore('mediator');
+    const reference = doc(firestore, 'events', '2026', 'registrations', REGISTRATION_ID);
+
+    await assertSucceeds(
+      updateDoc(reference, {
+        full_name: 'UPDATED VISITOR',
+        search_ngrams: ['u', 'up', 'upd'],
+        updated_at: serverTimestamp(),
+        updates: [
+          {
+            action: 'UPDATED',
+            by: {
+              name: 'Test Mediator',
+              email: 'mediator@example.com',
+            },
+            at: Timestamp.now(),
+            details: "full_name: 'EXAMPLE VISITOR' -> 'UPDATED VISITOR'",
+          },
+        ],
+      }),
+    );
+
+    const snapshot = await assertSucceeds(getDoc(reference));
+    expect(snapshot.data()?.full_name).toBe('UPDATED VISITOR');
   });
 
   it('allows legacy registration edits without search n-grams', async () => {
