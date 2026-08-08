@@ -8,9 +8,7 @@ const handleParaglide: Handle = ({ event, resolve }) => {
   }
 
   return paraglideMiddleware(event.request, async ({ request }) => {
-    event.request = request;
-
-    const response = await resolve(event);
+    const response = await resolve({ ...event, request });
     const isPrivateRoute =
       event.url.pathname.startsWith('/auth') || event.url.pathname.startsWith('/workflow');
 
