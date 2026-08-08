@@ -96,7 +96,7 @@ class FirebaseAuthStore implements AuthStore {
     const auth = getAuth(getFirebaseApp());
     const actionCodeSettings = {
       url: `${window.location.origin}/register`,
-      handleCodeInApp: true,
+      handleCodeInApp: false,
     };
 
     await sendSignInLinkToEmail(auth, normalizedEmail, actionCodeSettings);
