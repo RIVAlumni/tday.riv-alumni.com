@@ -139,8 +139,20 @@ test('collects the Google profile photo from the verified token', () => {
   );
 });
 
-test('uses only verified Google account emails', () => {
+test('uses only verified account emails from accepted providers', () => {
   assert.equal(getVerifiedEmail(verifiedAuth()), 'visitor@example.com');
+
+  // Email link (password) provider is also accepted.
+  assert.equal(
+    getVerifiedEmail({
+      token: {
+        email: 'student@students.edu.sg',
+        email_verified: true,
+        firebase: { sign_in_provider: 'password' },
+      },
+    }),
+    'student@students.edu.sg',
+  );
 
   assert.throws(() => getVerifiedEmail(undefined));
   assert.throws(() =>
@@ -154,7 +166,7 @@ test('uses only verified Google account emails', () => {
       ...verifiedAuth(),
       token: {
         ...verifiedAuth().token,
-        firebase: { sign_in_provider: 'password' },
+        firebase: { sign_in_provider: 'github.com' },
       },
     }),
   );

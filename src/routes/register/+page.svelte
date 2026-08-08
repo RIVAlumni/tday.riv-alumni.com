@@ -350,6 +350,11 @@
   }
 
   let authError = $state<string | null>(null);
+  let studentEmail = $state('');
+  let studentEmailError = $state<string | null>(null);
+  let sendingStudentLink = $state(false);
+  let completingStudentSignIn = $state(false);
+  let showStudentForm = $state(false);
 
   async function handleGoogleSignIn() {
     authError = null;
@@ -361,8 +366,68 @@
     }
   }
 
+  function showStudentEmailForm() {
+    showStudentForm = true;
+    studentEmail = '';
+    studentEmailError = null;
+    visitorAuth.emailLinkPending = false;
+  }
+
+  function validateStudentEmail(email: string): string | null {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed) return 'Enter your @students.edu.sg email address.';
+    if (!trimmed.endsWith('@students.edu.sg')) {
+      return 'Only @students.edu.sg email addresses are accepted.';
+    }
+    if (trimmed === '@students.edu.sg') return 'Enter your full email address.';
+    const localPart = trimmed.slice(0, -'@students.edu.sg'.length);
+    if (!localPart || localPart.length < 1) return 'Enter your full email address.';
+    if (!/^[a-z0-9._%+-]+$/.test(localPart)) return 'This does not look like a valid email address.';
+    return null;
+  }
+
+  async function handleSendStudentLink() {
+    studentEmailError = null;
+    const validationError = validateStudentEmail(studentEmail);
+    if (validationError) {
+      studentEmailError = validationError;
+      return;
+    }
+
+    sendingStudentLink = true;
+    try {
+      // Only sign in as guest when the user actually sends the link,
+      // so we don't create anonymous accounts unnecessarily.
+      if (!visitorAuth.user) {
+        await visitorAuth.signInAsGuest();
+      }
+      await visitorAuth.sendStudentEmailLink(studentEmail);
+    } catch (err) {
+      console.error('Failed to send student email link:', err);
+      studentEmailError =
+        err instanceof Error ? err.message : 'Could not send the verification link. Please try again.';
+      visitorAuth.emailLinkPending = false;
+    } finally {
+      sendingStudentLink = false;
+    }
+  }
+
+  async function handleCompleteStudentSignIn(email: string) {
+    completingStudentSignIn = true;
+    try {
+      await visitorAuth.completeStudentEmailSignIn(email);
+    } catch (err) {
+      console.error('Failed to complete student email sign-in:', err);
+      authError =
+        err instanceof Error ? err.message : 'Could not verify your email. Please try again.';
+    } finally {
+      completingStudentSignIn = false;
+    }
+  }
+
   async function handleSignOut() {
     authError = null;
+    showStudentForm = false;
     try {
       await visitorAuth.signOut();
     } catch (err) {
@@ -374,6 +439,13 @@
   onMount(() => {
     visitorAuth.init();
     restoreDraft(loadRegistrationDraft());
+
+    // If the page was opened from a @students.edu.sg email link, complete sign-in.
+    const storedEmail = window.sessionStorage.getItem('tday-student-email');
+    if (storedEmail && visitorAuth.isSignInWithEmailLink(window.location.href)) {
+      handleCompleteStudentSignIn(storedEmail);
+    }
+
     document.addEventListener('pointerdown', handleDocumentPointerDown);
     const countdownInterval = window.setInterval(() => {
       countdown = getCountdownState();
@@ -597,24 +669,29 @@
             <div
               class="google-button-wrap"
               aria-live="polite">
-              {#if visitorAuth.loading}
-                <p class="google-auth-status">Checking your Google account...</p>
+              {#if visitorAuth.loading || completingStudentSignIn}
+                <p class="google-auth-status">
+                  {completingStudentSignIn ? 'Verifying your email...' : 'Checking your account...'}
+                </p>
               {:else if visitorAuth.user?.email}
                 <div class="flex items-center gap-3">
                   <Item.Root variant="outline">
                     <Item.Media>
                       <Avatar.Root class="size-10">
-                        <Avatar.Image
-                          src={visitorAuth.user.photoURL ?? undefined}
-                          alt={visitorAuth.user.displayName ?? 'Visitor'} />
+                        {#if visitorAuth.user.photoURL}
+                          <Avatar.Image
+                            src={visitorAuth.user.photoURL}
+                            alt={visitorAuth.user.displayName ?? 'Visitor'} />
+                        {/if}
                         <Avatar.Fallback>{userInitials}</Avatar.Fallback>
                       </Avatar.Root>
                     </Item.Media>
 
                     <Item.Content>
                       <Item.Title>
-                        {`You are signed in as ${visitorAuth.user.displayName}` ||
-                          'You are signed in'}
+                        {visitorAuth.user.displayName
+                          ? `You are signed in as ${visitorAuth.user.displayName}`
+                          : 'You are signed in'}
                       </Item.Title>
                       <Item.Description class="line-clamp-none wrap-break-word">
                         We will send the event ticket to
@@ -634,24 +711,148 @@
                     </Item.Actions>
                   </Item.Root>
                 </div>
+              {:else if visitorAuth.user?.isAnonymous}
+                <div class="student-email-section">
+                  {#if visitorAuth.emailLinkPending}
+                    <div class="student-link-sent">
+                      <p class="student-link-sent-title">Check your inbox</p>
+                      <p>
+                        We sent a sign-in link to <strong>{studentEmail}</strong>.
+                        Click the link in the email to verify your address and return here.
+                      </p>
+                      <p class="student-link-sent-note">
+                        The link expires in a few minutes. Didn't get it? Check your spam folder or
+                        <button
+                          type="button"
+                          class="student-retry-link"
+                          onclick={handleSendStudentLink}>send a new link</button>.
+                      </p>
+                      <p class="student-switch-note">
+                        Want to sign in via Google instead?
+                        <button type="button" onclick={handleSignOut}>Click here to switch.</button>
+                      </p>
+                    </div>
+                  {:else}
+                    <p class="student-email-prompt">
+                      Enter your <strong>@students.edu.sg</strong> email address. We will send a
+                      verification link to your inbox.
+                    </p>
+                    <div class="student-email-form">
+                      <label class="student-email-field">
+                        <span class="sr-only">Your @students.edu.sg email</span>
+                        <input
+                          type="email"
+                          placeholder="yourname@students.edu.sg"
+                          value={studentEmail}
+                          oninput={(e) => {
+                            studentEmail = e.currentTarget.value;
+                            studentEmailError = null;
+                          }}
+                          onkeydown={(e) => {
+                            if (e.key === 'Enter') handleSendStudentLink();
+                          }} />
+                      </label>
+                      <button
+                        class="student-email-submit"
+                        type="button"
+                        disabled={sendingStudentLink}
+                        onclick={handleSendStudentLink}>
+                        {sendingStudentLink ? 'Sending...' : 'Send verification link'}
+                      </button>
+                    </div>
+                    {#if studentEmailError}
+                      <p class="student-email-error">{studentEmailError}</p>
+                    {/if}
+                    <p class="student-switch-note">
+                      Want to sign in via Google instead?
+                      <button type="button" onclick={handleSignOut}>Click here to switch.</button>
+                    </p>
+                  {/if}
+                </div>
+              {:else if showStudentForm}
+                <div class="student-email-section">
+                  <p class="student-email-prompt">
+                    Enter your <strong>@students.edu.sg</strong> email address. We will send a
+                    verification link to your inbox.
+                  </p>
+                  <div class="student-email-form">
+                    <label class="student-email-field">
+                      <span class="sr-only">Your @students.edu.sg email</span>
+                      <input
+                        type="email"
+                        placeholder="yourname@students.edu.sg"
+                        value={studentEmail}
+                        oninput={(e) => {
+                          studentEmail = e.currentTarget.value;
+                          studentEmailError = null;
+                        }}
+                        onkeydown={(e) => {
+                          if (e.key === 'Enter') handleSendStudentLink();
+                        }} />
+                    </label>
+                    <button
+                      class="student-email-submit"
+                      type="button"
+                      disabled={sendingStudentLink}
+                      onclick={handleSendStudentLink}>
+                      {sendingStudentLink ? 'Sending...' : 'Send verification link'}
+                    </button>
+                  </div>
+                  {#if studentEmailError}
+                    <p class="student-email-error">{studentEmailError}</p>
+                  {/if}
+                  <p class="student-switch-note">
+                    Want to sign in via Google instead?
+                    <button
+                      type="button"
+                      onclick={() => {
+                        showStudentForm = false;
+                      }}>Click here to switch.</button>
+                  </p>
+                </div>
               {:else}
-                <button
-                  class="google-fallback"
-                  type="button"
-                  onclick={handleGoogleSignIn}>
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24">
-                    <path
-                      d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
-                      fill="currentColor" />
-                  </svg>
-                  Sign in with Google
-                </button>
+                <div class="auth-buttons">
+                  <button
+                    class="google-fallback"
+                    type="button"
+                    onclick={handleGoogleSignIn}>
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24">
+                      <path
+                        d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
+                        fill="currentColor" />
+                    </svg>
+                    Sign in with Google
+                  </button>
+
+                  <button
+                    class="student-fallback"
+                    type="button"
+                    onclick={showStudentEmailForm}>
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round">
+                      <rect
+                        x="2"
+                        y="4"
+                        width="20"
+                        height="16"
+                        rx="2" />
+                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                    </svg>
+                    Sign in with @students.edu.sg
+                  </button>
+                </div>
               {/if}
               {#if authError}
                 <Alert.Root variant="destructive">
-                  <Alert.Title>Google account error</Alert.Title>
+                  <Alert.Title>Account error</Alert.Title>
                   <Alert.Description>{authError}</Alert.Description>
                 </Alert.Root>
               {/if}
@@ -1306,7 +1507,7 @@
   .attendance-footer a:focus-visible,
   .confirmation > a:focus-visible,
   .google-fallback:focus-visible,
-  .change-email-button:focus-visible,
+  .student-fallback:focus-visible,
   .submit-button:focus-visible {
     outline: 2px solid var(--red);
     outline-offset: 4px;
@@ -1505,7 +1706,14 @@
     gap: 0.85rem;
   }
 
-  .google-fallback {
+  .auth-buttons {
+    display: grid;
+    gap: 0.75rem;
+    max-width: 28rem;
+  }
+
+  .google-fallback,
+  .student-fallback {
     min-width: min(100%, 20rem);
     min-height: 2.75rem;
     padding-inline: 1rem;
@@ -1526,12 +1734,25 @@
       box-shadow 180ms ease;
   }
 
-  .google-fallback:hover {
+  .google-fallback:hover,
+  .student-fallback:hover {
     transform: translateY(-2px);
     box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.28);
   }
 
-  .google-fallback svg {
+  .student-fallback {
+    background: #1a1a2e;
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+  }
+
+  .student-fallback:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #fff;
+  }
+
+  .google-fallback svg,
+  .student-fallback svg {
     width: 1.1rem;
     height: 1.1rem;
   }
@@ -1545,42 +1766,164 @@
     font-size: 0.82rem;
   }
 
-  .verified-email {
+  /* ---- @students.edu.sg email section ---- */
+
+  .student-email-section {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .student-email-prompt {
+    margin: 0;
+    color: #c9c9c4;
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .student-email-prompt strong {
+    color: var(--paper);
+    font-weight: 650;
+  }
+
+  .student-email-form {
+    max-width: 28rem;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .student-email-field {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .student-email-field input {
+    width: 100%;
     min-height: 2.75rem;
+    padding: 0 0.85rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 0.2rem;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--paper);
+    font: inherit;
+    font-size: 0.85rem;
+  }
+
+  .student-email-field input::placeholder {
+    color: #747471;
+  }
+
+  .student-email-field input:focus {
+    border-color: var(--red);
+    outline: 2px solid var(--red);
+    outline-offset: -2px;
+  }
+
+  .student-email-submit {
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    flex: 0 0 auto;
+    border: 1px solid var(--red);
+    border-radius: 0.2rem;
+    background: var(--red);
+    color: #fff;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 650;
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+      background 180ms ease,
+      opacity 180ms ease;
+  }
+
+  .student-email-submit:hover:not(:disabled) {
+    background: var(--red-deep);
+  }
+
+  .student-email-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .student-email-error {
+    margin: 0;
+    color: var(--red);
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
+  .student-link-sent {
     padding: 1rem 1.1rem;
     display: grid;
     gap: 0.55rem;
     border-left: 0.2rem solid var(--red);
-    background: rgba(235, 47, 6, 0.08);
+    background: rgba(43, 85, 217, 0.1);
   }
 
-  .verified-email p {
+  .student-link-sent-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 650;
+    color: var(--paper);
+  }
+
+  .student-link-sent p {
     margin: 0;
     color: #c9c9c4;
     font-size: 0.85rem;
     line-height: 1.5;
   }
 
-  .verified-email strong {
+  .student-link-sent strong {
     color: var(--paper);
     font-weight: 650;
-    overflow-wrap: anywhere;
   }
 
-  .change-email-button {
-    margin-left: 0.15rem;
+  .student-link-sent-note {
+    font-size: 0.78rem !important;
+    color: var(--muted) !important;
+  }
+
+  .student-retry-link {
     padding: 0;
     border: 0;
     border-bottom: 1px solid currentColor;
     background: transparent;
     color: #ff8165;
     font: inherit;
-    font-weight: 700;
+    font-size: inherit;
     cursor: pointer;
   }
 
-  .change-email-button:hover {
+  .student-retry-link:hover {
     color: var(--paper);
+  }
+
+  .student-switch-note {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.72rem;
+    line-height: 1.45;
+  }
+
+  .student-switch-note button {
+    padding: 0;
+    border: 0;
+    border-bottom: 1px solid currentColor;
+    background: transparent;
+    color: var(--paper);
+    font: inherit;
+    font-size: inherit;
+    cursor: pointer;
+  }
+
+  .student-switch-note button:hover {
+    color: #ff6c4c;
+  }
+
+  .student-switch-note button:focus-visible {
+    outline: 2px solid var(--red);
+    outline-offset: 2px;
   }
 
   .consent-notice {
@@ -2197,16 +2540,23 @@
       margin-left: 0;
     }
 
+    .auth-buttons {
+      max-width: none;
+    }
+
+    .student-email-form {
+      flex-direction: column;
+    }
+
+    .student-email-submit {
+      width: 100%;
+    }
+
     .consent-notice {
       padding: 1.25rem;
       gap: 1.1rem;
       border: 1px solid var(--line);
       border-top: 0.25rem solid var(--red);
-    }
-
-    .verified-email {
-      border: 1px solid var(--line);
-      border-top: 0.2rem solid var(--red);
     }
 
     .consent-notice p {

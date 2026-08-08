@@ -53,7 +53,7 @@ const callableAuthSchema = z
         email_verified: z.literal(true),
         firebase: z
           .object({
-            sign_in_provider: z.literal('google.com'),
+            sign_in_provider: z.enum(['google.com', 'password']),
           })
           .passthrough(),
         picture: z.string().max(2048).optional(),
@@ -119,7 +119,7 @@ export function getVerifiedProfile(auth: unknown): { email: string; picture: str
   if (!result.success) {
     throw new HttpsError(
       'unauthenticated',
-      'Sign in with a verified Google account before registering.',
+      'Sign in with a verified account before registering.',
     );
   }
   return {
