@@ -13,6 +13,7 @@
   import * as Alert from '$lib/components/ui/alert';
   import * as Avatar from '$lib/components/ui/avatar';
   import * as Item from '$lib/components/ui/item';
+  import { Separator } from '$lib/components/ui/separator';
   import { visitorAuth } from '$lib/firebase/auth.svelte';
   import { onMount, tick } from 'svelte';
   import { registrationFormFieldName, registrationFormSchema } from '$lib/util/registration.schema';
@@ -662,6 +663,24 @@
               Take a screenshot of this page and show it at reception for a smoother check-in.
             </Alert.Description>
           </Alert.Root>
+          <Separator class="my-8" />
+          <section
+            class="whatsapp-invite"
+            aria-labelledby="whatsapp-invite-title">
+            <h4 id="whatsapp-invite-title">Stay in the loop.</h4>
+            <p>
+              Join our WhatsApp group chat for immediate communications and the latest event
+              updates.
+            </p>
+            <Button
+              href="https://go.riv-alumni.com/whatsapp"
+              target="_blank"
+              rel="noreferrer"
+              size="lg">
+              Join the WhatsApp group
+              <span data-icon="inline-end"><ArrowUpRight01Icon /></span>
+            </Button>
+          </section>
           <a href="/#the-visit">
             View event details
             <ArrowUpRight01Icon
@@ -2447,7 +2466,7 @@
   }
 
   .confirmation h3 {
-    max-width: 8ch;
+    width: 100%;
     margin: 0;
     font-size: clamp(4rem, 8vw, 8rem);
     line-height: 0.84;
@@ -2500,6 +2519,30 @@
     color: var(--paper);
     font-size: 1rem;
     font-weight: 650;
+  }
+
+  .whatsapp-invite {
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .whatsapp-invite h4 {
+    margin: 0;
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    line-height: 0.95;
+    letter-spacing: -0.055em;
+    font-weight: 520;
+  }
+
+  .whatsapp-invite p {
+    max-width: 34rem;
+    margin: 0;
+    color: #bbb;
+    font-size: 1rem;
+    line-height: 1.5;
   }
 
   .confirmation > a {
