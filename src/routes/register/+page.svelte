@@ -580,7 +580,7 @@
         <div>
           <dt>Well-wish letters closes</dt>
           <dd>
-            <time datetime="2026-08-14T23:59:00+08:00">14 Aug 2026 • 11:59 PM</time>
+            <time datetime="2026-08-21T23:59:00+08:00">21 Aug 2026 • 11:59 PM</time>
           </dd>
         </div>
         <div>
@@ -1162,7 +1162,7 @@
                 <h3 id="messages-heading">Personalised Messages</h3>
                 <p>
                   Your personalised messages will be printed by RIVA and handed over to your teacher
-                  before Teachers' Day. Please ensure that you fill up this section before 14 August
+                  before Teachers' Day. Please ensure that you fill up this section before 21 August
                   2026 (Friday), 11:59 PM.
                 </p>
               </div>
