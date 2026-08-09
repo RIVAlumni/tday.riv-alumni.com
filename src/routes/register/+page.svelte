@@ -83,6 +83,11 @@
   let submissionError = $state<string | null>(null);
   let submitting = $state(false);
   let submittedId = $state<string | null>(null);
+  const registrationQrUrl = $derived(
+    submittedId
+      ? `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(submittedId)}&size=320x320&qzone=4&format=png`
+      : '',
+  );
 
   function clearFieldError(field: string) {
     if (fieldErrors[field]) {
@@ -638,9 +643,25 @@
             Your registration has been recorded. We will send your event ticket to
             <strong>{visitorAuth.user?.email}</strong>.
           </p>
-          <p class="text-xs text-muted-foreground">
-            Reference: <code class="font-mono">{submittedId}</code>
-          </p>
+          <figure class="registration-ticket">
+            <img
+              class="registration-qr"
+              src={registrationQrUrl}
+              alt={`QR code for registration ${submittedId}`}
+              width="320"
+              height="320"
+              referrerpolicy="no-referrer" />
+            <figcaption>
+              <span>Registration code</span>
+              <code>{submittedId}</code>
+            </figcaption>
+          </figure>
+          <Alert.Root class="mx-auto mb-8 max-w-sm">
+            <Alert.Title>Save this QR code</Alert.Title>
+            <Alert.Description>
+              Take a screenshot of this page and show it at reception for a smoother check-in.
+            </Alert.Description>
+          </Alert.Root>
           <a href="/#the-visit">
             View event details
             <ArrowUpRight01Icon
@@ -2442,6 +2463,43 @@
     line-height: 1.5;
     overflow-wrap: anywhere;
     word-break: break-word;
+  }
+
+  .registration-ticket {
+    width: min(100%, 20rem);
+    margin: 0 auto 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .registration-qr {
+    width: 100%;
+    height: auto;
+    display: block;
+    background: #fff;
+  }
+
+  .registration-ticket figcaption {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .registration-ticket figcaption span {
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 0.68rem;
+    font-weight: 650;
+    letter-spacing: 0.04em;
+  }
+
+  .registration-ticket code {
+    color: var(--paper);
+    font-size: 1rem;
+    font-weight: 650;
   }
 
   .confirmation > a {
