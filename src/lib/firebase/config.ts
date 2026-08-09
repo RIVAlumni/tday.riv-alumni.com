@@ -18,7 +18,7 @@ export interface FirebaseProjectConfig {
  */
 export const FIREBASE_CONFIG: FirebaseProjectConfig = {
   apiKey: 'AIzaSyA7q4XCbmTZ3FK1JvKpinYRU9zRchvOHP4',
-  authDomain: 'tday.riv-alumni.com',
+  authDomain: 'auth.tday.riv-alumni.com',
   projectId: 'rivalumniops-tday',
   storageBucket: 'rivalumniops-tday.firebasestorage.app',
   messagingSenderId: '188108228168',
