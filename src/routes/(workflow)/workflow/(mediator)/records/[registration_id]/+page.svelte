@@ -239,10 +239,18 @@
     <Card.Root>
       <Card.Content class="flex flex-wrap items-start justify-between gap-4">
         <div class="flex items-center gap-4">
-          <span
-            class="bg-primary/10 text-primary flex size-14 shrink-0 items-center justify-center rounded-2xl text-xl font-semibold uppercase">
-            {record.full_name.charAt(0)}
-          </span>
+          {#if is2026(record) && record.photo_url}
+            <img
+              src={record.photo_url}
+              alt={record.full_name}
+              class="size-14 shrink-0 rounded-2xl object-cover"
+              referrerpolicy="no-referrer" />
+          {:else}
+            <span
+              class="bg-primary/10 text-primary flex size-14 shrink-0 items-center justify-center rounded-2xl text-xl font-semibold uppercase">
+              {record.full_name.charAt(0)}
+            </span>
+          {/if}
           <div class="flex flex-col gap-0.5">
             <h1 class="text-xl font-semibold tracking-tight">{record.full_name}</h1>
             <p class="text-muted-foreground font-mono text-sm">
