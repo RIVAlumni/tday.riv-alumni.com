@@ -569,6 +569,26 @@ export async function updateRegistrationFields(
   });
 }
 
+interface ResendEmailRequest {
+  registration_id: string;
+  event_id: string;
+}
+
+interface ResendEmailResponse {
+  success: boolean;
+}
+
+export async function resendRegistrationEmail(
+  eventId: string,
+  registrationId: string,
+): Promise<void> {
+  const resendFn = httpsCallable<ResendEmailRequest, ResendEmailResponse>(
+    getCallableFunctions(),
+    'resendRegistrationEmail',
+  );
+  await resendFn({ event_id: eventId, registration_id: registrationId });
+}
+
 interface CreateRegistrationResponse {
   registrationId: string;
 }

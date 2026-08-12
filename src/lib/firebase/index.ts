@@ -7,6 +7,7 @@ export { getCallableFunctions } from './functions';
 export {
   createRegistrationRecord,
   RegistrationWriteError,
+  resendRegistrationEmail,
   fetchConflictRegistrations,
   fetchEventStats,
   fetchRegistration,

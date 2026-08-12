@@ -4,12 +4,13 @@
   import { toast } from 'svelte-sonner';
 
   import { statusMeta } from '$lib/data/reception';
-  import { fetchRegistration, updateRegistrationFields } from '$lib/firebase';
+  import { fetchRegistration, resendRegistrationEmail, updateRegistrationFields } from '$lib/firebase';
   import {
     is2024,
     is2025,
     is2026,
     type Registration,
+    type Registration2026,
     type RegistrationUpdate,
     type RegistrationUpdateAction,
   } from '$lib/models/registration';
@@ -30,7 +31,7 @@
   import { Textarea } from '$lib/components/ui/textarea/index.js';
   import { Badge } from '$lib/components/ui/badge/index.js';
 
-  import { ArrowLeft01Icon, CheckIcon, PencilEdit01Icon, UserIcon } from '$lib/icons';
+  import { ArrowLeft01Icon, CheckIcon, Mail01Icon, PencilEdit01Icon, UserIcon } from '$lib/icons';
 
   const id = $derived(page.params.registration_id ?? '');
 
@@ -39,6 +40,7 @@
   let record = $state<Registration | null>(null);
   let loading = $state(false);
   let saving = $state(false);
+  let emailSending = $state(false);
 
   const meta = $derived(record ? statusMeta[record.status] : null);
   const canEdit = $derived(
@@ -260,6 +262,30 @@
           </Badge>
         {/if}
       </Card.Content>
+      {#if is2026(record) && canEdit}
+        <Card.Footer>
+          <Button
+            size="sm"
+            class="cursor-pointer"
+            disabled={emailSending}
+            onclick={async () => {
+              const r = record as Registration2026;
+              emailSending = true;
+              try {
+                await resendRegistrationEmail(eventStore.activeEventId, r.registration_id);
+                await refreshFromServer();
+                toast.success('Email resent to ' + r.email);
+              } catch (err) {
+                toast.error('Failed to resend email', { description: (err as Error).message });
+              } finally {
+                emailSending = false;
+              }
+            }}>
+            <Mail01Icon />
+            {emailSending ? 'Sending...' : 'Resend Email'}
+          </Button>
+        </Card.Footer>
+      {/if}
     </Card.Root>
 
     <!-- Edit -->

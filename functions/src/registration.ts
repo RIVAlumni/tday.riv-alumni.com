@@ -231,3 +231,65 @@ export const createRegistration2026 = onCall({ secrets: [SENDER_API_TOKEN] }, as
 
   return { registrationId };
 });
+
+const resendSchema = z
+  .object({
+    registration_id: z.string().trim().min(1),
+    event_id: z.string().trim().min(1),
+  })
+  .strict();
+
+export const resendRegistrationEmail = onCall(
+  { secrets: [SENDER_API_TOKEN] },
+  async (request) => {
+    const { email } = getVerifiedProfile(request.auth);
+    const result = resendSchema.safeParse(request.data);
+    if (!result.success) {
+      throw new HttpsError(
+        'invalid-argument',
+        'The request data does not meet the requirements.',
+      );
+    }
+
+    const app = getApps()[0] ?? initializeApp();
+    const firestore = getFirestore(app);
+    const reference = firestore.doc(
+      `events/${result.data.event_id}/registrations/${result.data.registration_id}`,
+    );
+    const snapshot = await reference.get();
+    if (!snapshot.exists) {
+      throw new HttpsError('not-found', 'Registration not found.');
+    }
+
+    const registration = snapshot.data();
+    if (!registration) {
+      throw new HttpsError('internal', 'Registration data is empty.');
+    }
+
+    await sendRegistrationEmail(
+      {
+        full_name: registration.full_name,
+        recipient_email: registration.email,
+        contact_number: registration.contact_number,
+        registration_id: result.data.registration_id,
+      },
+      SENDER_API_TOKEN.value(),
+    );
+
+    const updates = Array.isArray(registration.updates) ? registration.updates : [];
+    await reference.update({
+      updated_at: FieldValue.serverTimestamp(),
+      updates: [
+        ...updates,
+        {
+          action: 'UPDATED',
+          by: { name: email, email },
+          at: new Date(),
+          details: 'Registration email resent',
+        },
+      ],
+    });
+
+    return { success: true };
+  },
+);
