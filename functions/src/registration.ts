@@ -7,6 +7,8 @@ import { getApps, initializeApp } from 'firebase-admin/app';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { HttpsError, onCall } from 'firebase-functions/https';
 
+import { sendRegistrationEmail } from './email.js';
+
 const REGISTRATION_ID_CHARACTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 const REGISTRATION_ID_LENGTH = 6;
 const MAX_ID_ATTEMPTS = 3;
@@ -216,5 +218,13 @@ export const createRegistration2026 = onCall(async (request) => {
   }
 
   const registrationId = await writeRegistration(result.data, email, picture);
+
+  sendRegistrationEmail({
+    full_name: result.data.full_name,
+    recipient_email: email,
+    contact_number: result.data.contact_number,
+    registration_id: registrationId,
+  });
+
   return { registrationId };
 });
