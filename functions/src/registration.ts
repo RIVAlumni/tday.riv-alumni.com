@@ -2,12 +2,15 @@ import { randomInt } from 'node:crypto';
 import { z } from 'zod';
 
 import * as logger from 'firebase-functions/logger';
+import { defineSecret } from 'firebase-functions/params';
 
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { HttpsError, onCall } from 'firebase-functions/https';
 
 import { sendRegistrationEmail } from './email.js';
+
+const SENDER_API_TOKEN = defineSecret('SENDER_API_TOKEN');
 
 const REGISTRATION_ID_CHARACTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 const REGISTRATION_ID_LENGTH = 6;
@@ -119,10 +122,7 @@ export function generateRegistrationId(): string {
 export function getVerifiedProfile(auth: unknown): { email: string; picture: string } {
   const result = callableAuthSchema.safeParse(auth);
   if (!result.success) {
-    throw new HttpsError(
-      'unauthenticated',
-      'Sign in with a verified account before registering.',
-    );
+    throw new HttpsError('unauthenticated', 'Sign in with a verified account before registering.');
   }
   return {
     email: result.data.token.email.trim().toLowerCase(),
@@ -207,7 +207,7 @@ async function writeRegistration(
   );
 }
 
-export const createRegistration2026 = onCall(async (request) => {
+export const createRegistration2026 = onCall({ secrets: [SENDER_API_TOKEN] }, async (request) => {
   const { email, picture } = getVerifiedProfile(request.auth);
   const result = registrationSubmissionSchema.safeParse(request.data);
   if (!result.success) {
@@ -219,12 +219,15 @@ export const createRegistration2026 = onCall(async (request) => {
 
   const registrationId = await writeRegistration(result.data, email, picture);
 
-  sendRegistrationEmail({
-    full_name: result.data.full_name,
-    recipient_email: email,
-    contact_number: result.data.contact_number,
-    registration_id: registrationId,
-  });
+  sendRegistrationEmail(
+    {
+      full_name: result.data.full_name,
+      recipient_email: email,
+      contact_number: result.data.contact_number,
+      registration_id: registrationId,
+    },
+    SENDER_API_TOKEN.value(),
+  );
 
   return { registrationId };
 });

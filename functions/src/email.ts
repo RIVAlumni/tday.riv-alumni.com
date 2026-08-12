@@ -1,8 +1,7 @@
 import * as logger from 'firebase-functions/logger';
 
-const SENDER_API_TOKEN = process.env.SENDER_API_TOKEN ?? '';
 const SENDER_API_URL = 'https://api.sender.net/v2/message';
-const SENDER_MESSAGE_ID = process.env.SENDER_MESSAGE_ID ?? 'ejn7xv';
+const SENDER_API_TEMPLATE = 'ejn7xv';
 
 export interface RegistrationEmailData {
   full_name: string;
@@ -15,16 +14,22 @@ export interface RegistrationEmailData {
  * Sends a registration confirmation email via the Sender.net transactional API.
  * Failures are logged silently -- the email is a side effect and must not
  * influence the registration response.
+ * @param {RegistrationEmailData} data Visitor and registration details.
+ * @param {string} senderApiToken Sender.net API bearer token.
+ * @param {string} senderMessageId Sender.net transactional message template ID.
  */
-export async function sendRegistrationEmail(data: RegistrationEmailData): Promise<void> {
-  if (!SENDER_API_TOKEN) {
-    logger.warn('SENDER_API_TOKEN environment variable is empty; skipping registration email.', {
+export async function sendRegistrationEmail(
+  data: RegistrationEmailData,
+  senderApiToken: string,
+): Promise<void> {
+  if (!senderApiToken) {
+    logger.warn('SENDER_API_TOKEN is empty; skipping registration email.', {
       registration_id: data.registration_id,
     });
     return;
   }
 
-  const url = `${SENDER_API_URL}/${SENDER_MESSAGE_ID}/send`;
+  const url = `${SENDER_API_URL}/${SENDER_API_TEMPLATE}/send`;
   const body = JSON.stringify({
     recipient_email: data.recipient_email,
     variables: {
@@ -39,7 +44,7 @@ export async function sendRegistrationEmail(data: RegistrationEmailData): Promis
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${SENDER_API_TOKEN}`,
+        'Authorization': `Bearer ${senderApiToken}`,
         'Content-Type': 'application/json',
       },
       body,
