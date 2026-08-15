@@ -32,6 +32,7 @@ export { default as Database01Icon } from '$lib/components/icons/Database01Icon.
 export { default as Delete01Icon } from '$lib/components/icons/Delete01Icon.svelte';
 export { default as Delete02Icon } from '$lib/components/icons/Delete02Icon.svelte';
 export { default as Door01Icon } from '$lib/components/icons/Door01Icon.svelte';
+export { default as Download01Icon } from '$lib/components/icons/Download01Icon.svelte';
 export { default as DragDropIcon } from '$lib/components/icons/DragDropIcon.svelte';
 export { default as FaceIdIcon } from '$lib/components/icons/FaceIdIcon.svelte';
 export { default as FilterIcon } from '$lib/components/icons/FilterIcon.svelte';
@@ -62,6 +63,7 @@ export { default as MoreHorizontalCircle01Icon } from '$lib/components/icons/Mor
 export { default as MoreHorizontalIcon } from '$lib/components/icons/MoreHorizontalIcon.svelte';
 export { default as MoreVerticalIcon } from '$lib/components/icons/MoreVerticalIcon.svelte';
 export { default as Note01Icon } from '$lib/components/icons/Note01Icon.svelte';
+export { default as NoteIcon } from '$lib/components/icons/NoteIcon.svelte';
 export { default as Notification01Icon } from '$lib/components/icons/Notification01Icon.svelte';
 export { default as PencilEdit01Icon } from '$lib/components/icons/PencilEdit01Icon.svelte';
 export { default as Presentation07Icon } from '$lib/components/icons/Presentation07Icon.svelte';
