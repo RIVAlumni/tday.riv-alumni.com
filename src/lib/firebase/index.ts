@@ -12,6 +12,7 @@ export {
   fetchEventStats,
   fetchRegistration,
   fetchRegistrationsByDay,
+  deleteRegistration,
   fetchRegistrationPage,
   searchRegistrations,
   searchRegistrationsById,

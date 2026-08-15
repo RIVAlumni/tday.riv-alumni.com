@@ -15,6 +15,7 @@ import type { EventStats } from '$lib/util/registration';
 import {
   and,
   collection,
+  deleteDoc,
   doc,
   documentId,
   endBefore,
@@ -408,6 +409,10 @@ export async function fetchRegistration(
 ): Promise<Registration | null> {
   const snapshot = await getDoc(registrationRef(eventId, registrationId));
   return docToRegistration(snapshot, eventId);
+}
+
+export async function deleteRegistration(eventId: string, registrationId: string): Promise<void> {
+  await deleteDoc(registrationRef(eventId, registrationId));
 }
 
 export async function fetchEventStats(eventId: string): Promise<EventStats> {

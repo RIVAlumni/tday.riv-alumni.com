@@ -1,10 +1,12 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { browser } from '$app/env';
+  import { goto } from '$app/navigation';
   import { toast } from 'svelte-sonner';
 
   import { statusMeta } from '$lib/data/reception';
   import {
+    deleteRegistration,
     fetchRegistration,
     resendRegistrationEmail,
     updateRegistrationFields,
@@ -28,14 +30,24 @@
   import { Timestamp } from 'firebase/firestore';
   import { setPageTitle } from '$lib/data/page-title.svelte.js';
 
+  import * as Avatar from '$lib/components/ui/avatar/index.js';
   import * as Card from '$lib/components/ui/card/index.js';
+  import * as Item from '$lib/components/ui/item/index.js';
   import * as Field from '$lib/components/ui/field/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
   import { Input } from '$lib/components/ui/input/index.js';
   import { Textarea } from '$lib/components/ui/textarea/index.js';
   import { Badge } from '$lib/components/ui/badge/index.js';
 
-  import { ArrowLeft01Icon, CheckIcon, Mail01Icon, PencilEdit01Icon, UserIcon } from '$lib/icons';
+  import {
+    ArrowLeft01Icon,
+    CheckIcon,
+    Delete01Icon,
+    Mail01Icon,
+    PencilEdit01Icon,
+    UserIcon,
+  } from '$lib/icons';
+  import Skeleton from '$lib/components/ui/skeleton/skeleton.svelte';
 
   const id = $derived(page.params.registration_id ?? '');
 
@@ -45,12 +57,26 @@
   let loading = $state(false);
   let saving = $state(false);
   let emailSending = $state(false);
+  let deleting = $state(false);
 
   const meta = $derived(record ? statusMeta[record.status] : null);
   const canEdit = $derived(
     userStore.state !== null &&
       userStore.state !== undefined &&
       isAuthorized(userStore.state, AccessLevel.Mediator),
+  );
+  const canDelete = $derived(
+    userStore.state !== null &&
+      userStore.state !== undefined &&
+      isAuthorized(userStore.state, AccessLevel.Administrator),
+  );
+  const visitingTeachers = $derived(
+    record
+      ? visitingTeachersFor(record)
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean)
+      : [],
   );
 
   $effect(() => {
@@ -83,18 +109,18 @@
   });
 
   // --- Edit form state ---
+  let email = $state('');
   let fullName = $state('');
   let contactNumber = $state('');
   let graduatingYear = $state('');
-  let teachersInput = $state('');
   let comments = $state('');
 
   $effect(() => {
     if (record) {
+      email = is2026(record) ? record.email : '';
       fullName = record.full_name;
       contactNumber = String(record.contact_number);
       graduatingYear = String(record.graduating_year);
-      teachersInput = visitingTeachersFor(record);
       comments = record.comments;
     }
   });
@@ -104,33 +130,22 @@
       (fullName !== record.full_name ||
         contactNumber !== String(record.contact_number) ||
         graduatingYear !== String(record.graduating_year) ||
-        teachersInput !== visitingTeachersFor(record) ||
+        (is2026(record) && email !== record.email) ||
         comments !== record.comments),
   );
 
-  // Field shapes differ by event year (2025 stores numbers, 2024/2026 strings;
-  // visiting_teachers is a string for 2024/2025 and an array for 2026). Build
-  // a patch that matches the stored shape so the write validates cleanly.
+  // Field shapes differ by event year (2025 stores numbers, 2024/2026 strings).
+  // visiting_teachers is not editable per firestore rules; email exists on 2026 only.
   function buildPatch(): Record<string, unknown> | null {
     if (!record) return null;
-    const teachers = teachersInput
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean);
     const patch: Record<string, unknown> = { full_name: fullName, comments };
     if (is2025(record)) {
       patch.contact_number = Number(contactNumber);
       patch.graduating_year = Number(graduatingYear);
-      patch.visiting_teachers = teachers.join(', ');
-    } else if (is2026(record)) {
-      patch.contact_number = contactNumber;
-      patch.graduating_year = graduatingYear;
-      patch.visiting_teachers = teachers;
     } else {
-      // 2024
       patch.contact_number = contactNumber;
       patch.graduating_year = graduatingYear;
-      patch.visiting_teachers = teachers.join(', ');
+      if (is2026(record)) patch.email = email;
     }
     return patch;
   }
@@ -139,6 +154,40 @@
     if (!id) return;
     const fresh = await fetchRegistration(eventStore.activeEventId, id).catch(() => null);
     if (fresh !== null) record = fresh;
+  }
+
+  async function resendEmail() {
+    if (!record || !is2026(record) || emailSending) return;
+    emailSending = true;
+    try {
+      await resendRegistrationEmail(eventStore.activeEventId, record.registration_id);
+      toast.success('Email resent to ' + record.email);
+    } catch (err) {
+      toast.error('Failed to resend email', { description: (err as Error).message });
+    } finally {
+      emailSending = false;
+    }
+  }
+
+  async function deleteRecord() {
+    if (!record || deleting) return;
+    if (!canDelete) {
+      toast.error('Only administrators can delete registrations');
+      return;
+    }
+    if (!window.confirm(`Delete ${record.full_name}'s registration? This cannot be undone.`)) {
+      return;
+    }
+    deleting = true;
+    try {
+      await deleteRegistration(eventStore.activeEventId, String(record.registration_id));
+      toast.success('Registration deleted');
+      await goto(`/workflow/records${page.url.search}`);
+    } catch (err) {
+      toast.error('Delete failed', { description: (err as Error).message });
+    } finally {
+      deleting = false;
+    }
   }
 
   async function save() {
@@ -209,142 +258,138 @@
   }
 </script>
 
-<div class="@container/main flex flex-col gap-6 p-4 lg:p-6">
+<div class="grid grid-cols-1 gap-4 p-4 lg:p-6 @xl/main:grid-cols-3 @4xl/main:grid-cols-6">
   <Button
     variant="link"
-    class="text-muted-foreground hover:text-foreground w-fit px-0"
-    href={`/workflow/records${page.url.search}`}>
+    href={`/workflow/records${page.url.search}`}
+    class={cn('@xl/main:col-span-3 @4xl/main:col-span-6', 'text-muted-foreground w-fit px-0')}>
     <ArrowLeft01Icon />
-    Back to Registrations
+    Back to registrations
   </Button>
 
-  {#if !record && !loading}
-    <Card.Root>
-      <Card.Content class="flex flex-col items-center gap-4 py-16">
-        <div
-          class="bg-muted text-muted-foreground flex size-16 items-center justify-center rounded-4xl">
-          <UserIcon class="size-8" />
-        </div>
-        <div class="flex flex-col items-center gap-1 text-center">
-          <Card.Title>Record not found</Card.Title>
-          <Card.Description>No registration matches "{id}".</Card.Description>
-        </div>
-        <Button href={`/workflow/records${page.url.search}`}>Return to list</Button>
-      </Card.Content>
-    </Card.Root>
-  {:else if loading}
-    <Card.Root>
-      <Card.Content class="flex flex-col items-center gap-4 py-16">
-        <div class="text-muted-foreground text-sm">Loading...</div>
-      </Card.Content>
-    </Card.Root>
+  {#if !loading && !record}
+    abc
   {:else if record}
-    <!-- Identity -->
-    <Card.Root>
-      <Card.Content class="flex flex-wrap items-start justify-between gap-4">
-        <div class="flex items-center gap-4">
-          {#if is2026(record) && record.photo_url}
-            <img
-              src={record.photo_url}
-              alt={record.full_name}
-              class="size-14 shrink-0 rounded-2xl object-cover"
-              referrerpolicy="no-referrer" />
-          {:else}
-            <span
-              class="bg-primary/10 text-primary flex size-14 shrink-0 items-center justify-center rounded-2xl text-xl font-semibold uppercase">
-              {record.full_name.charAt(0)}
-            </span>
-          {/if}
-          <div class="flex flex-col gap-0.5">
-            <h1 class="text-xl font-semibold tracking-tight">{record.full_name}</h1>
-            <p class="text-muted-foreground font-mono text-sm">
-              {record.registration_id}
-              <span
-                class="mx-1.5"
-                aria-hidden="true">-</span>
-              Class of {record.graduating_year}
-            </p>
-          </div>
-        </div>
-        {#if meta}
-          <Badge
-            variant="secondary"
-            class={meta.badge}>
-            {meta.label}
-          </Badge>
-        {/if}
+    <!-- Registrant Header -->
+    <Card.Root class={cn('@4xl/main:col-span-4')}>
+      <Card.Content>
+        <Item.Root
+          variant="default"
+          class="p-0 m-0">
+          <Item.Media>
+            <Avatar.Root class="size-10">
+              {#if loading}
+                <Skeleton class="h-10 w-10 rounded-full" />
+              {:else}
+                <Avatar.Image src={is2026(record) ? record.photo_url : ''} />
+                <Avatar.Fallback>{record.full_name.charAt(0)}</Avatar.Fallback>
+              {/if}
+            </Avatar.Root>
+          </Item.Media>
+
+          <Item.Content>
+            {#if loading}
+              <Skeleton class="h-5 w-32" />
+              <Skeleton class="h-5 w-60" />
+            {:else}
+              <Item.Title>{record.full_name}</Item.Title>
+              <Item.Description>
+                {is2026(record) ? record.email : record.graduating_year}
+              </Item.Description>
+            {/if}
+          </Item.Content>
+
+          <Item.Content>
+            {#if loading}
+              <Skeleton class="h-5 w-20" />
+            {:else}
+              <Badge>{record.status}</Badge>
+            {/if}
+          </Item.Content>
+        </Item.Root>
       </Card.Content>
-      {#if is2026(record) && canEdit}
-        <Card.Footer>
-          <Button
-            size="sm"
-            class="cursor-pointer"
-            disabled={emailSending}
-            onclick={async () => {
-              const r = record as Registration2026;
-              emailSending = true;
-              try {
-                await resendRegistrationEmail(eventStore.activeEventId, r.registration_id);
-                await refreshFromServer();
-                toast.success('Email resent to ' + r.email);
-              } catch (err) {
-                toast.error('Failed to resend email', { description: (err as Error).message });
-              } finally {
-                emailSending = false;
-              }
-            }}>
-            <Mail01Icon />
-            {emailSending ? 'Sending...' : 'Resend Email'}
-          </Button>
-        </Card.Footer>
-      {/if}
     </Card.Root>
 
-    <!-- Edit -->
-    <Card.Root>
+    <!-- Registrant QR Code -->
+    <Card.Root class={cn('@4xl/main:col-span-2 @4xl/main:row-span-2')}>
+      <Card.Content class="flex flex-col items-center gap-4">
+        {#if loading}
+          <Skeleton class="w-full aspect-square rounded-2xl" />
+        {:else}
+          <img
+            src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(record.registration_id)}&qzone=4&format=png`}
+            alt={`${record.registration_id || 'QR Code'}`}
+            class="w-full rounded-2xl object-cover aspect-square"
+            referrerpolicy="no-referrer" />
+          <span class="text-muted-foreground text-sm font-mono">{record.registration_id}</span>
+        {/if}
+      </Card.Content>
+    </Card.Root>
+
+    <!-- Registrant Editable Fields -->
+    <Card.Root class={cn('@4xl/main:col-span-4')}>
       <Card.Header>
-        <Card.Title>Edit</Card.Title>
-        <Card.Description>Update the registrant's details below.</Card.Description>
+        <Card.Title>Edit Information</Card.Title>
+        <Card.Description>All data updates are recorded and audited.</Card.Description>
       </Card.Header>
+
       <Card.Content>
         <Field.FieldGroup>
           <Field.Field>
+            <Field.FieldLabel for="em">Email Address</Field.FieldLabel>
+            {#if loading}
+              <Skeleton class="h-9 w-full" />
+            {:else}
+              <Input
+                id="em"
+                bind:value={email} />
+            {/if}
+          </Field.Field>
+          <Field.Field>
             <Field.FieldLabel for="fn">Full Name</Field.FieldLabel>
-            <Input
-              id="fn"
-              bind:value={fullName} />
+            {#if loading}
+              <Skeleton class="h-9 w-full" />
+            {:else}
+              <Input
+                id="fn"
+                bind:value={fullName} />
+            {/if}
           </Field.Field>
           <Field.Field>
             <Field.FieldLabel for="cn">Contact Number</Field.FieldLabel>
-            <Input
-              id="cn"
-              bind:value={contactNumber} />
+            {#if loading}
+              <Skeleton class="h-9 w-full" />
+            {:else}
+              <Input
+                id="cn"
+                bind:value={contactNumber} />
+            {/if}
           </Field.Field>
           <Field.Field>
             <Field.FieldLabel for="gy">Graduating Year</Field.FieldLabel>
-            <Input
-              id="gy"
-              bind:value={graduatingYear} />
-          </Field.Field>
-          <Field.Field>
-            <Field.FieldLabel for="vt">Which Teacher(s) would you like to meet</Field.FieldLabel>
-            <Input
-              id="vt"
-              bind:value={teachersInput}
-              placeholder="e.g. Mdm Siti Khadijah, Mr Tan Wei Ming" />
-            <Field.FieldDescription>Separate names with commas.</Field.FieldDescription>
+            {#if loading}
+              <Skeleton class="h-9 w-full" />
+            {:else}
+              <Input
+                id="gy"
+                bind:value={graduatingYear} />
+            {/if}
           </Field.Field>
           <Field.Field>
             <Field.FieldLabel for="cm">Comments</Field.FieldLabel>
-            <Textarea
-              id="cm"
-              bind:value={comments}
-              placeholder="Internal notes about this registrant..."
-              class="min-h-24" />
-            <Field.FieldDescription>Visible only to your team.</Field.FieldDescription>
+            {#if loading}
+              <Skeleton class="h-24 w-full" />
+            {:else}
+              <Textarea
+                id="cm"
+                bind:value={comments}
+                placeholder="Internal notes about this registrant..."
+                class="min-h-24" />
+            {/if}
           </Field.Field>
         </Field.FieldGroup>
       </Card.Content>
+
       <Card.Footer>
         <Button
           onclick={save}
@@ -355,72 +400,118 @@
       </Card.Footer>
     </Card.Root>
 
-    <!-- Read-only details -->
-    <Card.Root>
+    <!-- Registrant Uneditable Fields -->
+    <Card.Root class={cn('@4xl/main:col-span-2')}>
       <Card.Header>
-        <Card.Title>Details</Card.Title>
-        <Card.Description>Read-only registration data.</Card.Description>
+        <Card.Title>Read-only Information</Card.Title>
+        <Card.Description>These fields cannot be edited.</Card.Description>
       </Card.Header>
-      <Card.Content class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        {#if is2024(record)}
-          <div class="flex flex-col gap-1">
-            <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide"
-              >NRIC</span>
-            <span class="text-sm font-medium tabular-nums">{record.nric}</span>
-          </div>
-          <div class="flex flex-col gap-1">
-            <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide"
-              >Gender</span>
-            <span class="text-sm font-medium">{record.gender === 'M' ? 'Male' : 'Female'}</span>
-          </div>
-          <div class="flex flex-col gap-1">
-            <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide"
-              >Graduating Class</span>
-            <span class="text-sm font-medium">{record.graduating_class}</span>
-          </div>
-          <div class="flex flex-col gap-1">
-            <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide"
-              >Institution</span>
-            <span class="text-sm font-medium">{record.current_institution || '-'}</span>
-          </div>
-        {/if}
-        {#if is2025(record)}
-          <div class="flex flex-col gap-1">
-            <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide"
-              >Ex-Riverlite</span>
-            <span class="text-sm font-medium">
-              {#if record.is_ex_riverlite === 'Yes'}
-                <Badge variant="secondary">Yes</Badge>
-              {:else}
-                No
-              {/if}
-            </span>
-          </div>
-        {/if}
-        {#if arrivedAtFor(record) !== null}
-          <div class="flex flex-col gap-1">
-            <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide"
-              >Arrived</span>
-            <span class="text-sm font-medium">{formatDate(arrivedAtFor(record))}</span>
-          </div>
-        {/if}
-        {#if record.comments}
-          <div class="flex flex-col gap-1 sm:col-span-2">
-            <span class="text-muted-foreground text-xs font-medium uppercase tracking-wide"
-              >Comments</span>
-            <span class="text-muted-foreground whitespace-pre-wrap text-sm">{record.comments}</span>
-          </div>
-        {/if}
+
+      <Card.Content>
+        <Field.FieldGroup>
+          <Field.Field>
+            <Field.FieldLabel>Registration ID</Field.FieldLabel>
+
+            <Item.Root variant="outline">
+              <Item.Content>
+                <Item.Description>{record.registration_id}</Item.Description>
+              </Item.Content>
+            </Item.Root>
+          </Field.Field>
+          <Field.Field>
+            <Field.FieldLabel>Visiting Teachers</Field.FieldLabel>
+            {#each visitingTeachers as teacher (teacher)}
+              <Item.Root variant="outline">
+                <Item.Media variant="icon">
+                  <UserIcon />
+                </Item.Media>
+
+                <Item.Content>
+                  <Item.Description>{teacher}</Item.Description>
+                </Item.Content>
+              </Item.Root>
+            {/each}
+          </Field.Field>
+          {#if is2026(record) && record.written_messages.length > 0}
+            <Field.Field>
+              <Field.FieldLabel>Messages Written For</Field.FieldLabel>
+              {#each record.written_messages as message}
+                <Item.Root variant="outline">
+                  <Item.Media variant="icon">
+                    <UserIcon />
+                  </Item.Media>
+
+                  <Item.Content>
+                    <Item.Description>{message.teacher_name}</Item.Description>
+                  </Item.Content>
+                </Item.Root>
+              {/each}
+            </Field.Field>
+          {/if}
+          <Field.Field>
+            <Field.FieldLabel>Arrived On</Field.FieldLabel>
+
+            <Item.Root variant="outline">
+              <Item.Content>
+                <Item.Description>{formatDate(arrivedAtFor(record))}</Item.Description>
+              </Item.Content>
+            </Item.Root>
+          </Field.Field>
+        </Field.FieldGroup>
       </Card.Content>
     </Card.Root>
 
-    <!-- Audit trail -->
+    <Card.Root class={cn('@4xl/main:col-span-2')}>
+      <Card.Header>
+        <Card.Title>Available Actions</Card.Title>
+      </Card.Header>
+
+      <Card.Content>
+        <Item.Group>
+          <Item.Root>
+            <Item.Content class="gap-1">
+              <Item.Title>Resend email</Item.Title>
+              <Item.Description>Send the registration email again.</Item.Description>
+            </Item.Content>
+            <Item.Actions>
+              <Button
+                variant="ghost"
+                size="icon"
+                class="rounded-full"
+                disabled={emailSending || !is2026(record)}
+                onclick={resendEmail}>
+                <Mail01Icon />
+              </Button>
+            </Item.Actions>
+          </Item.Root>
+          <Item.Separator />
+          <Item.Root>
+            <Item.Content class="gap-1">
+              <Item.Title>Delete Record</Item.Title>
+              <Item.Description>Delete this registration record.</Item.Description>
+            </Item.Content>
+            <Item.Actions>
+              <Button
+                variant="ghost"
+                size="icon"
+                class="rounded-full"
+                disabled={deleting || !canDelete}
+                onclick={deleteRecord}>
+                <Delete01Icon />
+              </Button>
+            </Item.Actions>
+          </Item.Root>
+        </Item.Group>
+      </Card.Content>
+    </Card.Root>
+
     {#if is2026(record)}
-      <Card.Root>
+      <Card.Root class={cn('@4xl/main:col-span-2')}>
         <Card.Header>
           <Card.Title>Audit Trail</Card.Title>
           <Card.Description>Status changes and who performed them.</Card.Description>
         </Card.Header>
+
         <Card.Content>
           {#if record.updates.length === 0}
             <p class="text-muted-foreground text-sm">No activity recorded yet.</p>
@@ -444,17 +535,24 @@
                   </span>
                   <div class="min-w-0 flex-1 pb-1">
                     <div class="flex flex-wrap items-baseline gap-x-2">
-                      <span class="text-sm font-medium">{updateMeta[update.action].label}</span>
-                      <span
-                        class="text-muted-foreground text-xs"
-                        title={actorEmail}>{actorName}</span>
+                      <span class="text-sm font-semibold">{updateMeta[update.action].label}</span>
+                      <span class="text-muted-foreground text-xs font-mono tabular-nums"
+                        >{formatDate(update.at)}</span>
                     </div>
-                    {#if update.details}
-                      <p class="text-muted-foreground mt-0.5 text-xs">{update.details}</p>
-                    {/if}
-                    <p class="text-muted-foreground/80 mt-0.5 text-[0.7rem]">
-                      {formatDate(update.at)}
+                    <p class="text-muted-foreground text-sm">
+                      {#if actorName && actorEmail}
+                        {actorName} ({actorEmail})
+                      {:else if actorName}
+                        {actorName}
+                      {:else if actorEmail}
+                        {actorEmail}
+                      {:else}
+                        Unknown
+                      {/if}
                     </p>
+                    {#if update.details.trim()}
+                      <p class="text-muted-foreground text-sm">{update.details}</p>
+                    {/if}
                   </div>
                 </li>
               {/each}
