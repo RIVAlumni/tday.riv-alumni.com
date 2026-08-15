@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { Registration } from '$lib/models/registration';
-  import { is2024 } from '$lib/models/registration';
   import { arrivedAtFor, visitingTeachersFor } from '$lib/util/registration';
   import { Timestamp } from 'firebase/firestore';
 
@@ -72,7 +71,8 @@
   } = $props();
 
   // --- Table state ---
-  let sorting = $state<SortingState>([{ id: 'registration_id', desc: false }]);
+  // No default sort: the server returns records newest-first (created_at desc).
+  let sorting = $state<SortingState>([]);
 
   const VISIBILITY_KEY = 'records:column-visibility';
   let columnVisibility = $state<VisibilityState>({});
@@ -119,11 +119,6 @@
       header: 'Year',
       cell: ({ row }) => row.original.graduating_year,
       filterFn: 'equalsString',
-    },
-    {
-      accessorKey: 'current_institution',
-      header: 'Institution',
-      cell: ({ row }) => (is2024(row.original) ? row.original.current_institution || '-' : '-'),
     },
     {
       accessorKey: 'visiting_teachers',

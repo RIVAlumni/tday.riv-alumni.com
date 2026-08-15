@@ -11,6 +11,7 @@ export {
   fetchConflictRegistrations,
   fetchEventStats,
   fetchRegistration,
+  fetchRegistrationsByDay,
   fetchRegistrationPage,
   searchRegistrations,
   searchRegistrationsById,

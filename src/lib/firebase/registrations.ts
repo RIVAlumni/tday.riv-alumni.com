@@ -154,10 +154,7 @@ export async function fetchRegistrationPage(
     constraints.length > 0 ? query(registrations, and(...constraints)) : query(registrations);
   const totalCount = (await getCountFromServer(filteredQuery)).data().count;
   const direction = options.direction ?? 'first';
-  const orderConstraints =
-    filters.createdFrom || filters.createdBefore
-      ? [orderBy('created_at'), orderBy(documentId())]
-      : [orderBy(documentId())];
+  const orderConstraints = [orderBy('created_at', 'desc'), orderBy(documentId(), 'desc')];
   const lastPageSize = totalCount % options.pageSize || options.pageSize;
   const pageConstraint =
     direction === 'last'
@@ -435,6 +432,19 @@ export async function fetchEventStats(eventId: string): Promise<EventStats> {
     awaiting: total - checkedIn,
     progress: total === 0 ? 0 : checkedIn / total,
   };
+}
+
+// count of registrations with created_at in [dayStart, dayEnd)
+export async function fetchRegistrationsByDay(
+  eventId: string,
+  dayStart: Timestamp,
+  dayEnd: Timestamp,
+): Promise<number> {
+  const registrations = registrationsCollection(eventId);
+  const result = await getCountFromServer(
+    query(registrations, where('created_at', '>=', dayStart), where('created_at', '<', dayEnd)),
+  );
+  return result.data().count;
 }
 
 function registrationUpdateEntry(

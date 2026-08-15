@@ -72,7 +72,7 @@
   let teacherPopoverOpen = $state(false);
   let yearPopoverOpen = $state(false);
   let yearTriggerRef = $state<HTMLButtonElement>(null!);
-  let filtersOpen = $state(!browser || localStorage.getItem('records:filters-open') !== 'false');
+  let filtersOpen = $state(browser && localStorage.getItem('records:filters-open') === 'true');
 
   $effect(() => {
     if (browser) localStorage.setItem('records:filters-open', String(filtersOpen));
@@ -358,7 +358,7 @@
               size="sm"
               {...props}>
               <span data-icon="inline-start"><FilterIcon /></span>
-              Filters
+              Advanced Filters
               {#if activeFilterCount > 0}
                 <Badge
                   variant="secondary"
