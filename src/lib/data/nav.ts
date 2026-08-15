@@ -3,7 +3,6 @@ import type { IconComponent } from '$lib/icons';
 import {
   DashboardSquare01Icon,
   Database01Icon,
-  FaceIdIcon,
   HelpCircleIcon,
   CheckmarkCircle01Icon,
   Note01Icon,
@@ -23,7 +22,6 @@ export interface NavItem {
 export const navMain: NavItem[] = [
   { title: 'Dashboard',            url: '/workflow/home',      icon: DashboardSquare01Icon,   minimumAccessLevel: AccessLevel.Mediator },
   { title: 'Reception (Check-in)', url: '/workflow/reception', icon: CheckmarkCircle01Icon,   minimumAccessLevel: AccessLevel.Operator },
-  { title: 'Conflict Resolution',  url: '/workflow/resolve',   icon: FaceIdIcon,               minimumAccessLevel: AccessLevel.Mediator },
 ];
 
 // prettier-ignore

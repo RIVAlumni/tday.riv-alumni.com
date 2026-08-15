@@ -2,6 +2,7 @@
   import type { ColumnFiltersState, PaginationState } from '@tanstack/table-core';
 
   import type { Registration } from '$lib/models/registration';
+  import type { RegistrationStatus } from '$lib/models/registration';
   import type {
     RegistrationPageCursor,
     RegistrationPageDirection,
@@ -12,6 +13,7 @@
   import { onMount } from 'svelte';
 
   import { goto } from '$app/navigation';
+  import { page } from '$app/state';
   import * as Alert from '$lib/components/ui/alert/index.js';
   import { createSvelteTable } from '$lib/components/ui/data-table/data-table.svelte.js';
   import { fetchRegistrationPage, searchRegistrations } from '$lib/firebase';
@@ -28,6 +30,8 @@
     registeredTo: '',
     visitingTeachers: [],
   };
+  const URL_QUERY_KEYS = ['q', 'status', 'year', 'from', 'to', 'teachers', 'page', 'size'];
+  const VALID_STATUSES: RegistrationStatus[] = ['REGISTERED', 'CHECKED_IN', 'CONFLICT', 'REJECTED'];
   const SINGAPORE_OFFSET_MILLISECONDS = 8 * 60 * 60 * 1000;
 
   let registrations = $state<Registration[]>([]);
@@ -82,6 +86,64 @@
 
   function usesClientPagination(filters: RegistrationQueryFilters): boolean {
     return filters.search.length > 0 || (filters.visitingTeachers?.length ?? 0) > 0;
+  }
+
+  function restoreFromUrl(searchParams: Pick<URLSearchParams, 'has' | 'get' | 'getAll'>): boolean {
+    const params = searchParams;
+    if (!URL_QUERY_KEYS.some((key) => params.has(key))) return false;
+
+    const status = params.get('status');
+    const year = params.get('year');
+    const restoredFilters: RecordsFilterValues = {
+      status: VALID_STATUSES.includes(status as RegistrationStatus)
+        ? (status as RegistrationStatus)
+        : 'all',
+      graduatingYear: year ?? 'all',
+      registeredFrom: params.get('from') ?? '',
+      registeredTo: params.get('to') ?? '',
+      visitingTeachers: params.getAll('teachers'),
+    };
+    const restoredPageIndex = Number(params.get('page'));
+    const restoredPageSize = Number(params.get('size'));
+
+    searchValue = params.get('q') ?? '';
+    submittedSearch = searchValue;
+    registeredFrom = restoredFilters.registeredFrom;
+    registeredTo = restoredFilters.registeredTo;
+    visitingTeachers = [...restoredFilters.visitingTeachers];
+    submittedFilters = {
+      ...restoredFilters,
+      visitingTeachers: [...restoredFilters.visitingTeachers],
+    };
+    columnFilters = [];
+    if (restoredFilters.status !== 'all') {
+      columnFilters.push({ id: 'status', value: restoredFilters.status });
+    }
+    if (restoredFilters.graduatingYear !== 'all') {
+      columnFilters.push({ id: 'graduating_year', value: restoredFilters.graduatingYear });
+    }
+    pagination = {
+      pageIndex:
+        Number.isInteger(restoredPageIndex) && restoredPageIndex > 0 ? restoredPageIndex : 0,
+      pageSize: Number.isInteger(restoredPageSize) && restoredPageSize > 0 ? restoredPageSize : 15,
+    };
+    return true;
+  }
+
+  function syncUrl(): void {
+    const params = new URLSearchParams();
+    if (submittedSearch) params.set('q', submittedSearch);
+    if (submittedFilters.status !== 'all') params.set('status', submittedFilters.status);
+    if (submittedFilters.graduatingYear !== 'all') {
+      params.set('year', submittedFilters.graduatingYear);
+    }
+    if (submittedFilters.registeredFrom) params.set('from', submittedFilters.registeredFrom);
+    if (submittedFilters.registeredTo) params.set('to', submittedFilters.registeredTo);
+    for (const teacher of submittedFilters.visitingTeachers) params.append('teachers', teacher);
+    if (pagination.pageIndex > 0) params.set('page', String(pagination.pageIndex));
+    if (pagination.pageSize !== 15) params.set('size', String(pagination.pageSize));
+    const query = params.toString();
+    void goto(query ? `/workflow/records?${query}` : '/workflow/records', { replaceState: true });
   }
 
   function sortRegistrations(values: Registration[]): Registration[] {
@@ -164,6 +226,7 @@
     totalCount = 0;
     pageCursor = null;
     clientPaginatedRegistrations = [];
+    void goto('/workflow/records', { replaceState: true });
     void runQuery(eventId, '', EMPTY_FILTERS, firstPage);
   }
 
@@ -171,7 +234,12 @@
     let mounted = true;
     // Parent layout hydrates eventStore in its onMount callback.
     queueMicrotask(() => {
-      if (mounted) loadEvent(eventStore.activeEventId);
+      if (!mounted) return;
+      if (restoreFromUrl(page.url.searchParams)) {
+        void runQuery(eventStore.activeEventId, submittedSearch, submittedFilters, pagination);
+      } else {
+        loadEvent(eventStore.activeEventId);
+      }
     });
     return () => {
       mounted = false;
@@ -185,6 +253,7 @@
     submittedSearch = normalizedSearch;
     submittedFilters = { ...filters, visitingTeachers: [...filters.visitingTeachers] };
     pagination = firstPage;
+    syncUrl();
     await runQuery(eventStore.activeEventId, normalizedSearch, filters, firstPage);
   }
 
@@ -216,10 +285,12 @@
       direction,
       true,
     );
+    syncUrl();
   }
 
   function navigateToProfile(registrationId: string): void {
-    goto(`/workflow/records/${registrationId}`);
+    // carry the current query so the detail page's back link restores it
+    goto(`/workflow/records/${registrationId}${page.url.search}`);
   }
 </script>
 

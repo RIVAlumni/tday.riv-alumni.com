@@ -5,6 +5,8 @@
 
   import { tick } from 'svelte';
 
+  import { browser } from '$app/env';
+
   import { Badge } from '$lib/components/ui/badge/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
   import * as Command from '$lib/components/ui/command/index.js';
@@ -70,7 +72,11 @@
   let teacherPopoverOpen = $state(false);
   let yearPopoverOpen = $state(false);
   let yearTriggerRef = $state<HTMLButtonElement>(null!);
-  let filtersOpen = $state(true);
+  let filtersOpen = $state(!browser || localStorage.getItem('records:filters-open') !== 'false');
+
+  $effect(() => {
+    if (browser) localStorage.setItem('records:filters-open', String(filtersOpen));
+  });
 
   const teacherFilterEnabled = $derived(eventStore.activeEventId === '2026');
   const teacherFilterLabel = $derived(

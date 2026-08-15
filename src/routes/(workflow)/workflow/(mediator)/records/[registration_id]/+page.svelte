@@ -4,7 +4,11 @@
   import { toast } from 'svelte-sonner';
 
   import { statusMeta } from '$lib/data/reception';
-  import { fetchRegistration, resendRegistrationEmail, updateRegistrationFields } from '$lib/firebase';
+  import {
+    fetchRegistration,
+    resendRegistrationEmail,
+    updateRegistrationFields,
+  } from '$lib/firebase';
   import {
     is2024,
     is2025,
@@ -209,7 +213,7 @@
   <Button
     variant="link"
     class="text-muted-foreground hover:text-foreground w-fit px-0"
-    href="/workflow/records">
+    href={`/workflow/records${page.url.search}`}>
     <ArrowLeft01Icon />
     Back to Registrations
   </Button>
@@ -225,7 +229,7 @@
           <Card.Title>Record not found</Card.Title>
           <Card.Description>No registration matches "{id}".</Card.Description>
         </div>
-        <Button href="/workflow/records">Return to list</Button>
+        <Button href={`/workflow/records${page.url.search}`}>Return to list</Button>
       </Card.Content>
     </Card.Root>
   {:else if loading}
