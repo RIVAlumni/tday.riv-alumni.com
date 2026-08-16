@@ -155,7 +155,11 @@ export async function fetchRegistrationPage(
     constraints.length > 0 ? query(registrations, and(...constraints)) : query(registrations);
   const totalCount = (await getCountFromServer(filteredQuery)).data().count;
   const direction = options.direction ?? 'first';
-  const orderConstraints = [orderBy('created_at', 'desc'), orderBy(documentId(), 'desc')];
+  // 2025 legacy imports lack created_at; order by id instead so they stay listed
+  const orderConstraints =
+    eventId === '2025'
+      ? [orderBy(documentId())]
+      : [orderBy('created_at', 'desc'), orderBy(documentId(), 'desc')];
   const lastPageSize = totalCount % options.pageSize || options.pageSize;
   const pageConstraint =
     direction === 'last'

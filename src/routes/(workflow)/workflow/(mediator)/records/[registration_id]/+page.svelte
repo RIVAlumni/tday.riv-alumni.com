@@ -32,8 +32,10 @@
 
   import * as Avatar from '$lib/components/ui/avatar/index.js';
   import * as Card from '$lib/components/ui/card/index.js';
+  import * as Empty from '$lib/components/ui/empty/index.js';
   import * as Item from '$lib/components/ui/item/index.js';
   import * as Field from '$lib/components/ui/field/index.js';
+  import * as Kbd from '$lib/components/ui/kbd/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
   import { Input } from '$lib/components/ui/input/index.js';
   import { Textarea } from '$lib/components/ui/textarea/index.js';
@@ -48,7 +50,7 @@
     PencilEdit01Icon,
     UserIcon,
   } from '$lib/icons';
-  import Skeleton from '$lib/components/ui/skeleton/skeleton.svelte';
+  import SkeletonControl from './SkeletonControl.svelte';
 
   const id = $derived(page.params.registration_id ?? '');
 
@@ -260,7 +262,7 @@
 </script>
 
 <div
-  class="grid grid-cols-1 items-start gap-4 p-4 lg:p-6 @xl/main:grid-cols-3 @4xl/main:grid-cols-6">
+  class="h-full grid grid-cols-1 items-start gap-4 p-4 lg:p-6 @xl/main:grid-cols-3 @4xl/main:grid-cols-6">
   <Button
     variant="link"
     href={`/workflow/records${page.url.search}`}
@@ -270,13 +272,28 @@
   </Button>
 
   {#if !loading && !record}
-    abc
+    <div class="@xl/main:col-span-3 @4xl/main:col-span-6 flex flex-col">
+      <Empty.Root>
+        <Empty.Header>
+          <Empty.Media variant="icon">
+            <UserIcon />
+          </Empty.Media>
+
+          <Empty.Title>No record found</Empty.Title>
+          <Empty.Description>
+            We could not find record
+            <Kbd.Root>{id}</Kbd.Root>
+            from the system.
+          </Empty.Description>
+        </Empty.Header>
+      </Empty.Root>
+    </div>
   {:else if record}
     <ScrollArea
       orientation="both"
-      class=" @xl/main:h-auto @xl/main:col-span-3 @4xl/main:col-span-6">
+      class="@xl/main:col-span-3 @4xl/main:col-span-6">
       <div class="flex flex-col gap-4 @xl/main:w-max @xl/main:flex-row">
-        <div class="w-full @xl/main:w-1/3 flex flex-col gap-4 shrink-0">
+        <div class="w-full @xl/main:w-96 flex flex-col gap-4 shrink-0">
           <!-- Registrant Header -->
           <Card.Root>
             <Card.Content>
@@ -285,33 +302,40 @@
                 class="p-0 m-0">
                 <Item.Media>
                   <Avatar.Root class="size-10">
-                    {#if loading}
-                      <Skeleton class="h-10 w-10 rounded-full" />
-                    {:else}
+                    <SkeletonControl
+                      {loading}
+                      class="h-10 w-10 rounded-full">
                       <Avatar.Image src={is2026(record) ? record.photo_url : ''} />
                       <Avatar.Fallback>{record.full_name.charAt(0)}</Avatar.Fallback>
-                    {/if}
+                    </SkeletonControl>
                   </Avatar.Root>
                 </Item.Media>
 
                 <Item.Content>
-                  {#if loading}
-                    <Skeleton class="h-5 w-32" />
-                    <Skeleton class="h-5 w-60" />
-                  {:else}
+                  <SkeletonControl
+                    {loading}
+                    class="h-5 w-32">
                     <Item.Title>{record.full_name}</Item.Title>
+                  </SkeletonControl>
+                  <SkeletonControl
+                    {loading}
+                    class="h-5 w-60">
                     <Item.Description>
                       {is2026(record) ? record.email : record.graduating_year}
                     </Item.Description>
-                  {/if}
+                  </SkeletonControl>
                 </Item.Content>
 
                 <Item.Content>
-                  {#if loading}
-                    <Skeleton class="h-5 w-20" />
-                  {:else}
-                    <Badge>{record.status}</Badge>
-                  {/if}
+                  <SkeletonControl
+                    {loading}
+                    class="h-5 w-20">
+                    <Badge
+                      variant="secondary"
+                      class={meta?.badge}>
+                      {meta?.label ?? record.status}
+                    </Badge>
+                  </SkeletonControl>
                 </Item.Content>
               </Item.Root>
             </Card.Content>
@@ -328,55 +352,55 @@
               <Field.FieldGroup>
                 <Field.Field>
                   <Field.FieldLabel for="em">Email Address</Field.FieldLabel>
-                  {#if loading}
-                    <Skeleton class="h-9 w-full" />
-                  {:else}
+                  <SkeletonControl
+                    {loading}
+                    class="h-9 w-full">
                     <Input
                       id="em"
                       bind:value={email} />
-                  {/if}
+                  </SkeletonControl>
                 </Field.Field>
                 <Field.Field>
                   <Field.FieldLabel for="fn">Full Name</Field.FieldLabel>
-                  {#if loading}
-                    <Skeleton class="h-9 w-full" />
-                  {:else}
+                  <SkeletonControl
+                    {loading}
+                    class="h-9 w-full">
                     <Input
                       id="fn"
                       bind:value={fullName} />
-                  {/if}
+                  </SkeletonControl>
                 </Field.Field>
                 <Field.Field>
                   <Field.FieldLabel for="cn">Contact Number</Field.FieldLabel>
-                  {#if loading}
-                    <Skeleton class="h-9 w-full" />
-                  {:else}
+                  <SkeletonControl
+                    {loading}
+                    class="h-9 w-full">
                     <Input
                       id="cn"
                       bind:value={contactNumber} />
-                  {/if}
+                  </SkeletonControl>
                 </Field.Field>
                 <Field.Field>
                   <Field.FieldLabel for="gy">Graduating Year</Field.FieldLabel>
-                  {#if loading}
-                    <Skeleton class="h-9 w-full" />
-                  {:else}
+                  <SkeletonControl
+                    {loading}
+                    class="h-9 w-full">
                     <Input
                       id="gy"
                       bind:value={graduatingYear} />
-                  {/if}
+                  </SkeletonControl>
                 </Field.Field>
                 <Field.Field>
                   <Field.FieldLabel for="cm">Comments</Field.FieldLabel>
-                  {#if loading}
-                    <Skeleton class="h-24 w-full" />
-                  {:else}
+                  <SkeletonControl
+                    {loading}
+                    class="h-24 w-full">
                     <Textarea
                       id="cm"
                       bind:value={comments}
                       placeholder="Internal notes about this registrant..."
                       class="min-h-24" />
-                  {/if}
+                  </SkeletonControl>
                 </Field.Field>
               </Field.FieldGroup>
             </Card.Content>
@@ -401,19 +425,37 @@
                 <Item.Root
                   class="cursor-pointer hover:bg-muted disabled:pointer-events-none disabled:opacity-50">
                   {#snippet child({ props })}
-                    <button
-                      type="button"
-                      disabled={emailSending || !record || !is2026(record)}
-                      onclick={resendEmail}
-                      {...props}>
-                      <Item.Content class="gap-1">
-                        <Item.Title>Resend email</Item.Title>
-                        <Item.Description>Send the registration email again.</Item.Description>
-                      </Item.Content>
-                      <Item.Actions>
-                        <Mail01Icon class="size-4" />
-                      </Item.Actions>
-                    </button>
+                    {#if record && is2026(record)}
+                      <button
+                        type="button"
+                        disabled={emailSending || !record}
+                        onclick={resendEmail}
+                        {...props}>
+                        <Item.Content class="gap-1">
+                          <Item.Title>Email the Event Ticket</Item.Title>
+                          <Item.Description>
+                            Resend the event ticket to {record.email}.
+                          </Item.Description>
+                        </Item.Content>
+                        <Item.Actions>
+                          <Mail01Icon class="size-4" />
+                        </Item.Actions>
+                      </button>
+                    {:else}
+                      <button
+                        type="button"
+                        disabled
+                        {...props}>
+                        <Item.Content class="gap-1">
+                          <Item.Title>Email the Event Ticket</Item.Title>
+                          <Item.Description
+                            >Not available for this registration year</Item.Description>
+                        </Item.Content>
+                        <Item.Actions>
+                          <Mail01Icon class="size-4" />
+                        </Item.Actions>
+                      </button>
+                    {/if}
                   {/snippet}
                 </Item.Root>
                 <Item.Separator />
@@ -441,13 +483,13 @@
           </Card.Root>
         </div>
 
-        <div class="w-full @xl/main:w-1/3 flex flex-col gap-4 shrink-0">
+        <div class="w-full @xl/main:w-96 flex flex-col gap-4 shrink-0">
           <!-- Registrant QR Code -->
           <Card.Root>
             <Card.Content class="flex flex-col items-center gap-4">
-              {#if loading}
-                <Skeleton class="w-full aspect-square rounded-2xl" />
-              {:else}
+              <SkeletonControl
+                {loading}
+                class="w-full aspect-square rounded-2xl">
                 <img
                   src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(record.registration_id)}&qzone=4&format=png`}
                   alt={`${record.registration_id || 'QR Code'}`}
@@ -455,7 +497,7 @@
                   referrerpolicy="no-referrer" />
                 <span class="text-muted-foreground text-sm font-mono"
                   >{record.registration_id}</span>
-              {/if}
+              </SkeletonControl>
             </Card.Content>
           </Card.Root>
 
@@ -471,58 +513,78 @@
                 <Field.Field>
                   <Field.FieldLabel>Registration ID</Field.FieldLabel>
 
-                  <Item.Root variant="outline">
-                    <Item.Content>
-                      <Item.Description>{record.registration_id}</Item.Description>
-                    </Item.Content>
-                  </Item.Root>
+                  <SkeletonControl
+                    {loading}
+                    class="h-12 w-full">
+                    <Item.Root variant="outline">
+                      <Item.Content>
+                        <Item.Description>{record.registration_id}</Item.Description>
+                      </Item.Content>
+                    </Item.Root>
+                  </SkeletonControl>
                 </Field.Field>
                 <Field.Field>
                   <Field.FieldLabel>Visiting Teachers</Field.FieldLabel>
-                  {#each visitingTeachers as teacher (teacher)}
-                    <Item.Root variant="outline">
-                      <Item.Media variant="icon">
-                        <UserIcon />
-                      </Item.Media>
 
-                      <Item.Content>
-                        <Item.Description>{teacher}</Item.Description>
-                      </Item.Content>
-                    </Item.Root>
-                  {/each}
-                </Field.Field>
-                {#if is2026(record) && record.written_messages.length > 0}
-                  <Field.Field>
-                    <Field.FieldLabel>Messages Written For</Field.FieldLabel>
-                    {#each record.written_messages as message}
+                  <SkeletonControl
+                    {loading}
+                    class="h-12 w-full">
+                    {#each visitingTeachers as teacher (teacher)}
                       <Item.Root variant="outline">
                         <Item.Media variant="icon">
                           <UserIcon />
                         </Item.Media>
 
                         <Item.Content>
-                          <Item.Description>{message.teacher_name}</Item.Description>
+                          <Item.Description>{teacher}</Item.Description>
                         </Item.Content>
                       </Item.Root>
                     {/each}
+                  </SkeletonControl>
+                </Field.Field>
+                {#if is2026(record) && record.written_messages.length > 0}
+                  <Field.Field>
+                    <Field.FieldLabel>Messages Written For</Field.FieldLabel>
+                    <SkeletonControl
+                      {loading}
+                      class="h-12 w-full">
+                      {#each record.written_messages as msg (msg.teacher_name)}
+                        <Item.Root variant="outline">
+                          <Item.Media variant="icon">
+                            <UserIcon />
+                          </Item.Media>
+
+                          <Item.Content>
+                            <Item.Title>{msg.teacher_name}</Item.Title>
+                            <Item.Description>{msg.message}</Item.Description>
+                          </Item.Content>
+                        </Item.Root>
+                      {/each}
+                    </SkeletonControl>
                   </Field.Field>
                 {/if}
                 <Field.Field>
                   <Field.FieldLabel>Arrived On</Field.FieldLabel>
 
-                  <Item.Root variant="outline">
-                    <Item.Content>
-                      <Item.Description>{formatDate(arrivedAtFor(record))}</Item.Description>
-                    </Item.Content>
-                  </Item.Root>
+                  <SkeletonControl
+                    {loading}
+                    class="h-12 w-full">
+                    <Item.Root variant="outline">
+                      <Item.Content>
+                        <Item.Description>
+                          {formatDate(arrivedAtFor(record))}
+                        </Item.Description>
+                      </Item.Content>
+                    </Item.Root>
+                  </SkeletonControl>
                 </Field.Field>
               </Field.FieldGroup>
             </Card.Content>
           </Card.Root>
         </div>
 
-        <div class="w-full @xl/main:w-1/3 flex flex-col gap-4 shrink-0">
-          {#if is2026(record)}
+        {#if is2026(record)}
+          <div class="w-full @xl/main:w-96 flex flex-col gap-4 shrink-0">
             <Card.Root class="grow order-6">
               <Card.Header>
                 <Card.Title>Audit Trail</Card.Title>
@@ -578,8 +640,8 @@
                 {/if}
               </Card.Content>
             </Card.Root>
-          {/if}
-        </div>
+          </div>
+        {/if}
       </div>
     </ScrollArea>
   {/if}
