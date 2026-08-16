@@ -20,7 +20,7 @@
   );
   const accountEmail = $derived(userStore.authUser?.email ?? userStore.state?.email ?? '');
   const accountLabel = $derived(accountEmail ? `${accountName} (${accountEmail})` : accountName);
-  const accountPhoto = $derived(userStore.authUser?.photoURL);
+  const accountPhoto = $derived(userStore.authUser?.photoURL ?? '/favicon.png');
   const accountInitials = $derived(
     accountName
       .trim()

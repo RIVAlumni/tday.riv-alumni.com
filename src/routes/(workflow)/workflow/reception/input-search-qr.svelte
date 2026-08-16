@@ -7,8 +7,8 @@
    * The camera lifecycle is driven by the drawer's `open` prop - NOT by
    * component mount - because bits-ui only gates the drawer's inner DOM on
    * close; this component instance stays mounted for the page's lifetime.
-   * Scans frames with jsQR on a 300 ms interval and reports the first
-   * decoded value via `onScan`.
+   * Scans frames with jsQR on a configurable polling rate (see
+   * settingsStore) and reports the first decoded value via `onScan`.
    */
 
   // ── Third-party ───────────────────────────────────────────────────────
@@ -23,6 +23,9 @@
 
   // ── Icon imports from $lib ────────────────────────────────────────────
   import { QrCode01Icon } from '$lib/icons';
+
+  // ── Settings imports from $lib ────────────────────────────────────────
+  import { settingsStore } from '$lib/stores/settings.svelte';
 
   let { open, onScan }: { open: boolean; onScan: (value: string) => void } = $props();
 
@@ -86,7 +89,7 @@
       videoEl.srcObject = stream;
       await videoEl.play().catch(() => {});
       status = 'scanning';
-      scanTimer = setInterval(scanFrame, 300);
+      scanTimer = setInterval(scanFrame, settingsStore.scanPollingRate);
     }
   }
 
@@ -186,10 +189,10 @@
 
   <Drawer.Footer>
     {#if status === 'error'}
-      <Button onclick={startCamera} class="w-full">Try Again</Button>
+      <Button
+        onclick={startCamera}
+        class="w-full">Try Again</Button>
     {/if}
-    <Drawer.Close class={cn(buttonVariants({ variant: 'outline' }), 'w-full')}>
-      Cancel
-    </Drawer.Close>
+    <Drawer.Close class={cn(buttonVariants({ variant: 'outline' }), 'w-full')}>Cancel</Drawer.Close>
   </Drawer.Footer>
 </Drawer.Content>

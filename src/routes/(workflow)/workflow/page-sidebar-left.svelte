@@ -1,18 +1,22 @@
 <script lang="ts">
   import type { ComponentProps } from 'svelte';
 
+  import { goto } from '$app/navigation';
   import RIVALogo from '$lib/assets/favicon.svg';
   import NavDocuments from './nav-records.svelte';
   import NavMain from './nav-main.svelte';
   import NavSecondary from './nav-secondary.svelte';
   import NavUser from './nav-user.svelte';
+  import SettingsDialog from './settings-dialog.svelte';
   import * as Sidebar from '$lib/components/ui/sidebar';
-  import { records, navMain, navSecondary } from '$lib/data/nav';
+  import { records, navMain, navSecondary, type NavItem } from '$lib/data/nav';
   import { AccessLevel } from '$lib/models/user';
   import { userStore } from '$lib/stores/user.svelte';
   import { isAuthorized } from '$lib/util/user';
 
   let { ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
+
+  let settingsOpen = $state(false);
 
   const homeHref = $derived(
     userStore.state && isAuthorized(userStore.state, AccessLevel.Mediator)
@@ -34,6 +38,14 @@
       (item) => userStore.state && isAuthorized(userStore.state, item.minimumAccessLevel),
     ),
   );
+
+  function handleSecondaryActivate(item: NavItem): void {
+    if (item.url === '/workflow/settings') {
+      settingsOpen = true;
+    } else {
+      void goto(item.url);
+    }
+  }
 </script>
 
 <Sidebar.Root
@@ -65,10 +77,13 @@
     {/if}
     <NavSecondary
       items={visibleSecondary}
-      class="mt-auto" />
+      class="mt-auto"
+      onActivate={handleSecondaryActivate} />
   </Sidebar.Content>
   <Sidebar.Footer>
     <NavUser />
   </Sidebar.Footer>
   <Sidebar.Rail class="inset-y-2.5 after:inset-y-2.5" />
+
+  <SettingsDialog bind:open={settingsOpen} />
 </Sidebar.Root>

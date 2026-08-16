@@ -3,9 +3,7 @@ import type { IconComponent } from '$lib/icons';
 import {
   DashboardSquare01Icon,
   Database01Icon,
-  HelpCircleIcon,
   CheckmarkCircle01Icon,
-  Note01Icon,
   NoteIcon,
   Settings01Icon,
 } from '$lib/icons';
@@ -26,15 +24,13 @@ export const navMain: NavItem[] = [
 
 // prettier-ignore
 export const records: NavItem[] = [
-  { title: 'Registrations',   url: '/workflow/records',  icon: Database01Icon, minimumAccessLevel: AccessLevel.Mediator },
-  { title: 'Messages',        url: '/workflow/messages', icon: NoteIcon,      minimumAccessLevel: AccessLevel.Mediator },
-  { title: 'Generate Report', url: '/workflow/generate', icon: Note01Icon,     minimumAccessLevel: AccessLevel.Mediator },
+  { title: 'Registrations', url: '/workflow/records',  icon: Database01Icon, minimumAccessLevel: AccessLevel.Mediator },
+  { title: 'Messages',      url: '/workflow/messages', icon: NoteIcon,      minimumAccessLevel: AccessLevel.Mediator },
 ];
 
 // prettier-ignore
 export const navSecondary: NavItem[] = [
-  { title: 'Settings',        url: '/workflow/settings',   icon: Settings01Icon, minimumAccessLevel: AccessLevel.Operator },
-  { title: 'Getting Started', url: '/workflow/onboarding', icon: HelpCircleIcon,  minimumAccessLevel: AccessLevel.Operator },
+  { title: 'Settings', url: '/workflow/settings', icon: Settings01Icon, minimumAccessLevel: AccessLevel.Operator },
 ];
 
 /**
