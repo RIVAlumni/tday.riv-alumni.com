@@ -1,9 +1,13 @@
 <script lang="ts">
-  import { page } from '$app/state';
+  import type { Component } from 'svelte';
+  import { toast } from 'svelte-sonner';
+  import { Timestamp } from 'firebase/firestore';
+
   import { browser } from '$app/env';
   import { goto } from '$app/navigation';
-  import { toast } from 'svelte-sonner';
+  import { page } from '$app/state';
 
+  import { setPageTitle } from '$lib/data/page-title.svelte.js';
   import { statusMeta } from '$lib/data/reception';
   import {
     deleteRegistration,
@@ -12,11 +16,9 @@
     updateRegistrationFields,
   } from '$lib/firebase';
   import {
-    is2024,
     is2025,
     is2026,
     type Registration,
-    type Registration2026,
     type RegistrationUpdate,
     type RegistrationUpdateAction,
   } from '$lib/models/registration';
@@ -26,9 +28,6 @@
   import { arrivedAtFor, visitingTeachersFor } from '$lib/util/registration';
   import { isAuthorized } from '$lib/util/user';
   import { cn } from '$lib/utils';
-  import type { Component } from 'svelte';
-  import { Timestamp } from 'firebase/firestore';
-  import { setPageTitle } from '$lib/data/page-title.svelte.js';
 
   import * as Avatar from '$lib/components/ui/avatar/index.js';
   import * as Card from '$lib/components/ui/card/index.js';
