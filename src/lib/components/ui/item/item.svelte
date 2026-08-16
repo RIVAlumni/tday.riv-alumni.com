@@ -8,6 +8,7 @@
 				default: "border-transparent",
 				outline: "border-border",
 				muted: "border-transparent bg-muted/50",
+				destructive: "border-transparent bg-destructive/10 text-destructive hover:bg-destructive/20",
 			},
 			size: {
 				default: "gap-3.5 px-4 py-3.5",

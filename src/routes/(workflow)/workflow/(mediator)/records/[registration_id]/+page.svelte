@@ -38,6 +38,7 @@
   import { Input } from '$lib/components/ui/input/index.js';
   import { Textarea } from '$lib/components/ui/textarea/index.js';
   import { Badge } from '$lib/components/ui/badge/index.js';
+  import { ScrollArea } from '$lib/components/ui/scroll-area';
 
   import {
     ArrowLeft01Icon,
@@ -258,7 +259,8 @@
   }
 </script>
 
-<div class="grid grid-cols-1 gap-4 p-4 lg:p-6 @xl/main:grid-cols-3 @4xl/main:grid-cols-6">
+<div
+  class="grid grid-cols-1 items-start gap-4 p-4 lg:p-6 @xl/main:grid-cols-3 @4xl/main:grid-cols-6">
   <Button
     variant="link"
     href={`/workflow/records${page.url.search}`}
@@ -270,296 +272,315 @@
   {#if !loading && !record}
     abc
   {:else if record}
-    <!-- Registrant Header -->
-    <Card.Root class={cn('@4xl/main:col-span-4')}>
-      <Card.Content>
-        <Item.Root
-          variant="default"
-          class="p-0 m-0">
-          <Item.Media>
-            <Avatar.Root class="size-10">
-              {#if loading}
-                <Skeleton class="h-10 w-10 rounded-full" />
-              {:else}
-                <Avatar.Image src={is2026(record) ? record.photo_url : ''} />
-                <Avatar.Fallback>{record.full_name.charAt(0)}</Avatar.Fallback>
-              {/if}
-            </Avatar.Root>
-          </Item.Media>
-
-          <Item.Content>
-            {#if loading}
-              <Skeleton class="h-5 w-32" />
-              <Skeleton class="h-5 w-60" />
-            {:else}
-              <Item.Title>{record.full_name}</Item.Title>
-              <Item.Description>
-                {is2026(record) ? record.email : record.graduating_year}
-              </Item.Description>
-            {/if}
-          </Item.Content>
-
-          <Item.Content>
-            {#if loading}
-              <Skeleton class="h-5 w-20" />
-            {:else}
-              <Badge>{record.status}</Badge>
-            {/if}
-          </Item.Content>
-        </Item.Root>
-      </Card.Content>
-    </Card.Root>
-
-    <!-- Registrant QR Code -->
-    <Card.Root class={cn('@4xl/main:col-span-2 @4xl/main:row-span-2')}>
-      <Card.Content class="flex flex-col items-center gap-4">
-        {#if loading}
-          <Skeleton class="w-full aspect-square rounded-2xl" />
-        {:else}
-          <img
-            src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(record.registration_id)}&qzone=4&format=png`}
-            alt={`${record.registration_id || 'QR Code'}`}
-            class="w-full rounded-2xl object-cover aspect-square"
-            referrerpolicy="no-referrer" />
-          <span class="text-muted-foreground text-sm font-mono">{record.registration_id}</span>
-        {/if}
-      </Card.Content>
-    </Card.Root>
-
-    <!-- Registrant Editable Fields -->
-    <Card.Root class={cn('@4xl/main:col-span-4')}>
-      <Card.Header>
-        <Card.Title>Edit Information</Card.Title>
-        <Card.Description>All data updates are recorded and audited.</Card.Description>
-      </Card.Header>
-
-      <Card.Content>
-        <Field.FieldGroup>
-          <Field.Field>
-            <Field.FieldLabel for="em">Email Address</Field.FieldLabel>
-            {#if loading}
-              <Skeleton class="h-9 w-full" />
-            {:else}
-              <Input
-                id="em"
-                bind:value={email} />
-            {/if}
-          </Field.Field>
-          <Field.Field>
-            <Field.FieldLabel for="fn">Full Name</Field.FieldLabel>
-            {#if loading}
-              <Skeleton class="h-9 w-full" />
-            {:else}
-              <Input
-                id="fn"
-                bind:value={fullName} />
-            {/if}
-          </Field.Field>
-          <Field.Field>
-            <Field.FieldLabel for="cn">Contact Number</Field.FieldLabel>
-            {#if loading}
-              <Skeleton class="h-9 w-full" />
-            {:else}
-              <Input
-                id="cn"
-                bind:value={contactNumber} />
-            {/if}
-          </Field.Field>
-          <Field.Field>
-            <Field.FieldLabel for="gy">Graduating Year</Field.FieldLabel>
-            {#if loading}
-              <Skeleton class="h-9 w-full" />
-            {:else}
-              <Input
-                id="gy"
-                bind:value={graduatingYear} />
-            {/if}
-          </Field.Field>
-          <Field.Field>
-            <Field.FieldLabel for="cm">Comments</Field.FieldLabel>
-            {#if loading}
-              <Skeleton class="h-24 w-full" />
-            {:else}
-              <Textarea
-                id="cm"
-                bind:value={comments}
-                placeholder="Internal notes about this registrant..."
-                class="min-h-24" />
-            {/if}
-          </Field.Field>
-        </Field.FieldGroup>
-      </Card.Content>
-
-      <Card.Footer>
-        <Button
-          onclick={save}
-          disabled={!dirty || saving}>
-          <CheckIcon />
-          {saving ? 'Saving...' : 'Save Changes'}
-        </Button>
-      </Card.Footer>
-    </Card.Root>
-
-    <!-- Registrant Uneditable Fields -->
-    <Card.Root class={cn('@4xl/main:col-span-2')}>
-      <Card.Header>
-        <Card.Title>Read-only Information</Card.Title>
-        <Card.Description>These fields cannot be edited.</Card.Description>
-      </Card.Header>
-
-      <Card.Content>
-        <Field.FieldGroup>
-          <Field.Field>
-            <Field.FieldLabel>Registration ID</Field.FieldLabel>
-
-            <Item.Root variant="outline">
-              <Item.Content>
-                <Item.Description>{record.registration_id}</Item.Description>
-              </Item.Content>
-            </Item.Root>
-          </Field.Field>
-          <Field.Field>
-            <Field.FieldLabel>Visiting Teachers</Field.FieldLabel>
-            {#each visitingTeachers as teacher (teacher)}
-              <Item.Root variant="outline">
-                <Item.Media variant="icon">
-                  <UserIcon />
+    <ScrollArea
+      orientation="both"
+      class=" @xl/main:h-auto @xl/main:col-span-3 @4xl/main:col-span-6">
+      <div class="flex flex-col gap-4 @xl/main:w-max @xl/main:flex-row">
+        <div class="w-full @xl/main:w-1/3 flex flex-col gap-4 shrink-0">
+          <!-- Registrant Header -->
+          <Card.Root>
+            <Card.Content>
+              <Item.Root
+                variant="default"
+                class="p-0 m-0">
+                <Item.Media>
+                  <Avatar.Root class="size-10">
+                    {#if loading}
+                      <Skeleton class="h-10 w-10 rounded-full" />
+                    {:else}
+                      <Avatar.Image src={is2026(record) ? record.photo_url : ''} />
+                      <Avatar.Fallback>{record.full_name.charAt(0)}</Avatar.Fallback>
+                    {/if}
+                  </Avatar.Root>
                 </Item.Media>
 
                 <Item.Content>
-                  <Item.Description>{teacher}</Item.Description>
+                  {#if loading}
+                    <Skeleton class="h-5 w-32" />
+                    <Skeleton class="h-5 w-60" />
+                  {:else}
+                    <Item.Title>{record.full_name}</Item.Title>
+                    <Item.Description>
+                      {is2026(record) ? record.email : record.graduating_year}
+                    </Item.Description>
+                  {/if}
+                </Item.Content>
+
+                <Item.Content>
+                  {#if loading}
+                    <Skeleton class="h-5 w-20" />
+                  {:else}
+                    <Badge>{record.status}</Badge>
+                  {/if}
                 </Item.Content>
               </Item.Root>
-            {/each}
-          </Field.Field>
-          {#if is2026(record) && record.written_messages.length > 0}
-            <Field.Field>
-              <Field.FieldLabel>Messages Written For</Field.FieldLabel>
-              {#each record.written_messages as message}
-                <Item.Root variant="outline">
-                  <Item.Media variant="icon">
-                    <UserIcon />
-                  </Item.Media>
+            </Card.Content>
+          </Card.Root>
 
-                  <Item.Content>
-                    <Item.Description>{message.teacher_name}</Item.Description>
-                  </Item.Content>
+          <!-- Registrant Editable Fields -->
+          <Card.Root>
+            <Card.Header>
+              <Card.Title>Edit Information</Card.Title>
+              <Card.Description>All data updates are recorded and audited.</Card.Description>
+            </Card.Header>
+
+            <Card.Content>
+              <Field.FieldGroup>
+                <Field.Field>
+                  <Field.FieldLabel for="em">Email Address</Field.FieldLabel>
+                  {#if loading}
+                    <Skeleton class="h-9 w-full" />
+                  {:else}
+                    <Input
+                      id="em"
+                      bind:value={email} />
+                  {/if}
+                </Field.Field>
+                <Field.Field>
+                  <Field.FieldLabel for="fn">Full Name</Field.FieldLabel>
+                  {#if loading}
+                    <Skeleton class="h-9 w-full" />
+                  {:else}
+                    <Input
+                      id="fn"
+                      bind:value={fullName} />
+                  {/if}
+                </Field.Field>
+                <Field.Field>
+                  <Field.FieldLabel for="cn">Contact Number</Field.FieldLabel>
+                  {#if loading}
+                    <Skeleton class="h-9 w-full" />
+                  {:else}
+                    <Input
+                      id="cn"
+                      bind:value={contactNumber} />
+                  {/if}
+                </Field.Field>
+                <Field.Field>
+                  <Field.FieldLabel for="gy">Graduating Year</Field.FieldLabel>
+                  {#if loading}
+                    <Skeleton class="h-9 w-full" />
+                  {:else}
+                    <Input
+                      id="gy"
+                      bind:value={graduatingYear} />
+                  {/if}
+                </Field.Field>
+                <Field.Field>
+                  <Field.FieldLabel for="cm">Comments</Field.FieldLabel>
+                  {#if loading}
+                    <Skeleton class="h-24 w-full" />
+                  {:else}
+                    <Textarea
+                      id="cm"
+                      bind:value={comments}
+                      placeholder="Internal notes about this registrant..."
+                      class="min-h-24" />
+                  {/if}
+                </Field.Field>
+              </Field.FieldGroup>
+            </Card.Content>
+
+            <Card.Footer>
+              <Button
+                onclick={save}
+                disabled={!dirty || saving}>
+                <CheckIcon />
+                {saving ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </Card.Footer>
+          </Card.Root>
+
+          <Card.Root class="h-max">
+            <Card.Header>
+              <Card.Title>Available Actions</Card.Title>
+            </Card.Header>
+
+            <Card.Content>
+              <Item.Group>
+                <Item.Root
+                  class="cursor-pointer hover:bg-muted disabled:pointer-events-none disabled:opacity-50">
+                  {#snippet child({ props })}
+                    <button
+                      type="button"
+                      disabled={emailSending || !record || !is2026(record)}
+                      onclick={resendEmail}
+                      {...props}>
+                      <Item.Content class="gap-1">
+                        <Item.Title>Resend email</Item.Title>
+                        <Item.Description>Send the registration email again.</Item.Description>
+                      </Item.Content>
+                      <Item.Actions>
+                        <Mail01Icon class="size-4" />
+                      </Item.Actions>
+                    </button>
+                  {/snippet}
                 </Item.Root>
-              {/each}
-            </Field.Field>
+                <Item.Separator />
+                <Item.Root
+                  variant="destructive"
+                  class="cursor-pointer disabled:pointer-events-none disabled:opacity-50">
+                  {#snippet child({ props })}
+                    <button
+                      type="button"
+                      disabled={deleting || !canDelete}
+                      onclick={deleteRecord}
+                      {...props}>
+                      <Item.Content class="gap-1">
+                        <Item.Title>Delete Record</Item.Title>
+                        <Item.Description>Delete this registration record.</Item.Description>
+                      </Item.Content>
+                      <Item.Actions>
+                        <Delete01Icon class="size-4" />
+                      </Item.Actions>
+                    </button>
+                  {/snippet}
+                </Item.Root>
+              </Item.Group>
+            </Card.Content>
+          </Card.Root>
+        </div>
+
+        <div class="w-full @xl/main:w-1/3 flex flex-col gap-4 shrink-0">
+          <!-- Registrant QR Code -->
+          <Card.Root>
+            <Card.Content class="flex flex-col items-center gap-4">
+              {#if loading}
+                <Skeleton class="w-full aspect-square rounded-2xl" />
+              {:else}
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(record.registration_id)}&qzone=4&format=png`}
+                  alt={`${record.registration_id || 'QR Code'}`}
+                  class="w-60 rounded-2xl object-cover aspect-square"
+                  referrerpolicy="no-referrer" />
+                <span class="text-muted-foreground text-sm font-mono"
+                  >{record.registration_id}</span>
+              {/if}
+            </Card.Content>
+          </Card.Root>
+
+          <!-- Registrant Uneditable Fields -->
+          <Card.Root class="grow">
+            <Card.Header>
+              <Card.Title>Read-only Information</Card.Title>
+              <Card.Description>These fields cannot be edited.</Card.Description>
+            </Card.Header>
+
+            <Card.Content>
+              <Field.FieldGroup>
+                <Field.Field>
+                  <Field.FieldLabel>Registration ID</Field.FieldLabel>
+
+                  <Item.Root variant="outline">
+                    <Item.Content>
+                      <Item.Description>{record.registration_id}</Item.Description>
+                    </Item.Content>
+                  </Item.Root>
+                </Field.Field>
+                <Field.Field>
+                  <Field.FieldLabel>Visiting Teachers</Field.FieldLabel>
+                  {#each visitingTeachers as teacher (teacher)}
+                    <Item.Root variant="outline">
+                      <Item.Media variant="icon">
+                        <UserIcon />
+                      </Item.Media>
+
+                      <Item.Content>
+                        <Item.Description>{teacher}</Item.Description>
+                      </Item.Content>
+                    </Item.Root>
+                  {/each}
+                </Field.Field>
+                {#if is2026(record) && record.written_messages.length > 0}
+                  <Field.Field>
+                    <Field.FieldLabel>Messages Written For</Field.FieldLabel>
+                    {#each record.written_messages as message}
+                      <Item.Root variant="outline">
+                        <Item.Media variant="icon">
+                          <UserIcon />
+                        </Item.Media>
+
+                        <Item.Content>
+                          <Item.Description>{message.teacher_name}</Item.Description>
+                        </Item.Content>
+                      </Item.Root>
+                    {/each}
+                  </Field.Field>
+                {/if}
+                <Field.Field>
+                  <Field.FieldLabel>Arrived On</Field.FieldLabel>
+
+                  <Item.Root variant="outline">
+                    <Item.Content>
+                      <Item.Description>{formatDate(arrivedAtFor(record))}</Item.Description>
+                    </Item.Content>
+                  </Item.Root>
+                </Field.Field>
+              </Field.FieldGroup>
+            </Card.Content>
+          </Card.Root>
+        </div>
+
+        <div class="w-full @xl/main:w-1/3 flex flex-col gap-4 shrink-0">
+          {#if is2026(record)}
+            <Card.Root class="grow order-6">
+              <Card.Header>
+                <Card.Title>Audit Trail</Card.Title>
+                <Card.Description>Status changes and who performed them.</Card.Description>
+              </Card.Header>
+
+              <Card.Content>
+                {#if record.updates.length === 0}
+                  <p class="text-muted-foreground text-sm">No activity recorded yet.</p>
+                {:else}
+                  <ol class="relative space-y-4">
+                    <span
+                      aria-hidden="true"
+                      class="pointer-events-none absolute inset-s-3 top-2 bottom-2 w-px -translate-x-1/2 bg-border"
+                    ></span>
+                    {#each [...record.updates].reverse() as update, i (record.updates.length - 1 - i)}
+                      {@const actorName = updateActorName(update)}
+                      {@const actorEmail = updateActorEmail(update)}
+                      {@const Icon = updateMeta[update.action].icon}
+                      <li class="relative flex gap-3">
+                        <span
+                          class={cn(
+                            'relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full border',
+                            updateTone[update.action],
+                          )}>
+                          <Icon class="size-3.5" />
+                        </span>
+                        <div class="min-w-0 flex-1 pb-1">
+                          <div class="flex flex-wrap items-baseline gap-x-2">
+                            <span class="text-sm font-semibold"
+                              >{updateMeta[update.action].label}</span>
+                            <span class="text-muted-foreground text-xs font-mono tabular-nums"
+                              >{formatDate(update.at)}</span>
+                          </div>
+                          <p class="text-muted-foreground text-sm">
+                            {#if actorName && actorEmail}
+                              {actorName} ({actorEmail})
+                            {:else if actorName}
+                              {actorName}
+                            {:else if actorEmail}
+                              {actorEmail}
+                            {:else}
+                              Unknown
+                            {/if}
+                          </p>
+                          {#if update.details.trim()}
+                            <p class="text-muted-foreground text-sm">{update.details}</p>
+                          {/if}
+                        </div>
+                      </li>
+                    {/each}
+                  </ol>
+                {/if}
+              </Card.Content>
+            </Card.Root>
           {/if}
-          <Field.Field>
-            <Field.FieldLabel>Arrived On</Field.FieldLabel>
-
-            <Item.Root variant="outline">
-              <Item.Content>
-                <Item.Description>{formatDate(arrivedAtFor(record))}</Item.Description>
-              </Item.Content>
-            </Item.Root>
-          </Field.Field>
-        </Field.FieldGroup>
-      </Card.Content>
-    </Card.Root>
-
-    <Card.Root class={cn('@4xl/main:col-span-2')}>
-      <Card.Header>
-        <Card.Title>Available Actions</Card.Title>
-      </Card.Header>
-
-      <Card.Content>
-        <Item.Group>
-          <Item.Root>
-            <Item.Content class="gap-1">
-              <Item.Title>Resend email</Item.Title>
-              <Item.Description>Send the registration email again.</Item.Description>
-            </Item.Content>
-            <Item.Actions>
-              <Button
-                variant="ghost"
-                size="icon"
-                class="rounded-full"
-                disabled={emailSending || !is2026(record)}
-                onclick={resendEmail}>
-                <Mail01Icon />
-              </Button>
-            </Item.Actions>
-          </Item.Root>
-          <Item.Separator />
-          <Item.Root>
-            <Item.Content class="gap-1">
-              <Item.Title>Delete Record</Item.Title>
-              <Item.Description>Delete this registration record.</Item.Description>
-            </Item.Content>
-            <Item.Actions>
-              <Button
-                variant="ghost"
-                size="icon"
-                class="rounded-full"
-                disabled={deleting || !canDelete}
-                onclick={deleteRecord}>
-                <Delete01Icon />
-              </Button>
-            </Item.Actions>
-          </Item.Root>
-        </Item.Group>
-      </Card.Content>
-    </Card.Root>
-
-    {#if is2026(record)}
-      <Card.Root class={cn('@4xl/main:col-span-2')}>
-        <Card.Header>
-          <Card.Title>Audit Trail</Card.Title>
-          <Card.Description>Status changes and who performed them.</Card.Description>
-        </Card.Header>
-
-        <Card.Content>
-          {#if record.updates.length === 0}
-            <p class="text-muted-foreground text-sm">No activity recorded yet.</p>
-          {:else}
-            <ol class="relative space-y-4">
-              <span
-                aria-hidden="true"
-                class="pointer-events-none absolute inset-s-3 top-2 bottom-2 w-px -translate-x-1/2 bg-border"
-              ></span>
-              {#each [...record.updates].reverse() as update, i (record.updates.length - 1 - i)}
-                {@const actorName = updateActorName(update)}
-                {@const actorEmail = updateActorEmail(update)}
-                {@const Icon = updateMeta[update.action].icon}
-                <li class="relative flex gap-3">
-                  <span
-                    class={cn(
-                      'relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full border',
-                      updateTone[update.action],
-                    )}>
-                    <Icon class="size-3.5" />
-                  </span>
-                  <div class="min-w-0 flex-1 pb-1">
-                    <div class="flex flex-wrap items-baseline gap-x-2">
-                      <span class="text-sm font-semibold">{updateMeta[update.action].label}</span>
-                      <span class="text-muted-foreground text-xs font-mono tabular-nums"
-                        >{formatDate(update.at)}</span>
-                    </div>
-                    <p class="text-muted-foreground text-sm">
-                      {#if actorName && actorEmail}
-                        {actorName} ({actorEmail})
-                      {:else if actorName}
-                        {actorName}
-                      {:else if actorEmail}
-                        {actorEmail}
-                      {:else}
-                        Unknown
-                      {/if}
-                    </p>
-                    {#if update.details.trim()}
-                      <p class="text-muted-foreground text-sm">{update.details}</p>
-                    {/if}
-                  </div>
-                </li>
-              {/each}
-            </ol>
-          {/if}
-        </Card.Content>
-      </Card.Root>
-    {/if}
+        </div>
+      </div>
+    </ScrollArea>
   {/if}
 </div>
