@@ -106,6 +106,8 @@
       registration = null;
       searchQuery = '';
       focusSearch();
+      // reopen the scanner for the next registrant
+      qrDrawerOpen = true;
     } finally {
       actionPending = false;
     }
