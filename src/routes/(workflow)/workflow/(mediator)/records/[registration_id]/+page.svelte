@@ -31,10 +31,12 @@
 
   import * as Avatar from '$lib/components/ui/avatar/index.js';
   import * as Card from '$lib/components/ui/card/index.js';
+  import * as Dialog from '$lib/components/ui/dialog/index.js';
   import * as Empty from '$lib/components/ui/empty/index.js';
   import * as Item from '$lib/components/ui/item/index.js';
   import * as Field from '$lib/components/ui/field/index.js';
   import * as Kbd from '$lib/components/ui/kbd/index.js';
+  import { Checkbox } from '$lib/components/ui/checkbox/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
   import { Input } from '$lib/components/ui/input/index.js';
   import { Textarea } from '$lib/components/ui/textarea/index.js';
@@ -47,6 +49,7 @@
     Delete01Icon,
     Mail01Icon,
     PencilEdit01Icon,
+    Share01Icon,
     UserIcon,
   } from '$lib/icons';
   import SkeletonControl from './SkeletonControl.svelte';
@@ -60,6 +63,9 @@
   let saving = $state(false);
   let emailSending = $state(false);
   let deleting = $state(false);
+  let requestInfoOpen = $state(false);
+  let incompleteName = $state(false);
+  let incorrectYear = $state(false);
 
   const meta = $derived(record ? statusMeta[record.status] : null);
   const canEdit = $derived(
@@ -190,6 +196,54 @@
     } finally {
       deleting = false;
     }
+  }
+
+  const currentYear = new Date().getFullYear();
+  const hasSelectedIssue = $derived(incompleteName || incorrectYear);
+
+  function openRequestInfoDialog() {
+    incompleteName = false;
+    incorrectYear = false;
+    requestInfoOpen = true;
+  }
+
+  // WhatsApp bold formatting uses *asterisks*; each checked issue becomes a numbered line.
+  function requestMoreInfoBody(): string {
+    if (!record) return '';
+    const issues: string[] = [];
+    if (incompleteName) {
+      issues.push(
+        '*Incomplete Full Name*. Please provide your full name as shown on your EZ-Link/NRIC/SingPass app.',
+      );
+    }
+    if (incorrectYear) {
+      issues.push(
+        `*Incorrect Graduating Year*. The current year is ${currentYear} and you have indicated that your graduating year is ${record.graduating_year}. Is this information correct?`,
+      );
+    }
+    const numbered = issues.map((issue, i) => `${i + 1}. ${issue}`).join('\n');
+    return [
+      "*[RIVA] Teachers' Day Visitations: More Information Required*",
+      '',
+      `Hello ${record.full_name}!`,
+      '',
+      "Thank you for registering your Teachers' Day visit! Your registration has been flagged for manual review.",
+      '',
+      'As such, please provide more information or confirm the details on the following:',
+      '',
+      numbered,
+      '',
+      'Please reply us as soon as possible to complete your registration!',
+      '',
+      '— RIVA Community Outreach Team',
+    ].join('\n');
+  }
+
+  function openWhatsApp() {
+    if (!record || !hasSelectedIssue) return;
+    const url = `https://api.whatsapp.com/send/?phone=65${String(record.contact_number)}&text=${encodeURIComponent(requestMoreInfoBody())}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+    requestInfoOpen = false;
   }
 
   async function save() {
@@ -459,6 +513,26 @@
                 </Item.Root>
                 <Item.Separator />
                 <Item.Root
+                  class="cursor-pointer hover:bg-muted disabled:pointer-events-none disabled:opacity-50">
+                  {#snippet child({ props })}
+                    <button
+                      type="button"
+                      onclick={openRequestInfoDialog}
+                      {...props}>
+                      <Item.Content class="gap-1">
+                        <Item.Title>Request More Information</Item.Title>
+                        <Item.Description>
+                          Ask the registrant to clarify missing or incorrect details via WhatsApp.
+                        </Item.Description>
+                      </Item.Content>
+                      <Item.Actions>
+                        <Share01Icon class="size-4" />
+                      </Item.Actions>
+                    </button>
+                  {/snippet}
+                </Item.Root>
+                <Item.Separator />
+                <Item.Root
                   variant="destructive"
                   class="cursor-pointer disabled:pointer-events-none disabled:opacity-50">
                   {#snippet child({ props })}
@@ -643,5 +717,72 @@
         {/if}
       </div>
     </ScrollArea>
+
+    <Dialog.Root bind:open={requestInfoOpen}>
+      <Dialog.Content>
+        <Dialog.Header>
+          <Dialog.Title>Request More Information</Dialog.Title>
+          <Dialog.Description>
+            Select the details that are incorrect or incomplete. A WhatsApp message will be drafted
+            to the registrant.
+          </Dialog.Description>
+        </Dialog.Header>
+
+        <div class="flex flex-col gap-3">
+          <Field.Field>
+            <Field.FieldLabel
+              for="issue-full-name"
+              class="w-full cursor-pointer items-start gap-3 rounded-2xl border border-border p-4">
+              <Checkbox
+                id="issue-full-name"
+                bind:checked={incompleteName}
+                class="mt-0.5" />
+              <span class="flex flex-col gap-1">
+                <span class="font-semibold">Incomplete Full Name</span>
+                <span class="text-muted-foreground">
+                  Please provide your full name as shown on your EZ-Link/NRIC/SingPass app.
+                </span>
+              </span>
+            </Field.FieldLabel>
+          </Field.Field>
+
+          <Field.Field>
+            <Field.FieldLabel
+              for="issue-graduating-year"
+              class="w-full cursor-pointer items-start gap-3 rounded-2xl border border-border p-4">
+              <Checkbox
+                id="issue-graduating-year"
+                bind:checked={incorrectYear}
+                class="mt-0.5" />
+              <span class="flex flex-col gap-1">
+                <span class="font-semibold">Incorrect Graduating Year</span>
+                <span class="text-muted-foreground">
+                  The current year is {currentYear} and you have indicated that your graduating year is
+                  {record.graduating_year}. Is this information correct?
+                </span>
+              </span>
+            </Field.FieldLabel>
+          </Field.Field>
+        </div>
+
+        <Dialog.Footer>
+          <Dialog.Close>
+            {#snippet child({ props })}
+              <Button
+                variant="outline"
+                {...props}>
+                Cancel
+              </Button>
+            {/snippet}
+          </Dialog.Close>
+          <Button
+            disabled={!hasSelectedIssue}
+            onclick={openWhatsApp}>
+            <Share01Icon />
+            Send via WhatsApp
+          </Button>
+        </Dialog.Footer>
+      </Dialog.Content>
+    </Dialog.Root>
   {/if}
 </div>
