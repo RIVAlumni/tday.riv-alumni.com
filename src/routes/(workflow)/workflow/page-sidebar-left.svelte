@@ -6,10 +6,11 @@
   import NavDocuments from './nav-records.svelte';
   import NavMain from './nav-main.svelte';
   import NavSecondary from './nav-secondary.svelte';
+  import NavSystem from './nav-system.svelte';
   import NavUser from './nav-user.svelte';
   import SettingsDialog from './settings-dialog.svelte';
   import * as Sidebar from '$lib/components/ui/sidebar';
-  import { records, navMain, navSecondary, type NavItem } from '$lib/data/nav';
+  import { records, navMain, navSecondary, system, type NavItem } from '$lib/data/nav';
   import { AccessLevel } from '$lib/models/user';
   import { userStore } from '$lib/stores/user.svelte';
   import { isAuthorized } from '$lib/util/user';
@@ -30,6 +31,11 @@
   );
   const visibleRecords = $derived(
     records.filter(
+      (item) => userStore.state && isAuthorized(userStore.state, item.minimumAccessLevel),
+    ),
+  );
+  const visibleSystem = $derived(
+    system.filter(
       (item) => userStore.state && isAuthorized(userStore.state, item.minimumAccessLevel),
     ),
   );
@@ -74,6 +80,9 @@
     <NavMain items={visibleMain} />
     {#if visibleRecords.length > 0}
       <NavDocuments items={visibleRecords} />
+    {/if}
+    {#if visibleSystem.length > 0}
+      <NavSystem items={visibleSystem} />
     {/if}
     <NavSecondary
       items={visibleSecondary}

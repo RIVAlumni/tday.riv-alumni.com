@@ -6,6 +6,7 @@ import {
   CheckmarkCircle01Icon,
   NoteIcon,
   Settings01Icon,
+  UserMultipleIcon,
 } from '$lib/icons';
 import { AccessLevel } from '$lib/models/user';
 
@@ -26,6 +27,11 @@ export const navMain: NavItem[] = [
 export const records: NavItem[] = [
   { title: 'Registrations', url: '/workflow/records',  icon: Database01Icon, minimumAccessLevel: AccessLevel.Mediator },
   { title: 'Messages',      url: '/workflow/messages', icon: NoteIcon,      minimumAccessLevel: AccessLevel.Mediator },
+];
+
+// prettier-ignore
+export const system: NavItem[] = [
+  { title: 'Operators', url: '/workflow/operators', icon: UserMultipleIcon, minimumAccessLevel: AccessLevel.Administrator },
 ];
 
 // prettier-ignore

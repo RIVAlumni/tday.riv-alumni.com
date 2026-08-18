@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { DropdownMenu as DropdownMenuPrimitive } from "bits-ui";
-	import { MinusSignIcon, Tick02Icon } from '$lib/icons';
+	import { HugeiconsIcon } from "@hugeicons/svelte"
+	import { MinusSignIcon } from '@hugeicons/core-free-icons';
+	import { Tick02Icon } from '@hugeicons/core-free-icons';
 	import { cn, type WithoutChildrenOrChild } from "$lib/utils.js";
 	import type { Snippet } from "svelte";
 
@@ -22,7 +24,7 @@
 	bind:indeterminate
 	data-slot="dropdown-menu-checkbox-item"
 	class={cn(
-		"focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground gap-2.5 rounded-2xl py-2 pr-8 pl-3 text-sm font-medium data-inset:pl-9.5 [&_svg:not([class*='size-'])]:size-4 relative flex cursor-default items-center outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+		"gap-2.5 rounded-2xl py-2 pr-8 pl-3 text-sm font-medium focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground data-inset:pl-9.5 [&_svg:not([class*='size-'])]:size-4 relative flex cursor-default items-center outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
 		className
 	)}
 	{...restProps}
@@ -33,9 +35,9 @@
 			data-slot="dropdown-menu-checkbox-item-indicator"
 		>
 			{#if indeterminate}
-				<MinusSignIcon strokeWidth={2}  />
+				<HugeiconsIcon icon={MinusSignIcon} strokeWidth={2}  />
 			{:else if checked}
-				<Tick02Icon strokeWidth={2}  />
+				<HugeiconsIcon icon={Tick02Icon} strokeWidth={2}  />
 			{/if}
 		</span>
 		{@render childrenProp?.()}

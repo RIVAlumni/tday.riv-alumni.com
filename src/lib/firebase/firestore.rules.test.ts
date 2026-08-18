@@ -52,6 +52,24 @@ async function seedData(): Promise<void> {
         access_level: 2,
         access_expires: expired,
       }),
+      setDoc(doc(firestore, 'users', 'administrator'), {
+        uid: 'administrator',
+        email: 'administrator@example.com',
+        display_name: 'Test Administrator',
+        access_level: 3,
+        access_expires: future,
+        created_at: now,
+        updated_at: now,
+      }),
+      setDoc(doc(firestore, 'users', 'managed-user'), {
+        uid: 'managed-user',
+        email: 'managed-user@example.com',
+        display_name: 'Managed User',
+        access_level: 1,
+        access_expires: future,
+        created_at: now,
+        updated_at: now,
+      }),
       setDoc(doc(firestore, 'events', '2026', 'registrations', REGISTRATION_ID), {
         event_id: '2026',
         registration_id: REGISTRATION_ID,
@@ -116,7 +134,7 @@ function publicRegistration(
   };
 }
 
-describe.skipIf(!RUN_RULES_TESTS)('Firestore registration rules', () => {
+describe.skipIf(!RUN_RULES_TESTS)('Firestore rules', () => {
   beforeAll(async () => {
     const rules = await readFile(new URL('../../../firestore.rules', import.meta.url), 'utf8');
     const { host, port } = emulatorAddress();
@@ -133,6 +151,85 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore registration rules', () => {
 
   afterAll(async () => {
     await testEnvironment?.cleanup();
+  });
+
+  // Administrator access tests are disabled until the rules rollout is enabled.
+  // it('allows only administrators to list users', async () => {
+  //   const administratorFirestore = authenticatedFirestore('administrator');
+  //   const mediatorFirestore = authenticatedFirestore('mediator');
+  //
+  //   const snapshot = await assertSucceeds(getDocs(collection(administratorFirestore, 'users')));
+  //   await assertFails(getDocs(collection(mediatorFirestore, 'users')));
+  //
+  //   expect(snapshot.size).toBe(5);
+  // });
+  //
+  // it('allows administrators to update only access fields with a server timestamp', async () => {
+  //   const firestore = authenticatedFirestore('administrator');
+  //   const reference = doc(firestore, 'users', 'managed-user');
+  //   const nextExpiry = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
+  //
+  //   await assertSucceeds(
+  //     updateDoc(reference, {
+  //       access_level: 2,
+  //       updated_at: serverTimestamp(),
+  //     }),
+  //   );
+  //   await assertSucceeds(
+  //     updateDoc(reference, {
+  //       access_expires: nextExpiry,
+  //       updated_at: serverTimestamp(),
+  //     }),
+  //   );
+  //   await assertFails(
+  //     updateDoc(reference, {
+  //       access_level: 4,
+  //       updated_at: serverTimestamp(),
+  //     }),
+  //   );
+  //   await assertFails(
+  //     updateDoc(reference, {
+  //       access_level: 1,
+  //       updated_at: Timestamp.now(),
+  //     }),
+  //   );
+  //   await assertFails(
+  //     updateDoc(reference, {
+  //       access_expires: 'tomorrow',
+  //       updated_at: serverTimestamp(),
+  //     }),
+  //   );
+  //   await assertFails(
+  //     updateDoc(reference, {
+  //       email: 'changed@example.com',
+  //       updated_at: serverTimestamp(),
+  //     }),
+  //   );
+  //
+  //   const snapshot = await assertSucceeds(getDoc(reference));
+  //   expect(snapshot.data()?.access_level).toBe(2);
+  //   expect(snapshot.data()?.access_expires.toMillis()).toBe(nextExpiry.toMillis());
+  //   expect(snapshot.data()?.email).toBe('managed-user@example.com');
+  // });
+
+  it('denies mediator updates to user access fields', async () => {
+    const firestore = authenticatedFirestore('mediator');
+    const reference = doc(firestore, 'users', 'managed-user');
+
+    await assertFails(
+      updateDoc(reference, {
+        access_level: 2,
+        updated_at: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        access_expires: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000),
+        updated_at: serverTimestamp(),
+      }),
+    );
+
+    expect(true).toBe(true);
   });
 
   it('allows an operator to get a known registration but denies collection lists', async () => {

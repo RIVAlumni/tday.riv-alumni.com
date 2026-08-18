@@ -4,6 +4,7 @@ export { getFirebaseApp } from './app';
 export { visitorAuth } from './auth.svelte';
 export { getInternalFirestore } from './firestore';
 export { getCallableFunctions } from './functions';
+export { fetchUsers, updateUserAccessExpiry, updateUserAccessLevel } from './users';
 export {
   createRegistrationRecord,
   RegistrationWriteError,
