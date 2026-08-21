@@ -84,8 +84,8 @@ class FirebaseAuthStore implements AuthStore {
 
   /**
    * Send a sign-in link to a @students.edu.sg email address.
-   * Stores the email in sessionStorage so we can complete sign-in
-   * when the user returns via the link.
+   * The email is embedded in the link URL so sign-in can be completed
+   * in any tab or on any device; sessionStorage is kept as a fallback.
    */
   async sendStudentEmailLink(email: string): Promise<void> {
     const normalizedEmail = email.trim().toLowerCase();
@@ -95,7 +95,7 @@ class FirebaseAuthStore implements AuthStore {
 
     const auth = getAuth(getFirebaseApp());
     const actionCodeSettings = {
-      url: `${window.location.origin}/register`,
+      url: `${window.location.origin}/register?email=${encodeURIComponent(normalizedEmail)}`,
       handleCodeInApp: true,
     };
 

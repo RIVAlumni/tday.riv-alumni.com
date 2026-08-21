@@ -447,9 +447,13 @@
     restoreDraft(loadRegistrationDraft());
 
     // If the page was opened from a @students.edu.sg email link, complete sign-in.
-    const storedEmail = window.sessionStorage.getItem('tday-student-email');
-    if (storedEmail && visitorAuth.isSignInWithEmailLink(window.location.href)) {
-      handleCompleteStudentSignIn(storedEmail);
+    if (visitorAuth.isSignInWithEmailLink(window.location.href)) {
+      const email =
+        new URL(window.location.href).searchParams.get('email') ??
+        window.sessionStorage.getItem('tday-student-email');
+      if (email) {
+        handleCompleteStudentSignIn(email);
+      }
     }
 
     document.addEventListener('pointerdown', handleDocumentPointerDown);
