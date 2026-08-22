@@ -38,6 +38,7 @@ describe('flattenMessages', () => {
     expect(flattenMessages(registrations)).toEqual([
       {
         student_name: 'STUDENT A',
+        graduating_year: '2020',
         teacher_name: 'MDM NG HWEE KOON',
         message: 'Thank you!',
         written_at: Timestamp.fromMillis(1),
@@ -59,12 +60,14 @@ describe('flattenMessages', () => {
     expect(flattenMessages(registrations)).toEqual([
       {
         student_name: 'STUDENT A',
+        graduating_year: '2020',
         teacher_name: 'MDM NG HWEE KOON',
         message: 'First entry',
         written_at: Timestamp.fromMillis(1),
       },
       {
         student_name: 'STUDENT A',
+        graduating_year: '2020',
         teacher_name: 'MDM NG HWEE KOON',
         message: 'Second entry',
         written_at: Timestamp.fromMillis(2),

@@ -2,7 +2,11 @@ import type { Registration, WrittenMessage } from '$lib/models/registration';
 import { is2026 } from '$lib/models/registration';
 import type { Timestamp } from 'firebase/firestore';
 
-export type MessageRow = WrittenMessage & { student_name: string; written_at: Timestamp };
+export type MessageRow = WrittenMessage & {
+  student_name: string;
+  graduating_year: string;
+  written_at: Timestamp;
+};
 
 export function flattenMessages(registrations: Registration[]): MessageRow[] {
   return registrations
@@ -15,6 +19,7 @@ export function flattenMessages(registrations: Registration[]): MessageRow[] {
         )
         .map((message) => ({
           student_name: registration.full_name,
+          graduating_year: registration.graduating_year,
           written_at: registration.created_at,
           ...message,
         })),

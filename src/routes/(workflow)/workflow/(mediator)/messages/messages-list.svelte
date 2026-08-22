@@ -34,6 +34,7 @@
     <Table.Header class="bg-muted sticky top-0 z-10">
       <Table.Row>
         <Table.Head class="w-56">Student Name</Table.Head>
+        <Table.Head class="w-28">Graduating Year</Table.Head>
         <Table.Head class="w-72">Teacher's Name</Table.Head>
         <Table.Head>Written Message</Table.Head>
         <Table.Head class="w-40">Written At</Table.Head>
@@ -43,7 +44,7 @@
       {#if loading}
         <Table.Row>
           <Table.Cell
-            colspan={4}
+            colspan={5}
             class="h-32 text-center text-sm text-muted-foreground">
             Loading messages...
           </Table.Cell>
@@ -51,7 +52,7 @@
       {:else if !is2026Event}
         <Table.Row>
           <Table.Cell
-            colspan={4}
+            colspan={5}
             class="h-32 text-center">
             <Empty.Root>
               <Empty.Header>
@@ -66,7 +67,7 @@
       {:else if messages.length === 0}
         <Table.Row>
           <Table.Cell
-            colspan={4}
+            colspan={5}
             class="h-32 text-center">
             <Empty.Root>
               <Empty.Header>
@@ -81,6 +82,7 @@
         {#each messages as message, i (i)}
           <Table.Row>
             <Table.Cell class="align-top font-medium">{message.student_name}</Table.Cell>
+            <Table.Cell class="align-top">{message.graduating_year}</Table.Cell>
             <Table.Cell class="align-top font-medium">{message.teacher_name}</Table.Cell>
             <Table.Cell class="whitespace-pre-wrap wrap-break-word">{message.message}</Table.Cell>
             <Table.Cell class="whitespace-nowrap align-top text-muted-foreground">
