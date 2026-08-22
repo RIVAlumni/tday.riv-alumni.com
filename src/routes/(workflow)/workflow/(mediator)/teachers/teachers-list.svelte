@@ -111,6 +111,7 @@
             </Button>
             <Button
               href={teacherMailtoHref(teacher, students, emailTemplate)}
+              target="_blank"
               variant="outline"
               size="sm">
               <span data-icon="inline-start"><Mail01Icon /></span>

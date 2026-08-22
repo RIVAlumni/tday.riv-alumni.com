@@ -5,7 +5,6 @@ export const TEACHER_EMAIL_SUBJECT = "[RIVA Teachers' Day] Students Visiting You
 export interface TeacherEmailStudent {
   full_name: string;
   graduating_year: string;
-  contact_number: string;
 }
 
 export interface TeacherEmailTemplate {
@@ -19,9 +18,9 @@ export function buildTeacherEmailBody(
   students: TeacherEmailStudent[],
   template: TeacherEmailTemplate,
 ): string {
-  const header = 'Name | Graduation Year | Contact Number';
-  const rows = students.map(
-    (student) => `${student.full_name} | ${student.graduating_year} | ${student.contact_number}`,
+  const items = students.map(
+    (student, index) =>
+      `${index + 1}. ${student.full_name} (Graduate of ${student.graduating_year})`,
   );
 
   return [
@@ -33,7 +32,7 @@ export function buildTeacherEmailBody(
     '',
     `A total of ${students.length} student(s) have expressed interest in dropping by to see you! You may refer to the list of students below:`,
     '',
-    [header, ...rows].join('\r\n'),
+    ...items,
     '',
     `In order to manage the total number of visiting students, we would greatly appreciate if you could let us know if you will be present on campus between ${template.startTime} and ${template.endTime} on ${template.date}.`,
     '',
@@ -61,11 +60,11 @@ export function buildTeacherEmailBodyHtml(
 ): string {
   const rows = students.map(
     (student) =>
-      `<tr><td>${escapeHtml(student.full_name)}</td><td>${escapeHtml(student.graduating_year)}</td><td>${escapeHtml(student.contact_number)}</td></tr>`,
+      `<tr><td>${escapeHtml(student.full_name)}</td><td>${escapeHtml(student.graduating_year)}</td></tr>`,
   );
   const table =
     '<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;text-align:left">' +
-    '<tr><th>Name</th><th>Graduation Year</th><th>Contact Number</th></tr>' +
+    '<tr><th>Name</th><th>Graduation Year</th></tr>' +
     rows.join('') +
     '</table>';
 
