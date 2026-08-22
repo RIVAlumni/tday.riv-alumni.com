@@ -5,6 +5,7 @@ import {
   Database01Icon,
   CheckmarkCircle01Icon,
   NoteIcon,
+  Presentation07Icon,
   Settings01Icon,
   UserMultipleIcon,
 } from '$lib/icons';
@@ -25,8 +26,9 @@ export const navMain: NavItem[] = [
 
 // prettier-ignore
 export const records: NavItem[] = [
-  { title: 'Registrations', url: '/workflow/records',  icon: Database01Icon, minimumAccessLevel: AccessLevel.Mediator },
-  { title: 'Messages',      url: '/workflow/messages', icon: NoteIcon,      minimumAccessLevel: AccessLevel.Mediator },
+  { title: 'Registrations', url: '/workflow/records',  icon: Database01Icon,     minimumAccessLevel: AccessLevel.Mediator },
+  { title: 'Messages',      url: '/workflow/messages', icon: NoteIcon,           minimumAccessLevel: AccessLevel.Mediator },
+  { title: 'Teachers',      url: '/workflow/teachers', icon: Presentation07Icon, minimumAccessLevel: AccessLevel.Mediator },
 ];
 
 // prettier-ignore

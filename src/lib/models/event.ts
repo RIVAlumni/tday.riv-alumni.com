@@ -5,5 +5,6 @@ export interface Event {
   event_name: string;
   event_start: Timestamp;
   event_end: Timestamp;
-  teachers: string[];
+  // teacher email -> teacher name; not yet populated
+  teachers: Record<string, string>;
 }
