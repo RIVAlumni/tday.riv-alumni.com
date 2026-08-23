@@ -9,6 +9,7 @@ import {
 } from '@firebase/rules-unit-testing';
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -130,6 +131,19 @@ function publicRegistration(
     visiting_teachers: ['Mr Lim'],
     written_messages: [],
     arrived_at: null,
+    ...overrides,
+  };
+}
+
+function claimDocument(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    teacher: 'Mr Lim',
+    status: 'CLAIMED',
+    claimed_by: { email: 'mediator@example.com', name: 'Test Mediator' },
+    claimed_at: serverTimestamp(),
+    completed_by: null,
+    completed_at: null,
+    updated_at: serverTimestamp(),
     ...overrides,
   };
 }
@@ -528,5 +542,116 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore rules', () => {
     await assertFails(setDoc(authenticatedReference, publicRegistration('CDEFGH')));
 
     expect(true).toBe(true);
+  });
+
+  it('allows mediators to create and read claims, denies operators', async () => {
+    const mediatorFirestore = authenticatedFirestore('mediator');
+    const operatorFirestore = authenticatedFirestore('operator');
+    const claimReference = doc(mediatorFirestore, 'claims', 'MR LIM');
+
+    await assertSucceeds(setDoc(claimReference, claimDocument()));
+    await assertSucceeds(getDoc(claimReference));
+    await assertSucceeds(getDocs(collection(mediatorFirestore, 'claims')));
+
+    await assertFails(
+      setDoc(doc(operatorFirestore, 'claims', 'MR TAN'), claimDocument({
+        teacher: 'Mr Tan',
+        claimed_by: { email: 'operator@example.com', name: 'Test Operator' },
+      })),
+    );
+    await assertFails(getDocs(collection(operatorFirestore, 'claims')));
+
+    expect(true).toBe(true);
+  });
+
+  it('denies another mediator overwriting a fresh claim', async () => {
+    const mediatorFirestore = authenticatedFirestore('mediator');
+    const administratorFirestore = authenticatedFirestore('administrator');
+    const claimReference = doc(mediatorFirestore, 'claims', 'MR LIM');
+
+    await assertSucceeds(setDoc(claimReference, claimDocument()));
+
+    await assertFails(
+      setDoc(doc(administratorFirestore, 'claims', 'MR LIM'), claimDocument({
+        status: 'COMPLETED',
+        claimed_by: { email: 'administrator@example.com', name: 'Test Administrator' },
+        completed_by: { email: 'administrator@example.com', name: 'Test Administrator' },
+        completed_at: serverTimestamp(),
+      })),
+    );
+
+    const snapshot = await assertSucceeds(getDoc(claimReference));
+    expect(snapshot.data()?.claimed_by.email).toBe('mediator@example.com');
+  });
+
+  it('allows taking over an expired claim', async () => {
+    const mediatorFirestore = authenticatedFirestore('mediator');
+    const claimReference = doc(mediatorFirestore, 'claims', 'MR TAN');
+
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      const firestore = context.firestore();
+      const stale = Timestamp.fromMillis(Date.now() - 60 * 60 * 1000);
+      await setDoc(doc(firestore, 'claims', 'MR TAN'), {
+        teacher: 'Mr Tan',
+        status: 'CLAIMED',
+        claimed_by: { email: 'old@example.com', name: 'Old Claimer' },
+        claimed_at: stale,
+        completed_by: null,
+        completed_at: null,
+        updated_at: stale,
+      });
+    });
+
+    await assertSucceeds(
+      setDoc(claimReference, claimDocument({
+        teacher: 'Mr Tan',
+        claimed_by: { email: 'mediator@example.com', name: 'Test Mediator' },
+      })),
+    );
+
+    const snapshot = await assertSucceeds(getDoc(claimReference));
+    expect(snapshot.data()?.claimed_by.email).toBe('mediator@example.com');
+  });
+
+  it('allows the claimer to complete, and anyone to un-complete', async () => {
+    const mediatorFirestore = authenticatedFirestore('mediator');
+    const administratorFirestore = authenticatedFirestore('administrator');
+    const claimReference = doc(mediatorFirestore, 'claims', 'MR LIM');
+
+    await assertSucceeds(setDoc(claimReference, claimDocument()));
+
+    await assertSucceeds(
+      setDoc(claimReference, claimDocument({
+        status: 'COMPLETED',
+        completed_by: { email: 'mediator@example.com', name: 'Test Mediator' },
+        completed_at: serverTimestamp(),
+      })),
+    );
+
+    await assertSucceeds(
+      setDoc(doc(administratorFirestore, 'claims', 'MR LIM'), claimDocument({
+        claimed_by: { email: 'administrator@example.com', name: 'Test Administrator' },
+      })),
+    );
+
+    const snapshot = await assertSucceeds(getDoc(claimReference));
+    expect(snapshot.data()?.status).toBe('CLAIMED');
+    expect(snapshot.data()?.claimed_by.email).toBe('administrator@example.com');
+  });
+
+  it('allows only the owner to release a claim', async () => {
+    const mediatorFirestore = authenticatedFirestore('mediator');
+    const administratorFirestore = authenticatedFirestore('administrator');
+    const ownedReference = doc(mediatorFirestore, 'claims', 'MR LIM');
+
+    await assertSucceeds(setDoc(ownedReference, claimDocument()));
+    await assertSucceeds(deleteDoc(ownedReference));
+
+    const foreignReference = doc(mediatorFirestore, 'claims', 'MR TAN');
+    await assertSucceeds(setDoc(foreignReference, claimDocument({ teacher: 'Mr Tan' })));
+    await assertFails(deleteDoc(doc(administratorFirestore, 'claims', 'MR TAN')));
+
+    const snapshot = await assertSucceeds(getDoc(foreignReference));
+    expect(snapshot.exists()).toBe(true);
   });
 });

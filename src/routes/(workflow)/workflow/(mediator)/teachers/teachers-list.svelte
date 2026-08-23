@@ -1,14 +1,28 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+
   import { toast } from 'svelte-sonner';
 
+  import * as Alert from '$lib/components/ui/alert/index.js';
+  import { Badge } from '$lib/components/ui/badge/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
   import * as Empty from '$lib/components/ui/empty/index.js';
-  import * as Table from '$lib/components/ui/table/index.js';
   import { formatTime } from '$lib/data/reception';
-  import { ClipboardCheckIcon, Mail01Icon, Presentation07Icon } from '$lib/icons';
+  import {
+    claimTeacher,
+    completeTeacher,
+    releaseClaim,
+    uncompleteTeacher,
+  } from '$lib/firebase/claims';
+  import { CheckIcon, ClipboardCheckIcon, Mail01Icon, Presentation07Icon } from '$lib/icons';
   import type { Event } from '$lib/models/event';
   import type { Registration2026 } from '$lib/models/registration';
-  import { arrivedAtFor, visitingTeachersFor } from '$lib/util/registration';
+  import type { TeacherClaim } from '$lib/util/teacher-claims';
+  import {
+    isClaimStale,
+    normalizeTeacherKey,
+    rankTeachersByStudentCount,
+  } from '$lib/util/teacher-claims';
   import {
     buildTeacherEmailBody,
     buildTeacherEmailBodyHtml,
@@ -17,18 +31,24 @@
     teacherMailtoHref,
   } from '$lib/util/teacher-email';
 
+  import StudentsTable from './students-table.svelte';
+
   let {
     selectedTeachers,
     registrations,
     event,
     loading = false,
     is2026Event = false,
+    claims = {} as Record<string, TeacherClaim>,
+    viewer = null as { email: string; name: string } | null,
   }: {
     selectedTeachers: string[];
     registrations: Registration2026[];
     event: Event | null;
     loading?: boolean;
     is2026Event?: boolean;
+    claims?: Record<string, TeacherClaim>;
+    viewer?: { email: string; name: string } | null;
   } = $props();
 
   const emailTemplate = $derived({
@@ -37,12 +57,80 @@
     endTime: formatEventTime(event?.event_end?.toDate()),
   });
 
+  const rankedTeachers = $derived(
+    selectedTeachers.length > 0 ? selectedTeachers : rankTeachersByStudentCount(registrations),
+  );
+
+  // Claim staleness depends on the current time, so tick a non-write
+  // render clock to re-evaluate badges and the blocked alert without
+  // waiting for the next claims snapshot.
+  let now = $state(Date.now());
+  onMount(() => {
+    const interval = setInterval(() => {
+      now = Date.now();
+    }, 60_000);
+    return () => clearInterval(interval);
+  });
+
+  // Selected student ids per teacher (normalized key). No selection means
+  // every student is included in the email; any selection narrows it.
+  let selectedStudents = $state<Record<string, string[]>>({});
+
+  function claimFor(teacher: string): TeacherClaim | undefined {
+    return claims[normalizeTeacherKey(teacher)];
+  }
+
+  function isCompleted(teacher: string): boolean {
+    return claimFor(teacher)?.status === 'COMPLETED';
+  }
+
+  function isMine(teacher: string): boolean {
+    const claim = claimFor(teacher);
+    return claim?.claimed_by.email === viewer?.email && claim?.status === 'CLAIMED';
+  }
+
+  function isBlocked(teacher: string): boolean {
+    const claim = claimFor(teacher);
+    return (
+      viewer !== null &&
+      claim !== undefined &&
+      claim.status === 'CLAIMED' &&
+      !isMine(teacher) &&
+      !isClaimStale(claim, now)
+    );
+  }
+
+  function blockerName(teacher: string): string {
+    return claimFor(teacher)?.claimed_by.name ?? '';
+  }
+
+  function claimStatus(teacher: string): string {
+    const claim = claimFor(teacher);
+    if (!claim) return 'Unassigned';
+    if (claim.status === 'COMPLETED') {
+      return `Completed by ${claim.completed_by?.name} at ${formatTime(claim.completed_at)}`;
+    }
+    if (claim.claimed_by.email === viewer?.email) return 'Assigned to you';
+    if (isClaimStale(claim, now)) {
+      return `Assigned to ${claim.claimed_by.name} (timed out)`;
+    }
+    return `Assigned to ${claim.claimed_by.name} at ${formatTime(claim.claimed_at)}`;
+  }
+
   function studentsFor(teacher: string): Registration2026[] {
     return registrations.filter((registration) =>
       registration.visiting_teachers.some(
         (candidate) => candidate.trim().toUpperCase() === teacher.trim().toUpperCase(),
       ),
     );
+  }
+
+  function emailableStudents(teacher: string): Registration2026[] {
+    const selected = selectedStudents[normalizeTeacherKey(teacher)];
+    const all = studentsFor(teacher);
+    if (!selected || selected.length === 0) return all;
+    const wanted = new Set(selected);
+    return all.filter((registration) => wanted.has(registration.registration_id));
   }
 
   // Puts rich text (text/html + text/plain) on the clipboard so pasting into
@@ -69,6 +157,45 @@
       toast.error('Failed to copy email body', { description: (error as Error).message });
     }
   }
+
+  async function onClaim(teacher: string): Promise<void> {
+    if (!viewer) return;
+    try {
+      await claimTeacher(teacher, viewer);
+      toast.success(`Assigned ${teacher} to you`);
+    } catch (error) {
+      toast.error('Unable to assign', { description: (error as Error).message });
+    }
+  }
+
+  async function onRelease(teacher: string): Promise<void> {
+    try {
+      await releaseClaim(teacher);
+      toast.success(`Unassigned ${teacher} from you`);
+    } catch (error) {
+      toast.error('Unable to unassign', { description: (error as Error).message });
+    }
+  }
+
+  async function onComplete(teacher: string): Promise<void> {
+    if (!viewer) return;
+    try {
+      await completeTeacher(teacher, viewer);
+      toast.success(`Marked ${teacher} as completed`);
+    } catch (error) {
+      toast.error('Unable to complete', { description: (error as Error).message });
+    }
+  }
+
+  async function onUndoComplete(teacher: string): Promise<void> {
+    if (!viewer) return;
+    try {
+      await uncompleteTeacher(teacher, viewer);
+      toast.success(`Reopened ${teacher}`);
+    } catch (error) {
+      toast.error('Unable to undo completion', { description: (error as Error).message });
+    }
+  }
 </script>
 
 <div class="flex flex-col gap-6">
@@ -83,71 +210,101 @@
           >Select the 2026 event to view teachers and email them.</Empty.Description>
       </Empty.Header>
     </Empty.Root>
-  {:else if selectedTeachers.length === 0}
-    <Empty.Root>
-      <Empty.Header>
-        <Empty.Media variant="icon"><Presentation07Icon /></Empty.Media>
-        <Empty.Title>Select a teacher</Empty.Title>
-        <Empty.Description
-          >Choose one or more teachers above to see their students.</Empty.Description>
-      </Empty.Header>
-    </Empty.Root>
   {:else}
-    {#each selectedTeachers as teacher (teacher)}
+    {#each rankedTeachers as teacher (teacher)}
       {@const students = studentsFor(teacher)}
-      <section class="flex flex-col gap-2">
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <h2 class="text-base font-semibold">{teacher}</h2>
-            <p class="text-sm text-muted-foreground">{students.length} student(s)</p>
-          </div>
-          <div class="flex items-center gap-2">
+      {#if isCompleted(teacher)}
+        <section class="rounded-lg border">
+          <div class="flex items-center justify-between gap-3 px-4 py-2">
+            <div class="flex items-baseline gap-3">
+              <CheckIcon class="size-4 text-muted-foreground" />
+              <span class="text-sm font-medium">{teacher}</span>
+              <span class="text-sm text-muted-foreground">{students.length} student(s)</span>
+              <span class="text-xs text-muted-foreground">
+                Completed by {claimFor(teacher)?.completed_by?.name}
+              </span>
+            </div>
             <Button
               variant="outline"
               size="sm"
-              onclick={() => copyEmailBody(teacher, students)}>
-              <span data-icon="inline-start"><ClipboardCheckIcon /></span>
-              Copy email body
-            </Button>
-            <Button
-              href={teacherMailtoHref(teacher, students, emailTemplate)}
-              target="_blank"
-              variant="outline"
-              size="sm">
-              <span data-icon="inline-start"><Mail01Icon /></span>
-              Email the teacher
+              onclick={() => onUndoComplete(teacher)}>
+              Undo
             </Button>
           </div>
-        </div>
-        <div class="overflow-hidden rounded-lg border">
-          <Table.Root>
-            <Table.Header class="bg-muted">
-              <Table.Row>
-                <Table.Head class="w-32">ID</Table.Head>
-                <Table.Head>Name</Table.Head>
-                <Table.Head>Status</Table.Head>
-                <Table.Head class="w-20">Year</Table.Head>
-                <Table.Head>Visiting Teachers</Table.Head>
-                <Table.Head class="w-28">Arrived</Table.Head>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {#each students as registration (registration.registration_id)}
-                <Table.Row>
-                  <Table.Cell class="font-mono text-xs">{registration.registration_id}</Table.Cell>
-                  <Table.Cell class="font-medium">{registration.full_name}</Table.Cell>
-                  <Table.Cell>{registration.status}</Table.Cell>
-                  <Table.Cell>{registration.graduating_year}</Table.Cell>
-                  <Table.Cell>{visitingTeachersFor(registration)}</Table.Cell>
-                  <Table.Cell class="text-muted-foreground">
-                    {formatTime(arrivedAtFor(registration))}
-                  </Table.Cell>
-                </Table.Row>
-              {/each}
-            </Table.Body>
-          </Table.Root>
-        </div>
-      </section>
+        </section>
+      {:else}
+        {@const blocked = isBlocked(teacher)}
+        <section class="flex flex-col gap-2">
+          {#if blocked}
+            <Alert.Root
+              variant="destructive"
+              class="px-5 py-4">
+              <Alert.Title class="text-base font-semibold"
+                >Assigned to {blockerName(teacher)}</Alert.Title>
+              <Alert.Description class="text-sm">
+                {blockerName(teacher)} is emailing this teacher. Email or copy only if you have checked
+                with them.
+              </Alert.Description>
+            </Alert.Root>
+          {/if}
+          <div class="flex flex-col gap-3">
+            <div class="flex flex-wrap items-center gap-3">
+              <h2 class="text-base font-semibold">{teacher}</h2>
+              <Badge variant="secondary">{students.length} student(s)</Badge>
+              <span class="text-sm text-muted-foreground">{claimStatus(teacher)}</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              {#if isMine(teacher)}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={blocked}
+                  onclick={() => onRelease(teacher)}>
+                  Unassign myself
+                </Button>
+              {:else}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="border-green-600 bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
+                  disabled={blocked}
+                  onclick={() => onClaim(teacher)}>
+                  Assign to me
+                </Button>
+              {/if}
+              <Button
+                variant="outline"
+                size="sm"
+                onclick={() => copyEmailBody(teacher, emailableStudents(teacher))}>
+                <span data-icon="inline-start"><ClipboardCheckIcon /></span>
+                Copy email body
+              </Button>
+              <Button
+                href={teacherMailtoHref(teacher, emailableStudents(teacher), emailTemplate)}
+                target="_blank"
+                variant="outline"
+                size="sm">
+                <span data-icon="inline-start"><Mail01Icon /></span>
+                Email the teacher
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={blocked}
+                onclick={() => onComplete(teacher)}>
+                <span data-icon="inline-start"><CheckIcon /></span>
+                Mark as completed
+              </Button>
+            </div>
+          </div>
+          <StudentsTable
+            {students}
+            selected={selectedStudents[normalizeTeacherKey(teacher)] ?? []}
+            onselectedchange={(ids) => {
+              selectedStudents[normalizeTeacherKey(teacher)] = ids;
+            }} />
+        </section>
+      {/if}
     {/each}
   {/if}
 </div>

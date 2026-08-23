@@ -33,6 +33,28 @@ service cloud.firestore {
       }
     }
 
+    match /claims/{claimId} {
+      allow get, list: if isAuthorised('MEDIATOR');
+
+      allow create: if isAuthorised('MEDIATOR')
+        && isValidClaim()
+        && request.resource.data.claimed_at == request.time;
+
+      allow update: if isAuthorised('MEDIATOR')
+        && isValidClaim()
+        && (request.resource.data.claimed_at == resource.data.claimed_at
+          || request.resource.data.claimed_at == request.time)
+        && (
+          resource.data.status == 'COMPLETED'
+          || resource.data.claimed_by.email == request.auth.token.email
+          || resource.data.claimed_at < request.time - duration.value(1800, 's')
+        );
+
+      allow delete: if isAuthorised('MEDIATOR')
+        && resource.data.status == 'CLAIMED'
+        && resource.data.claimed_by.email == request.auth.token.email;
+    }
+
     // ─── Functions ───────────────────────────────────────────────────────────
 
     // -- Auth -----------------------------------------------------------------
@@ -209,6 +231,38 @@ service cloud.firestore {
         && entry.at is timestamp
         && entry.details is string
         && entry.details.size() <= 1000;
+    }
+
+    // -- Claims --------------------------------------------------------------
+
+    function isValidClaim() {
+      let data = request.resource.data;
+      let completed = data.status == 'COMPLETED';
+      return data.keys().hasOnly([
+        'teacher', 'status', 'claimed_by', 'claimed_at',
+        'completed_by', 'completed_at', 'updated_at',
+      ])
+        && data.teacher is string
+        && data.teacher.size() > 0
+        && data.teacher.size() <= 120
+        && data.status in ['CLAIMED', 'COMPLETED']
+        && data.claimed_by is map
+        && data.claimed_by.email is string
+        && data.claimed_by.email == request.auth.token.email
+        && data.claimed_by.name is string
+        && data.claimed_by.name.size() <= 120
+        && data.claimed_at is timestamp
+        && data.updated_at is timestamp
+        && data.updated_at == request.time
+        && (completed
+          ? data.completed_by is map
+            && data.completed_by.email is string
+            && data.completed_by.email == request.auth.token.email
+            && data.completed_by.name is string
+            && data.completed_by.name.size() <= 120
+            && data.completed_at is timestamp
+            && data.completed_at == request.time
+          : data.completed_by == null && data.completed_at == null);
     }
   }
 }

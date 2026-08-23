@@ -2,11 +2,14 @@
   import { onMount } from 'svelte';
 
   import * as Alert from '$lib/components/ui/alert/index.js';
+  import { subscribeClaims } from '$lib/firebase/claims';
   import { getEvent, searchRegistrations } from '$lib/firebase';
   import type { Event } from '$lib/models/event';
   import type { Registration } from '$lib/models/registration';
   import { is2026, type Registration2026 } from '$lib/models/registration';
   import { eventStore } from '$lib/stores/event.svelte';
+  import { userStore } from '$lib/stores/user.svelte';
+  import type { TeacherClaim } from '$lib/util/teacher-claims';
 
   import TeachersList from './teachers-list.svelte';
   import TeachersToolbar from './teachers-toolbar.svelte';
@@ -16,7 +19,13 @@
   let selectedTeachers = $state<string[]>([]);
   let loading = $state(false);
   let error = $state<Error | null>(null);
+  let claims = $state<Record<string, TeacherClaim>>({});
+  let claimsError = $state<string | null>(null);
   let requestSequence = 0;
+
+  const viewer = $derived(
+    userStore.state ? { email: userStore.state.email, name: userStore.state.display_name } : null,
+  );
 
   const is2026Event = $derived(eventStore.activeEventId === '2026');
 
@@ -66,8 +75,21 @@
     queueMicrotask(() => {
       if (mounted) void loadEvent(eventStore.activeEventId);
     });
+    // Claims collection is 2026-only by convention; the subscription stays
+    // live across event switches rather than resetting with the event.
+    const unsubscribe = subscribeClaims(
+      (next) => {
+        if (!mounted) return;
+        claims = next;
+        claimsError = null;
+      },
+      (error) => {
+        if (mounted) claimsError = error.message;
+      },
+    );
     return () => {
       mounted = false;
+      unsubscribe();
     };
   });
 </script>
@@ -87,10 +109,19 @@
     </Alert.Root>
   {/if}
 
+  {#if claimsError}
+    <Alert.Root variant="destructive">
+      <Alert.Title>Unable to load assignments</Alert.Title>
+      <Alert.Description>{claimsError}</Alert.Description>
+    </Alert.Root>
+  {/if}
+
   <TeachersList
     {selectedTeachers}
     registrations={registrations2026}
     {event}
     {loading}
-    {is2026Event} />
+    {is2026Event}
+    {claims}
+    {viewer} />
 </div>
