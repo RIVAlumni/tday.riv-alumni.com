@@ -52,6 +52,7 @@
     HistoryIcon,
     Mail01Icon,
     PencilEdit01Icon,
+    ScanIcon,
     Share01Icon,
     UnfoldMoreIcon,
     UserIcon,
@@ -248,6 +249,23 @@
     const url = `https://api.whatsapp.com/send/?phone=65${String(record.contact_number)}&text=${encodeURIComponent(requestMoreInfoBody())}`;
     window.open(url, '_blank', 'noopener,noreferrer');
     requestInfoOpen = false;
+  }
+
+  function manualCheckInBody(): string {
+    if (!record) return '';
+    return [
+      `Hello ${record.full_name}!`,
+      '',
+      'Welcome back to RIVPS! Please use the following code for manual check-in at our Reception Station at the Kindness Corner.',
+      '',
+      `Manual Check-in Code: *${record.registration_id}*`,
+    ].join('\n');
+  }
+
+  function openManualCheckInWhatsApp() {
+    if (!record) return;
+    const url = `https://api.whatsapp.com/send/?phone=65${String(record.contact_number)}&text=${encodeURIComponent(manualCheckInBody())}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   }
 
   async function save() {
@@ -513,6 +531,26 @@
                         </Item.Actions>
                       </button>
                     {/if}
+                  {/snippet}
+                </Item.Root>
+                <Item.Separator />
+                <Item.Root
+                  class="cursor-pointer hover:bg-muted disabled:pointer-events-none disabled:opacity-50">
+                  {#snippet child({ props })}
+                    <button
+                      type="button"
+                      onclick={openManualCheckInWhatsApp}
+                      {...props}>
+                      <Item.Content class="gap-1">
+                        <Item.Title>Send Manual Check-in Code</Item.Title>
+                        <Item.Description>
+                          Send the manual check-in code to {record?.contact_number}.
+                        </Item.Description>
+                      </Item.Content>
+                      <Item.Actions>
+                        <ScanIcon class="size-4" />
+                      </Item.Actions>
+                    </button>
                   {/snippet}
                 </Item.Root>
                 <Item.Separator />
