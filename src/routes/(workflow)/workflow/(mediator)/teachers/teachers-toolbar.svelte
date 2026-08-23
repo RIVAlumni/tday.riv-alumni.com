@@ -89,7 +89,7 @@
     </DropdownMenu.Root>
   </Field.Field>
 
-  <Field.Field>
+  <Field.Field class="max-w-sm">
     <Field.FieldLabel for="teachers-combobox">Teachers</Field.FieldLabel>
     <Popover.Root bind:open={teacherPopoverOpen}>
       <Popover.Trigger>

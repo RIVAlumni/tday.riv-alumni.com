@@ -31,13 +31,15 @@
 
   import * as Avatar from '$lib/components/ui/avatar/index.js';
   import * as Card from '$lib/components/ui/card/index.js';
+  import * as Collapsible from '$lib/components/ui/collapsible/index.js';
   import * as Dialog from '$lib/components/ui/dialog/index.js';
   import * as Empty from '$lib/components/ui/empty/index.js';
   import * as Item from '$lib/components/ui/item/index.js';
   import * as Field from '$lib/components/ui/field/index.js';
   import * as Kbd from '$lib/components/ui/kbd/index.js';
+  import * as Timeline from '$lib/components/ui/timeline/index.js';
   import { Checkbox } from '$lib/components/ui/checkbox/index.js';
-  import { Button } from '$lib/components/ui/button/index.js';
+  import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
   import { Input } from '$lib/components/ui/input/index.js';
   import { Textarea } from '$lib/components/ui/textarea/index.js';
   import { Badge } from '$lib/components/ui/badge/index.js';
@@ -47,9 +49,11 @@
     ArrowLeft01Icon,
     CheckIcon,
     Delete01Icon,
+    HistoryIcon,
     Mail01Icon,
     PencilEdit01Icon,
     Share01Icon,
+    UnfoldMoreIcon,
     UserIcon,
   } from '$lib/icons';
   import SkeletonControl from './SkeletonControl.svelte';
@@ -287,11 +291,11 @@
   }
 
   const updateTone: Record<RegistrationUpdateAction, string> = {
-    REGISTERED: 'border-sky-500/30 bg-sky-500/10 text-sky-500',
-    CHECKED_IN: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500',
-    CONFLICT: 'border-amber-500/30 bg-amber-500/10 text-amber-500',
-    REJECTED: 'border-red-500/30 bg-red-500/10 text-red-500',
-    UPDATED: 'border-slate-500/30 bg-slate-500/10 text-slate-500',
+    REGISTERED: 'bg-secondary text-secondary-foreground',
+    CHECKED_IN: 'bg-primary text-primary-foreground',
+    CONFLICT: 'bg-warning text-foreground',
+    REJECTED: 'bg-destructive text-background',
+    UPDATED: 'bg-muted text-muted-foreground',
   };
 
   const updateMeta: Record<RegistrationUpdateAction, { label: string; icon: Component }> = {
@@ -666,50 +670,104 @@
 
               <Card.Content>
                 {#if record.updates.length === 0}
-                  <p class="text-muted-foreground text-sm">No activity recorded yet.</p>
+                  <Empty.Root class="p-6">
+                    <Empty.Header>
+                      <Empty.Media variant="icon">
+                        <HistoryIcon />
+                      </Empty.Media>
+                      <Empty.Title>No activity recorded</Empty.Title>
+                      <Empty.Description>Status changes will appear here.</Empty.Description>
+                    </Empty.Header>
+                  </Empty.Root>
                 {:else}
-                  <ol class="relative space-y-4">
-                    <span
-                      aria-hidden="true"
-                      class="pointer-events-none absolute inset-s-3 top-2 bottom-2 w-px -translate-x-1/2 bg-border"
-                    ></span>
+                  <Timeline.Root defaultValue={record.updates.length}>
                     {#each [...record.updates].reverse() as update, i (record.updates.length - 1 - i)}
                       {@const actorName = updateActorName(update)}
                       {@const actorEmail = updateActorEmail(update)}
+                      {@const details = update.details.trim()}
+                      {@const hasCollapsedDetails = update.action === 'UPDATED' && details !== ''}
                       {@const Icon = updateMeta[update.action].icon}
-                      <li class="relative flex gap-3">
-                        <span
-                          class={cn(
-                            'relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full border',
-                            updateTone[update.action],
-                          )}>
-                          <Icon class="size-3.5" />
-                        </span>
-                        <div class="min-w-0 flex-1 pb-1">
-                          <div class="flex flex-wrap items-baseline gap-x-2">
-                            <span class="text-sm font-semibold"
-                              >{updateMeta[update.action].label}</span>
-                            <span class="text-muted-foreground text-xs font-mono tabular-nums"
-                              >{formatDate(update.at)}</span>
-                          </div>
-                          <p class="text-muted-foreground text-sm">
-                            {#if actorName && actorEmail}
-                              {actorName} ({actorEmail})
-                            {:else if actorName}
-                              {actorName}
-                            {:else if actorEmail}
-                              {actorEmail}
+                      <Timeline.Item
+                        step={record.updates.length - i}
+                        class="group-data-[orientation=vertical]/timeline:ms-10">
+                        <Collapsible.Root class="flex flex-col gap-0.5">
+                          <Timeline.Header>
+                            <Timeline.Separator
+                              class="bg-input! group-data-[orientation=vertical]/timeline:-left-7 group-data-[orientation=vertical]/timeline:h-[calc(100%-1.5rem-0.25rem)] group-data-[orientation=vertical]/timeline:translate-y-6.5" />
+                            <div class="flex flex-wrap items-center gap-2">
+                              <Timeline.Title>{updateMeta[update.action].label}</Timeline.Title>
+                              {#if hasCollapsedDetails}
+                                <Collapsible.Trigger
+                                  type="button"
+                                  class={buttonVariants({ variant: 'ghost', size: 'xs' })}>
+                                  View changes
+                                  <UnfoldMoreIcon data-icon="inline-end" />
+                                </Collapsible.Trigger>
+                              {/if}
+                            </div>
+                            <Timeline.Indicator
+                              class={cn(
+                                'flex size-6 items-center justify-center border-none group-data-[orientation=vertical]/timeline:-left-7',
+                                updateTone[update.action],
+                              )}>
+                              <Icon />
+                            </Timeline.Indicator>
+                          </Timeline.Header>
+                          <Timeline.Content class="flex flex-col gap-1">
+                            {#if hasCollapsedDetails}
+                              <div class="flex flex-wrap items-center gap-2">
+                                <span>{actorName || actorEmail || 'Unknown'}</span>
+                                <span aria-hidden="true">&middot;</span>
+                                <Timeline.Date class="mb-0">{formatDate(update.at)}</Timeline.Date>
+                              </div>
                             {:else}
-                              Unknown
+                              <div class="flex flex-col gap-0.5">
+                                <div class="flex flex-wrap items-center gap-2">
+                                  <span>{actorName || actorEmail || 'Unknown'}</span>
+                                  {#if actorEmail && actorName !== actorEmail}
+                                    <span aria-hidden="true">&middot;</span>
+                                    <span>{actorEmail}</span>
+                                  {/if}
+                                </div>
+                                <Timeline.Date class="mb-0">{formatDate(update.at)}</Timeline.Date>
+                              </div>
                             {/if}
-                          </p>
-                          {#if update.details.trim()}
-                            <p class="text-muted-foreground text-sm">{update.details}</p>
-                          {/if}
-                        </div>
-                      </li>
+                            {#if hasCollapsedDetails}
+                              <Collapsible.Content class="pt-2">
+                                <Item.Group>
+                                  {#if actorEmail && actorName !== actorEmail}
+                                    <Item.Root
+                                      variant="muted"
+                                      size="xs">
+                                      <Item.Content>
+                                        <Item.Title>Operator email</Item.Title>
+                                        <Item.Description class="line-clamp-none break-words">
+                                          {actorEmail}
+                                        </Item.Description>
+                                      </Item.Content>
+                                    </Item.Root>
+                                  {/if}
+                                  <Item.Root
+                                    variant="muted"
+                                    size="xs">
+                                    <Item.Content>
+                                      <Item.Title>Recorded changes</Item.Title>
+                                      <Item.Description class="line-clamp-none break-words">
+                                        {details}
+                                      </Item.Description>
+                                    </Item.Content>
+                                  </Item.Root>
+                                </Item.Group>
+                              </Collapsible.Content>
+                            {/if}
+                            {#if !hasCollapsedDetails && details}
+                              <p>{details}</p>
+                            {/if}
+                          </Timeline.Content>
+                        </Collapsible.Root>
+                      </Timeline.Item>
                     {/each}
-                  </ol>
+                  </Timeline.Root>
                 {/if}
               </Card.Content>
             </Card.Root>
