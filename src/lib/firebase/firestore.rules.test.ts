@@ -427,6 +427,61 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore rules', () => {
     expect(snapshot.data()?.full_name).toBe('UPDATED VISITOR');
   });
 
+  it('allows a mediator edit whose rebuilt n-grams equal the stored ones', async () => {
+    const firestore = authenticatedFirestore('mediator');
+    const reference = doc(firestore, 'events', '2026', 'registrations', REGISTRATION_ID);
+
+    // A name edit can introduce no new 1-3 character grams, leaving the
+    // rebuilt index identical and therefore absent from diff().affectedKeys().
+    await assertSucceeds(
+      updateDoc(reference, {
+        full_name: 'EDITED VISITOR',
+        search_ngrams: ['e', 'ex', 'v', 'vi'],
+        updated_at: serverTimestamp(),
+        updates: [
+          {
+            action: 'UPDATED',
+            by: {
+              name: 'Test Mediator',
+              email: 'mediator@example.com',
+            },
+            at: Timestamp.now(),
+            details: "full_name: 'EXAMPLE VISITOR' -> 'EDITED VISITOR'",
+          },
+        ],
+      }),
+    );
+
+    const snapshot = await assertSucceeds(getDoc(reference));
+    expect(snapshot.data()?.full_name).toBe('EDITED VISITOR');
+  });
+
+  it('denies mediator edits that empty the search index', async () => {
+    const firestore = authenticatedFirestore('mediator');
+    const reference = doc(firestore, 'events', '2026', 'registrations', REGISTRATION_ID);
+
+    await assertFails(
+      updateDoc(reference, {
+        full_name: 'EDITED VISITOR',
+        search_ngrams: [],
+        updated_at: serverTimestamp(),
+        updates: [
+          {
+            action: 'UPDATED',
+            by: {
+              name: 'Test Mediator',
+              email: 'mediator@example.com',
+            },
+            at: Timestamp.now(),
+            details: "full_name: 'EXAMPLE VISITOR' -> 'EDITED VISITOR'",
+          },
+        ],
+      }),
+    );
+
+    expect(true).toBe(true);
+  });
+
   it('denies writes to legacy events but allows reads', async () => {
     const firestore = authenticatedFirestore('mediator');
     const reference = doc(firestore, 'events', '2025', 'registrations', '1001');

@@ -132,7 +132,10 @@ service cloud.firestore {
         ])
         && request.resource.data.updated_at == request.time
         && isValidUpdatesChange()
-        && (!changed.hasAny(['full_name', 'contact_number', 'email']) || changed.hasAll(['search_ngrams']))
+        // A rebuilt index can equal the stored one when an edit introduces no
+        // new 1-3 character grams, so require validity rather than a change.
+        && (!changed.hasAny(['full_name', 'contact_number', 'email'])
+          || isValidSearchNgrams(request.resource.data.get('search_ngrams', [])))
         && (!changed.hasAny(['full_name']) || isValidName(request.resource.data.full_name))
         && (!changed.hasAny(['comments']) || isValidComments(request.resource.data.comments))
         && (!changed.hasAny(['email']) || isValidEmail(request.resource.data.email))
