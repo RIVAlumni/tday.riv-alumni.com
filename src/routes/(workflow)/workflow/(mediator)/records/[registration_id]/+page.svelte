@@ -663,7 +663,7 @@
                     <SkeletonControl
                       {loading}
                       class="h-12 w-full">
-                      {#each record.written_messages as msg (msg.teacher_name)}
+                      {#each record.written_messages as msg, i (i)}
                         <Item.Root variant="outline">
                           <Item.Media variant="icon">
                             <UserIcon />
