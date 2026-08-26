@@ -16,7 +16,11 @@
   import { page } from '$app/state';
   import * as Alert from '$lib/components/ui/alert/index.js';
   import { createSvelteTable } from '$lib/components/ui/data-table/data-table.svelte.js';
-  import { fetchRegistrationPage, searchRegistrations } from '$lib/firebase';
+  import {
+    fetchRegistrationPage,
+    fetchRegistrationPageCursor,
+    searchRegistrations,
+  } from '$lib/firebase';
   import { eventStore } from '$lib/stores/event.svelte';
 
   import type { RecordsFilterValues } from './records-filter';
@@ -140,7 +144,12 @@
     if (submittedFilters.registeredFrom) params.set('from', submittedFilters.registeredFrom);
     if (submittedFilters.registeredTo) params.set('to', submittedFilters.registeredTo);
     for (const teacher of submittedFilters.visitingTeachers) params.append('teachers', teacher);
-    if (pagination.pageIndex > 0) params.set('page', String(pagination.pageIndex));
+    if (pagination.pageIndex > 0) {
+      params.set('page', String(pagination.pageIndex));
+      // carry the page's boundary docs so a revisit can reopen the same page
+      if (pageCursor?.first) params.set('first', pageCursor.first.id);
+      if (pageCursor?.last) params.set('last', pageCursor.last.id);
+    }
     if (pagination.pageSize !== 15) params.set('size', String(pagination.pageSize));
     const query = params.toString();
     void goto(query ? `/workflow/records?${query}` : '/workflow/records', { replaceState: true });
@@ -162,6 +171,7 @@
     requestedPagination: PaginationState,
     direction: RegistrationPageDirection = 'first',
     reuseClientResults = false,
+    cursor: RegistrationPageCursor | null = pageCursor,
   ): Promise<void> {
     const sequence = ++requestSequence;
     loading = true;
@@ -186,7 +196,7 @@
         const result = await fetchRegistrationPage(eventId, {
           pageSize: requestedPagination.pageSize,
           direction,
-          cursor: pageCursor,
+          cursor,
           filters,
         });
         nextRegistrations = result.registrations;
@@ -230,13 +240,56 @@
     void runQuery(eventId, '', EMPTY_FILTERS, firstPage);
   }
 
+  async function openRestoredPage(eventId: string): Promise<void> {
+    const firstPage = { pageIndex: 0, pageSize: pagination.pageSize };
+    if (pagination.pageIndex === 0) {
+      await runQuery(eventId, submittedSearch, submittedFilters, firstPage);
+      return;
+    }
+    // client-paginated results slice locally, so the restored page index is honored
+    const clientPaginated =
+      submittedSearch.trim().length > 0 || submittedFilters.visitingTeachers.length > 0;
+    if (!clientPaginated) {
+      // server-paginated: reopen the page the user left off on via its boundary docs
+      const restoredCursor = await fetchRegistrationPageCursor(
+        eventId,
+        page.url.searchParams.get('first'),
+        page.url.searchParams.get('last'),
+      );
+      if (restoredCursor) {
+        await runQuery(
+          eventId,
+          submittedSearch,
+          submittedFilters,
+          pagination,
+          'same',
+          false,
+          restoredCursor,
+        );
+        if (totalCount > 0 && registrations.length === 0) {
+          // the restored page no longer exists (records were deleted); reopen from the top
+          pagination = firstPage;
+          syncUrl();
+          await runQuery(eventId, submittedSearch, submittedFilters, firstPage);
+        }
+        return;
+      }
+      // no boundary anchors left: reopen from the top instead of showing the wrong page
+      pagination = firstPage;
+      syncUrl();
+      await runQuery(eventId, submittedSearch, submittedFilters, firstPage);
+      return;
+    }
+    await runQuery(eventId, submittedSearch, submittedFilters, pagination);
+  }
+
   onMount(() => {
     let mounted = true;
     // Parent layout hydrates eventStore in its onMount callback.
     queueMicrotask(() => {
       if (!mounted) return;
       if (restoreFromUrl(page.url.searchParams)) {
-        void runQuery(eventStore.activeEventId, submittedSearch, submittedFilters, pagination);
+        void openRestoredPage(eventStore.activeEventId);
       } else {
         loadEvent(eventStore.activeEventId);
       }

@@ -30,6 +30,7 @@ import {
   runTransaction,
   serverTimestamp,
   startAfter,
+  startAt,
   Timestamp,
   updateDoc,
   where,
@@ -60,7 +61,7 @@ export interface RegistrationQueryFilters {
   visitingTeachers?: string[];
 }
 
-export type RegistrationPageDirection = 'first' | 'next' | 'previous' | 'last';
+export type RegistrationPageDirection = 'first' | 'next' | 'previous' | 'last' | 'same';
 
 export interface RegistrationPageCursor {
   first: QueryDocumentSnapshot<DocumentData, DocumentData> | null;
@@ -168,7 +169,11 @@ export async function fetchRegistrationPage(
         ? [endBefore(options.cursor.first), limitToLast(options.pageSize)]
         : direction === 'next' && options.cursor?.last
           ? [startAfter(options.cursor.last), limit(options.pageSize)]
-          : limit(options.pageSize);
+          : direction === 'same' && options.cursor?.first
+            ? [startAt(options.cursor.first), limit(options.pageSize)]
+            : direction === 'same' && options.cursor?.last
+              ? [endBefore(options.cursor.last), limitToLast(options.pageSize)]
+              : limit(options.pageSize);
   const pageConstraints = Array.isArray(pageConstraint) ? pageConstraint : [pageConstraint];
   const snapshot = await getDocs(
     constraints.length > 0
@@ -184,6 +189,25 @@ export async function fetchRegistrationPage(
       last: snapshot.docs.at(-1) ?? null,
     },
   };
+}
+
+// rebuild a page cursor from the boundary doc ids carried in the URL, so a
+// revisited records list can reopen the page the user left off on; returns
+// null when both boundary docs no longer exist
+export async function fetchRegistrationPageCursor(
+  eventId: string,
+  firstId: string | null,
+  lastId: string | null,
+): Promise<RegistrationPageCursor | null> {
+  if (firstId) {
+    const firstSnapshot = await getDoc(doc(registrationsCollection(eventId), firstId));
+    if (firstSnapshot.exists()) return { first: firstSnapshot, last: null };
+  }
+  if (lastId) {
+    const lastSnapshot = await getDoc(doc(registrationsCollection(eventId), lastId));
+    if (lastSnapshot.exists()) return { first: null, last: lastSnapshot };
+  }
+  return null;
 }
 
 export async function searchRegistrationsById(

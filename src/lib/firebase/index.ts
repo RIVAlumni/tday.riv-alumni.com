@@ -16,6 +16,7 @@ export {
   fetchRegistrationsByDay,
   deleteRegistration,
   fetchRegistrationPage,
+  fetchRegistrationPageCursor,
   searchRegistrations,
   searchRegistrationsById,
   checkInRegistration,
