@@ -104,6 +104,13 @@
     if (videoEl) videoEl.srcObject = null;
   }
 
+  function playScanSound(): void {
+    // fresh element each time: the browser releases it after playback
+    const audio = new Audio('/scan.mp3');
+    audio.volume = 0.7;
+    void audio.play().catch(() => {});
+  }
+
   function handleCameraError(err: unknown) {
     status = 'error';
     if (err instanceof DOMException && err.name === 'NotAllowedError') {
@@ -135,6 +142,7 @@
 
     if (code?.data) {
       stopCamera();
+      playScanSound();
       onScan(code.data);
     }
   }
