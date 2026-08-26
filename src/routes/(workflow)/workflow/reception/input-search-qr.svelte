@@ -27,6 +27,9 @@
   // ── Settings imports from $lib ────────────────────────────────────────
   import { settingsStore } from '$lib/stores/settings.svelte';
 
+  // ── Util imports from $lib ────────────────────────────────────────────
+  import { playScanSound } from '$lib/util/sound';
+
   let { open, onScan }: { open: boolean; onScan: (value: string) => void } = $props();
 
   type CameraStatus = 'starting' | 'scanning' | 'error';
@@ -102,13 +105,6 @@
     stream?.getTracks().forEach((track) => track.stop());
     stream = null;
     if (videoEl) videoEl.srcObject = null;
-  }
-
-  function playScanSound(): void {
-    // fresh element each time: the browser releases it after playback
-    const audio = new Audio('/scan.mp3');
-    audio.volume = 0.7;
-    void audio.play().catch(() => {});
   }
 
   function handleCameraError(err: unknown) {

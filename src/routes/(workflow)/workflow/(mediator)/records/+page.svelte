@@ -152,7 +152,7 @@
     }
     if (pagination.pageSize !== 15) params.set('size', String(pagination.pageSize));
     const query = params.toString();
-    void goto(query ? `/workflow/records?${query}` : '/workflow/records', { replaceState: true });
+    void goto(query ? `/workflow/records?${query}` : '/workflow/records', { replace: true });
   }
 
   function sortRegistrations(values: Registration[]): Registration[] {
@@ -172,6 +172,7 @@
     direction: RegistrationPageDirection = 'first',
     reuseClientResults = false,
     cursor: RegistrationPageCursor | null = pageCursor,
+    offset = 0,
   ): Promise<void> {
     const sequence = ++requestSequence;
     loading = true;
@@ -197,6 +198,7 @@
           pageSize: requestedPagination.pageSize,
           direction,
           cursor,
+          offset: direction === 'jump' ? offset : undefined,
           filters,
         });
         nextRegistrations = result.registrations;
@@ -236,7 +238,7 @@
     totalCount = 0;
     pageCursor = null;
     clientPaginatedRegistrations = [];
-    void goto('/workflow/records', { replaceState: true });
+    void goto('/workflow/records', { replace: true });
     void runQuery(eventId, '', EMPTY_FILTERS, firstPage);
   }
 
@@ -320,16 +322,18 @@
     nextPagination: PaginationState,
     previousPagination: PaginationState,
   ): Promise<void> {
+    if (nextPagination.pageIndex === previousPagination.pageIndex) return;
     const lastPageIndex = Math.max(0, Math.ceil(totalCount / nextPagination.pageSize) - 1);
     const direction: RegistrationPageDirection =
       nextPagination.pageSize !== previousPagination.pageSize || nextPagination.pageIndex === 0
         ? 'first'
-        : nextPagination.pageIndex > previousPagination.pageIndex + 1 &&
-            nextPagination.pageIndex === lastPageIndex
+        : nextPagination.pageIndex === lastPageIndex
           ? 'last'
-          : nextPagination.pageIndex > previousPagination.pageIndex
+          : nextPagination.pageIndex === previousPagination.pageIndex + 1
             ? 'next'
-            : 'previous';
+            : nextPagination.pageIndex === previousPagination.pageIndex - 1
+              ? 'previous'
+              : 'jump';
     await runQuery(
       eventStore.activeEventId,
       submittedSearch,
@@ -337,6 +341,8 @@
       nextPagination,
       direction,
       true,
+      direction === 'jump' ? null : pageCursor,
+      direction === 'jump' ? nextPagination.pageIndex * nextPagination.pageSize : 0,
     );
     syncUrl();
   }

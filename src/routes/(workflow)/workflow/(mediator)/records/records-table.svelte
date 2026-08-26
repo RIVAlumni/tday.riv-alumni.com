@@ -230,6 +230,24 @@
     get: () => `${table.getState().pagination.pageSize}`,
     set: (v: string) => table.setPageSize(Number(v)),
   };
+
+  // page numbers with an ellipsis window around the current page
+  function getPageItems(pageIndex: number, pageCount: number): (number | '...')[] {
+    const current = pageIndex + 1;
+    if (pageCount <= 7) return Array.from({ length: pageCount }, (_, i) => i + 1);
+    const items: (number | '...')[] = [1];
+    const windowStart = Math.max(2, current - 2);
+    const windowEnd = Math.min(pageCount - 1, current + 2);
+    if (windowStart > 2) items.push('...');
+    for (let page = windowStart; page <= windowEnd; page++) items.push(page);
+    if (windowEnd < pageCount - 1) items.push('...');
+    items.push(pageCount);
+    return items;
+  }
+
+  const pageCount = $derived(table.getPageCount() || 1);
+  const pageIndex = $derived(table.getState().pagination.pageIndex);
+  const pageItems = $derived(getPageItems(pageIndex, pageCount));
 </script>
 
 <div class="overflow-hidden rounded-lg border">
@@ -314,7 +332,7 @@
       {table.getFilteredRowModel().rows.length} of {registrations.length} registration(s)
     {/if}
   </div>
-  <div class="flex w-full items-center gap-6 lg:w-fit">
+  <div class="flex w-full flex-wrap items-center gap-x-6 gap-y-2 lg:w-fit">
     <div class="hidden items-center gap-2 lg:flex">
       <Label
         for="rows-per-page"
@@ -339,8 +357,8 @@
       </Select.Root>
     </div>
     <div class="flex w-fit items-center justify-center text-sm font-medium">
-      Page {table.getState().pagination.pageIndex + 1} of
-      {table.getPageCount() || 1}
+      Page {pageIndex + 1} of
+      {pageCount}
     </div>
     <div class="flex items-center gap-1">
       <Button
@@ -353,21 +371,44 @@
       </Button>
       <Button
         variant="outline"
-        class="size-8"
-        size="icon"
+        class="size-8 gap-1 p-0 lg:size-auto lg:px-3 lg:py-2"
         onclick={() => table.previousPage()}
         disabled={loading || !table.getCanPreviousPage()}>
         <span class="sr-only">Go to previous page</span>
         <ArrowLeft01Icon />
+        <span class="hidden lg:inline">Prev</span>
       </Button>
+      {#if pageCount > 1}
+        <div class="flex items-center">
+          {#each pageItems as item, i (i)}
+            {#if item === '...'}
+              <span class="grid size-8 select-none place-items-center text-sm text-muted-foreground"
+                >...</span>
+            {:else}
+              <button
+                type="button"
+                class="grid size-8 cursor-pointer place-items-center rounded-full text-sm transition-colors outline-none select-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:pointer-events-none disabled:opacity-50 {item ===
+                pageIndex + 1
+                  ? 'font-medium text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'}"
+                aria-label={`Go to page ${item}`}
+                aria-current={item === pageIndex + 1 ? 'page' : undefined}
+                disabled={loading}
+                onclick={() => table.setPageIndex(item - 1)}>
+                {item}
+              </button>
+            {/if}
+          {/each}
+        </div>
+      {/if}
       <Button
         variant="outline"
-        class="size-8"
-        size="icon"
+        class="size-8 gap-1 p-0 lg:size-auto lg:px-3 lg:py-2"
         onclick={() => table.nextPage()}
         disabled={loading || !table.getCanNextPage()}>
         <span class="sr-only">Go to next page</span>
         <ArrowRight01Icon />
+        <span class="hidden lg:inline">Next</span>
       </Button>
       <Button
         variant="outline"

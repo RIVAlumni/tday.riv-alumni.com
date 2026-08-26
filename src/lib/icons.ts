@@ -26,6 +26,7 @@ export { default as CheckmarkCircle01Icon } from '$lib/components/icons/Checkmar
 export { default as CircleDotIcon } from '$lib/components/icons/CircleDotIcon.svelte';
 export { default as ClipboardCheckIcon } from '$lib/components/icons/ClipboardCheckIcon.svelte';
 export { default as Clock01Icon } from '$lib/components/icons/Clock01Icon.svelte';
+export { default as Copy02Icon } from '$lib/components/icons/Copy02Icon.svelte';
 export { default as CreditCardIcon } from '$lib/components/icons/CreditCardIcon.svelte';
 export { default as DashboardSquare01Icon } from '$lib/components/icons/DashboardSquare01Icon.svelte';
 export { default as Database01Icon } from '$lib/components/icons/Database01Icon.svelte';

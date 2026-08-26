@@ -61,7 +61,7 @@ export interface RegistrationQueryFilters {
   visitingTeachers?: string[];
 }
 
-export type RegistrationPageDirection = 'first' | 'next' | 'previous' | 'last' | 'same';
+export type RegistrationPageDirection = 'first' | 'next' | 'previous' | 'last' | 'same' | 'jump';
 
 export interface RegistrationPageCursor {
   first: QueryDocumentSnapshot<DocumentData, DocumentData> | null;
@@ -78,6 +78,7 @@ export interface RegistrationPageOptions {
   pageSize: number;
   direction?: RegistrationPageDirection;
   cursor?: RegistrationPageCursor | null;
+  offset?: number;
   filters?: RegistrationQueryFilters;
 }
 
@@ -137,10 +138,10 @@ function docToRegistration(snapshot: DocLike, eventId: string): Registration | n
 }
 
 function registrationsFromSnapshot(
-  snapshot: Awaited<ReturnType<typeof getDocs>>,
+  docs: QueryDocumentSnapshot<DocumentData, DocumentData>[],
   eventId: string,
 ): Registration[] {
-  return snapshot.docs
+  return docs
     .map((document) => docToRegistration(document, eventId))
     .filter((registration): registration is Registration => registration !== null);
 }
@@ -173,7 +174,11 @@ export async function fetchRegistrationPage(
             ? [startAt(options.cursor.first), limit(options.pageSize)]
             : direction === 'same' && options.cursor?.last
               ? [endBefore(options.cursor.last), limitToLast(options.pageSize)]
-              : limit(options.pageSize);
+              : direction === 'jump' && options.offset != null
+                ? totalCount <= options.offset + options.pageSize
+                  ? limitToLast(lastPageSize)
+                  : limit(options.offset + options.pageSize)
+                : limit(options.pageSize);
   const pageConstraints = Array.isArray(pageConstraint) ? pageConstraint : [pageConstraint];
   const snapshot = await getDocs(
     constraints.length > 0
@@ -181,12 +186,19 @@ export async function fetchRegistrationPage(
       : query(registrations, ...orderConstraints, ...pageConstraints),
   );
 
+  // "jump" fetches everything up to the target page in one query, then keeps
+  // only the last pageSize docs so arbitrary page numbers stay reachable
+  const pageDocs =
+    direction === 'jump' && options.offset != null && totalCount > options.offset + options.pageSize
+      ? snapshot.docs.slice(-options.pageSize)
+      : snapshot.docs;
+
   return {
-    registrations: registrationsFromSnapshot(snapshot, eventId),
+    registrations: registrationsFromSnapshot(pageDocs, eventId),
     totalCount,
     cursor: {
-      first: snapshot.docs[0] ?? null,
-      last: snapshot.docs.at(-1) ?? null,
+      first: pageDocs[0] ?? null,
+      last: pageDocs.at(-1) ?? null,
     },
   };
 }
@@ -217,7 +229,7 @@ export async function searchRegistrationsById(
   const snapshot = await getDocs(
     query(registrationsCollection(eventId), where(documentId(), '==', registrationId), limit(1)),
   );
-  return registrationsFromSnapshot(snapshot, eventId);
+  return registrationsFromSnapshot(snapshot.docs, eventId);
 }
 
 function registrationQueryConstraints(
@@ -355,7 +367,7 @@ export async function searchRegistrations(
     const snapshot = await getDocs(
       constraints.length > 0 ? query(registrations, and(...constraints)) : query(registrations),
     );
-    return registrationsFromSnapshot(snapshot, eventId);
+    return registrationsFromSnapshot(snapshot.docs, eventId);
   }
 
   if (eventId !== '2026') {
@@ -428,7 +440,7 @@ export async function fetchConflictRegistrations(eventId: string): Promise<Regis
       limit(REGISTRATION_PAGE_SIZE),
     ),
   );
-  return registrationsFromSnapshot(snapshot, eventId);
+  return registrationsFromSnapshot(snapshot.docs, eventId);
 }
 
 export async function fetchRegistration(
