@@ -7,11 +7,9 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow get: if isSignedIn() && request.auth.uid == userId;
-      // Administrator listing and editing is disabled until the rollout is ready.
-      // allow get: if isSignedIn() && (request.auth.uid == userId || isAuthorised('ADMINISTRATOR'));
-      // allow list: if isAuthorised('ADMINISTRATOR');
-      // allow update: if isAuthorised('ADMINISTRATOR') && isAdministratorUserUpdate();
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAuthorised('ADMINISTRATOR'));
+      allow list: if isAuthorised('ADMINISTRATOR');
+      allow update: if isAuthorised('ADMINISTRATOR') && isAdministratorUserUpdate();
     }
 
     match /events/{eventId} {
@@ -82,18 +80,17 @@ service cloud.firestore {
         && get(userPath()).data.access_expires >= request.time;
     }
 
-    // Administrator user updates are disabled until the rollout is ready.
-    // function isAdministratorUserUpdate() {
-    //   let changed = request.resource.data.diff(resource.data).affectedKeys();
-    //   return changed.hasAll(['updated_at'])
-    //     && changed.hasAny(['access_level', 'access_expires'])
-    //     && changed.hasOnly(['access_level', 'access_expires', 'updated_at'])
-    //     && request.resource.data.access_level is int
-    //     && request.resource.data.access_level >= 0
-    //     && request.resource.data.access_level <= 3
-    //     && request.resource.data.access_expires is timestamp
-    //     && request.resource.data.updated_at == request.time;
-    // }
+    function isAdministratorUserUpdate() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return changed.hasAll(['updated_at'])
+        && changed.hasAny(['access_level', 'access_expires'])
+        && changed.hasOnly(['access_level', 'access_expires', 'updated_at'])
+        && request.resource.data.access_level is int
+        && request.resource.data.access_level >= 0
+        && request.resource.data.access_level <= 3
+        && request.resource.data.access_expires is timestamp
+        && request.resource.data.updated_at == request.time;
+    }
 
     // -- Events ---------------------------------------------------------------
 

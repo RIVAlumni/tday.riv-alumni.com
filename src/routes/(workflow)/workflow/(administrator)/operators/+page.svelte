@@ -1,70 +1,45 @@
 <script lang="ts">
-  import type { Timestamp } from 'firebase/firestore';
   import type { User } from '$lib/models/user';
   import { onMount } from 'svelte';
-  import { toast } from 'svelte-sonner';
 
+  import { goto } from '$app/navigation';
   import * as Alert from '$lib/components/ui/alert';
-  import { fetchUsers, updateUserAccessExpiry, updateUserAccessLevel } from '$lib/firebase';
-  import { AccessLevel } from '$lib/models/user';
-
-  import UsersTable from './users-table.svelte';
+  import { Button } from '$lib/components/ui/button';
+  import * as Empty from '$lib/components/ui/empty';
+  import { ACCESS_LEVEL_NAMES } from '$lib/data/access';
+  import { fetchUsers } from '$lib/firebase';
+  import { AddCircleIcon, UserMultipleIcon } from '$lib/icons';
+  import { formatAccessExpiry } from '$lib/util/access-time';
 
   let users = $state<User[]>([]);
   let loading = $state(true);
   let error = $state<Error | null>(null);
 
+  // Users with unexpired access, and/or a level above None.
+  const activeUsers = $derived(
+    [...users]
+      .filter((user) => user.access_expires.toMillis() > Date.now() || user.access_level > 0)
+      .sort((left, right) =>
+        left.display_name.localeCompare(right.display_name, 'en-SG', { sensitivity: 'base' }),
+      ),
+  );
+
+  async function loadUsers(): Promise<void> {
+    loading = true;
+    try {
+      users = await fetchUsers();
+      error = null;
+    } catch (fetchError) {
+      users = [];
+      error = fetchError as Error;
+    } finally {
+      loading = false;
+    }
+  }
+
   onMount(() => {
-    let mounted = true;
-    fetchUsers()
-      .then((result) => {
-        if (!mounted) return;
-        users = result;
-        error = null;
-      })
-      .catch((fetchError) => {
-        if (!mounted) return;
-        users = [];
-        error = fetchError as Error;
-      })
-      .finally(() => {
-        if (mounted) loading = false;
-      });
-
-    return () => {
-      mounted = false;
-    };
+    void loadUsers();
   });
-
-  async function updateAccessExpiry(uid: string, accessExpires: Timestamp): Promise<void> {
-    try {
-      await updateUserAccessExpiry(uid, accessExpires);
-      users = users.map((user) =>
-        user.uid === uid ? { ...user, access_expires: accessExpires } : user,
-      );
-      toast.success('Access expiry updated');
-    } catch (updateError) {
-      toast.error('Unable to update access expiry', {
-        description: (updateError as Error).message,
-      });
-      throw updateError;
-    }
-  }
-
-  async function updateAuthorization(uid: string, accessLevel: AccessLevel): Promise<void> {
-    try {
-      await updateUserAccessLevel(uid, accessLevel);
-      users = users.map((user) =>
-        user.uid === uid ? { ...user, access_level: accessLevel } : user,
-      );
-      toast.success('Authorization updated');
-    } catch (updateError) {
-      toast.error('Unable to update authorization', {
-        description: (updateError as Error).message,
-      });
-      throw updateError;
-    }
-  }
 </script>
 
 <div class="@container/main flex flex-col gap-4 p-4 lg:p-6">
@@ -75,9 +50,62 @@
     </Alert.Root>
   {/if}
 
-  <UsersTable
-    {users}
-    {loading}
-    onUpdateAccessExpiry={updateAccessExpiry}
-    onUpdateAuthorization={updateAuthorization} />
+  <div class="flex flex-col gap-4">
+    <div class="flex items-center justify-between gap-4">
+      <div class="grid gap-0.5">
+        <h1 class="text-base font-semibold">Current Authorization Plan</h1>
+        <p class="text-sm text-muted-foreground">
+          {#if loading}
+            Loading users...
+          {:else}
+            {activeUsers.length} user{activeUsers.length === 1 ? '' : 's'} with active access
+          {/if}
+        </p>
+      </div>
+      <Button
+        disabled={loading}
+        onclick={() => void goto('/workflow/operators/plan')}>
+        <AddCircleIcon />
+        New authorization plan
+      </Button>
+    </div>
+
+    {#if loading}
+      <p class="text-sm text-muted-foreground">Loading users...</p>
+    {:else if activeUsers.length === 0}
+      <Empty.Root>
+        <Empty.Header>
+          <Empty.Media variant="icon">
+            <UserMultipleIcon />
+          </Empty.Media>
+          <Empty.Title>No active access</Empty.Title>
+          <Empty.Description
+            >No user currently has unexpired access or an authorization level.</Empty.Description>
+        </Empty.Header>
+      </Empty.Root>
+    {:else}
+      <div class="divide-y rounded-lg border">
+        {#each activeUsers as user (user.uid)}
+          <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+            <div class="min-w-0">
+              <p class="truncate text-sm font-medium">{user.display_name}</p>
+              <p class="truncate text-xs text-muted-foreground">{user.email}</p>
+            </div>
+            <div class="flex shrink-0 items-center gap-6 text-right">
+              <div class="grid gap-0.5">
+                <p class="text-xs text-muted-foreground">Access expires</p>
+                <p class="text-sm tabular-nums">{formatAccessExpiry(user.access_expires)}</p>
+              </div>
+              <div class="grid gap-0.5">
+                <p class="text-xs text-muted-foreground">Authorization</p>
+                <p class="text-sm tabular-nums">
+                  {ACCESS_LEVEL_NAMES[user.access_level]} ({user.access_level})
+                </p>
+              </div>
+            </div>
+          </div>
+        {/each}
+      </div>
+    {/if}
+  </div>
 </div>

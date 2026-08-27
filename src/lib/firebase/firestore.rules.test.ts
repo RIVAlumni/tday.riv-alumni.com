@@ -167,64 +167,63 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore rules', () => {
     await testEnvironment?.cleanup();
   });
 
-  // Administrator access tests are disabled until the rules rollout is enabled.
-  // it('allows only administrators to list users', async () => {
-  //   const administratorFirestore = authenticatedFirestore('administrator');
-  //   const mediatorFirestore = authenticatedFirestore('mediator');
-  //
-  //   const snapshot = await assertSucceeds(getDocs(collection(administratorFirestore, 'users')));
-  //   await assertFails(getDocs(collection(mediatorFirestore, 'users')));
-  //
-  //   expect(snapshot.size).toBe(5);
-  // });
-  //
-  // it('allows administrators to update only access fields with a server timestamp', async () => {
-  //   const firestore = authenticatedFirestore('administrator');
-  //   const reference = doc(firestore, 'users', 'managed-user');
-  //   const nextExpiry = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
-  //
-  //   await assertSucceeds(
-  //     updateDoc(reference, {
-  //       access_level: 2,
-  //       updated_at: serverTimestamp(),
-  //     }),
-  //   );
-  //   await assertSucceeds(
-  //     updateDoc(reference, {
-  //       access_expires: nextExpiry,
-  //       updated_at: serverTimestamp(),
-  //     }),
-  //   );
-  //   await assertFails(
-  //     updateDoc(reference, {
-  //       access_level: 4,
-  //       updated_at: serverTimestamp(),
-  //     }),
-  //   );
-  //   await assertFails(
-  //     updateDoc(reference, {
-  //       access_level: 1,
-  //       updated_at: Timestamp.now(),
-  //     }),
-  //   );
-  //   await assertFails(
-  //     updateDoc(reference, {
-  //       access_expires: 'tomorrow',
-  //       updated_at: serverTimestamp(),
-  //     }),
-  //   );
-  //   await assertFails(
-  //     updateDoc(reference, {
-  //       email: 'changed@example.com',
-  //       updated_at: serverTimestamp(),
-  //     }),
-  //   );
-  //
-  //   const snapshot = await assertSucceeds(getDoc(reference));
-  //   expect(snapshot.data()?.access_level).toBe(2);
-  //   expect(snapshot.data()?.access_expires.toMillis()).toBe(nextExpiry.toMillis());
-  //   expect(snapshot.data()?.email).toBe('managed-user@example.com');
-  // });
+  it('allows only administrators to list users', async () => {
+    const administratorFirestore = authenticatedFirestore('administrator');
+    const mediatorFirestore = authenticatedFirestore('mediator');
+
+    const snapshot = await assertSucceeds(getDocs(collection(administratorFirestore, 'users')));
+    await assertFails(getDocs(collection(mediatorFirestore, 'users')));
+
+    expect(snapshot.size).toBe(5);
+  });
+
+  it('allows administrators to update only access fields with a server timestamp', async () => {
+    const firestore = authenticatedFirestore('administrator');
+    const reference = doc(firestore, 'users', 'managed-user');
+    const nextExpiry = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
+
+    await assertSucceeds(
+      updateDoc(reference, {
+        access_level: 2,
+        updated_at: serverTimestamp(),
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(reference, {
+        access_expires: nextExpiry,
+        updated_at: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        access_level: 4,
+        updated_at: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        access_level: 1,
+        updated_at: Timestamp.now(),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        access_expires: 'tomorrow',
+        updated_at: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        email: 'changed@example.com',
+        updated_at: serverTimestamp(),
+      }),
+    );
+
+    const snapshot = await assertSucceeds(getDoc(reference));
+    expect(snapshot.data()?.access_level).toBe(2);
+    expect(snapshot.data()?.access_expires.toMillis()).toBe(nextExpiry.toMillis());
+    expect(snapshot.data()?.email).toBe('managed-user@example.com');
+  });
 
   it('denies mediator updates to user access fields', async () => {
     const firestore = authenticatedFirestore('mediator');
@@ -554,10 +553,13 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore rules', () => {
     await assertSucceeds(getDocs(collection(mediatorFirestore, 'claims')));
 
     await assertFails(
-      setDoc(doc(operatorFirestore, 'claims', 'MR TAN'), claimDocument({
-        teacher: 'Mr Tan',
-        claimed_by: { email: 'operator@example.com', name: 'Test Operator' },
-      })),
+      setDoc(
+        doc(operatorFirestore, 'claims', 'MR TAN'),
+        claimDocument({
+          teacher: 'Mr Tan',
+          claimed_by: { email: 'operator@example.com', name: 'Test Operator' },
+        }),
+      ),
     );
     await assertFails(getDocs(collection(operatorFirestore, 'claims')));
 
@@ -572,12 +574,15 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore rules', () => {
     await assertSucceeds(setDoc(claimReference, claimDocument()));
 
     await assertFails(
-      setDoc(doc(administratorFirestore, 'claims', 'MR LIM'), claimDocument({
-        status: 'COMPLETED',
-        claimed_by: { email: 'administrator@example.com', name: 'Test Administrator' },
-        completed_by: { email: 'administrator@example.com', name: 'Test Administrator' },
-        completed_at: serverTimestamp(),
-      })),
+      setDoc(
+        doc(administratorFirestore, 'claims', 'MR LIM'),
+        claimDocument({
+          status: 'COMPLETED',
+          claimed_by: { email: 'administrator@example.com', name: 'Test Administrator' },
+          completed_by: { email: 'administrator@example.com', name: 'Test Administrator' },
+          completed_at: serverTimestamp(),
+        }),
+      ),
     );
 
     const snapshot = await assertSucceeds(getDoc(claimReference));
@@ -603,10 +608,13 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore rules', () => {
     });
 
     await assertSucceeds(
-      setDoc(claimReference, claimDocument({
-        teacher: 'Mr Tan',
-        claimed_by: { email: 'mediator@example.com', name: 'Test Mediator' },
-      })),
+      setDoc(
+        claimReference,
+        claimDocument({
+          teacher: 'Mr Tan',
+          claimed_by: { email: 'mediator@example.com', name: 'Test Mediator' },
+        }),
+      ),
     );
 
     const snapshot = await assertSucceeds(getDoc(claimReference));
@@ -621,17 +629,23 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore rules', () => {
     await assertSucceeds(setDoc(claimReference, claimDocument()));
 
     await assertSucceeds(
-      setDoc(claimReference, claimDocument({
-        status: 'COMPLETED',
-        completed_by: { email: 'mediator@example.com', name: 'Test Mediator' },
-        completed_at: serverTimestamp(),
-      })),
+      setDoc(
+        claimReference,
+        claimDocument({
+          status: 'COMPLETED',
+          completed_by: { email: 'mediator@example.com', name: 'Test Mediator' },
+          completed_at: serverTimestamp(),
+        }),
+      ),
     );
 
     await assertSucceeds(
-      setDoc(doc(administratorFirestore, 'claims', 'MR LIM'), claimDocument({
-        claimed_by: { email: 'administrator@example.com', name: 'Test Administrator' },
-      })),
+      setDoc(
+        doc(administratorFirestore, 'claims', 'MR LIM'),
+        claimDocument({
+          claimed_by: { email: 'administrator@example.com', name: 'Test Administrator' },
+        }),
+      ),
     );
 
     const snapshot = await assertSucceeds(getDoc(claimReference));
