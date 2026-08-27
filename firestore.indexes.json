@@ -5,22 +5,6 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "contact_number",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "nric",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "registration_id",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "full_name",
-          "order": "DESCENDING"
-        },
-        {
           "fieldPath": "__name__",
           "order": "DESCENDING"
         }
@@ -36,7 +20,15 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "nric",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "registration_id",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "full_name",
           "order": "DESCENDING"
         },
         {
@@ -59,6 +51,25 @@
           "order": "DESCENDING"
         },
         {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "registrations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "contact_number",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "registration_id",
+          "order": "DESCENDING"
+        },
+        {
           "fieldPath": "full_name",
           "order": "DESCENDING"
         },
@@ -166,6 +177,44 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "graduating_year",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "created_at",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "registrations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "graduating_year",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "created_at",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "registrations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "nric",
           "order": "ASCENDING"
         },
@@ -231,8 +280,42 @@
           "arrayConfig": "CONTAINS"
         },
         {
-          "fieldPath": "status",
+          "fieldPath": "created_at",
           "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "registrations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "search_ngrams",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "graduating_year",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "registrations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "search_ngrams",
+          "arrayConfig": "CONTAINS"
         },
         {
           "fieldPath": "graduating_year",
@@ -240,6 +323,29 @@
         },
         {
           "fieldPath": "created_at",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "registrations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "search_ngrams",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
           "order": "ASCENDING"
         }
       ],
@@ -260,88 +366,9 @@
         {
           "fieldPath": "created_at",
           "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "registrations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "search_ngrams",
-          "arrayConfig": "CONTAINS"
         },
         {
-          "fieldPath": "graduating_year",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "created_at",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "registrations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "search_ngrams",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "created_at",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "registrations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "graduating_year",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "created_at",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "registrations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "created_at",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
-      "collectionGroup": "registrations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "graduating_year",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "created_at",
+          "fieldPath": "__name__",
           "order": "ASCENDING"
         }
       ],
@@ -362,6 +389,10 @@
         {
           "fieldPath": "graduating_year",
           "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
         }
       ],
       "density": "SPARSE_ALL"
@@ -377,6 +408,18 @@
         {
           "fieldPath": "status",
           "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "graduating_year",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "created_at",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
         }
       ],
       "density": "SPARSE_ALL"
@@ -386,11 +429,53 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "search_ngrams",
-          "arrayConfig": "CONTAINS"
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "created_at",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "registrations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "created_at",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "registrations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
         },
         {
           "fieldPath": "graduating_year",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
           "order": "ASCENDING"
         }
       ],
@@ -406,6 +491,14 @@
         },
         {
           "fieldPath": "graduating_year",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "created_at",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
           "order": "ASCENDING"
         }
       ],
