@@ -7,6 +7,9 @@
   import { Badge } from '$lib/components/ui/badge/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
   import * as Empty from '$lib/components/ui/empty/index.js';
+  import { Label } from '$lib/components/ui/label/index.js';
+  import * as Select from '$lib/components/ui/select/index.js';
+  import * as Tabs from '$lib/components/ui/tabs/index.js';
   import { formatTime } from '$lib/data/reception';
   import {
     claimTeacher,
@@ -14,7 +17,14 @@
     releaseClaim,
     uncompleteTeacher,
   } from '$lib/firebase/claims';
-  import { CheckIcon, ClipboardCheckIcon, Mail01Icon, Presentation07Icon } from '$lib/icons';
+  import {
+    CheckIcon,
+    ClipboardCheckIcon,
+    Mail01Icon,
+    Presentation07Icon,
+    Sorting01Icon,
+    Sorting02Icon,
+  } from '$lib/icons';
   import type { Event } from '$lib/models/event';
   import type { Registration2026 } from '$lib/models/registration';
   import type { TeacherClaim } from '$lib/util/teacher-claims';
@@ -60,6 +70,50 @@
   const rankedTeachers = $derived(
     selectedTeachers.length > 0 ? selectedTeachers : rankTeachersByStudentCount(registrations),
   );
+
+  let sortDirection = $state<'asc' | 'desc'>('desc');
+
+  // stable count sort; ties stay alphabetical in both directions
+  const sortedTeachers = $derived(
+    [...rankedTeachers].sort((left, right) => {
+      const countDelta = studentsFor(left).length - studentsFor(right).length;
+      if (countDelta !== 0) return sortDirection === 'asc' ? countDelta : -countDelta;
+      return left.localeCompare(right, 'en-SG', { sensitivity: 'base' });
+    }),
+  );
+
+  // View switcher: Unassigned / Assigned to me / Assigned to others.
+  // A claim keyed by normalized teacher name decides membership; the claim
+  // status (CLAIMED vs COMPLETED) only changes how the row is rendered.
+  type TeacherView = 'unassigned' | 'mine' | 'others';
+
+  const teacherViews: { id: TeacherView; label: string }[] = [
+    { id: 'unassigned', label: 'Unassigned' },
+    { id: 'mine', label: 'Assigned to me' },
+    { id: 'others', label: 'Assigned to others' },
+  ];
+
+  let view = $state<TeacherView>('unassigned');
+  const viewLabel = $derived(teacherViews.find((v) => view === v.id)?.label ?? 'Select a view');
+
+  const viewTeachers = $derived(sortedTeachers.filter(matchesView));
+
+  const viewCounts = $derived({
+    unassigned: rankedTeachers.filter((teacher) => !claimFor(teacher)).length,
+    mine: rankedTeachers.filter((teacher) => claimFor(teacher)?.claimed_by.email === viewer?.email)
+      .length,
+    others: rankedTeachers.filter((teacher) => {
+      const claim = claimFor(teacher);
+      return claim !== undefined && claim.claimed_by.email !== viewer?.email;
+    }).length,
+  });
+
+  function matchesView(teacher: string): boolean {
+    const claim = claimFor(teacher);
+    if (view === 'unassigned') return claim === undefined;
+    if (view === 'mine') return claim?.claimed_by.email === viewer?.email;
+    return claim !== undefined && claim.claimed_by.email !== viewer?.email;
+  }
 
   // Claim staleness depends on the current time, so tick a non-write
   // render clock to re-evaluate badges and the blocked alert without
@@ -211,100 +265,172 @@
       </Empty.Header>
     </Empty.Root>
   {:else}
-    {#each rankedTeachers as teacher (teacher)}
-      {@const students = studentsFor(teacher)}
-      {#if isCompleted(teacher)}
-        <section class="rounded-lg border">
-          <div class="flex items-center justify-between gap-3 px-4 py-2">
-            <div class="flex items-baseline gap-3">
-              <CheckIcon class="size-4 text-muted-foreground" />
-              <span class="text-sm font-medium">{teacher}</span>
-              <span class="text-sm text-muted-foreground">{students.length} student(s)</span>
-              <span class="text-xs text-muted-foreground">
-                Completed by {claimFor(teacher)?.completed_by?.name}
-              </span>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onclick={() => onUndoComplete(teacher)}>
-              Undo
-            </Button>
-          </div>
-        </section>
-      {:else}
-        {@const blocked = isBlocked(teacher)}
-        <section class="flex flex-col gap-2">
-          {#if blocked}
-            <Alert.Root
-              variant="destructive"
-              class="px-5 py-4">
-              <Alert.Title class="text-base font-semibold"
-                >Assigned to {blockerName(teacher)}</Alert.Title>
-              <Alert.Description class="text-sm">
-                {blockerName(teacher)} is emailing this teacher. Email or copy only if you have checked
-                with them.
-              </Alert.Description>
-            </Alert.Root>
+    <div class="flex items-center justify-between">
+      <Label
+        for="view-selector"
+        class="sr-only">View</Label>
+      <Select.Root
+        type="single"
+        bind:value={view}>
+        <Select.Trigger
+          class="flex w-fit @4xl/main:hidden"
+          size="sm"
+          id="view-selector">
+          {viewLabel}
+        </Select.Trigger>
+        <Select.Content>
+          {#each teacherViews as teacherView (teacherView.id)}
+            <Select.Item value={teacherView.id}>
+              {teacherView.label} ({viewCounts[teacherView.id]})
+            </Select.Item>
+          {/each}
+        </Select.Content>
+      </Select.Root>
+      <Tabs.Root
+        value={view}
+        onValueChange={(next) => (view = next as TeacherView)}
+        class="w-full flex-col justify-start gap-6">
+        <Tabs.List
+          class="hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:bg-muted-foreground/30 **:data-[slot=badge]:px-1 @4xl/main:flex">
+          {#each teacherViews as teacherView (teacherView.id)}
+            <Tabs.Trigger value={teacherView.id}>
+              {teacherView.label}
+              <Badge variant="secondary">{viewCounts[teacherView.id]}</Badge>
+            </Tabs.Trigger>
+          {/each}
+        </Tabs.List>
+      </Tabs.Root>
+      <Button
+        variant="outline"
+        size="sm"
+        class="shrink-0"
+        aria-label={`Sort by ${sortDirection === 'asc' ? 'ascending' : 'descending'} count`}
+        aria-pressed={sortDirection === 'asc'}
+        onclick={() => (sortDirection = sortDirection === 'asc' ? 'desc' : 'asc')}>
+        {#if sortDirection === 'asc'}
+          <Sorting02Icon />
+        {:else}
+          <Sorting01Icon />
+        {/if}
+        {sortDirection === 'asc' ? 'Sort by ascending count' : 'Sort by descending count'}
+      </Button>
+    </div>
+
+    {#if viewTeachers.length === 0}
+      <Empty.Root>
+        <Empty.Header>
+          <Empty.Media variant="icon">
+            <Presentation07Icon />
+          </Empty.Media>
+          {#if view === 'unassigned'}
+            <Empty.Title>No teachers to be assigned</Empty.Title>
+            <Empty.Description>All teachers have been assigned already.</Empty.Description>
+          {:else if view === 'mine'}
+            <Empty.Title>No teachers assigned to you</Empty.Title>
+            <Empty.Description
+              >Assign a teacher to yourself to start emailing them.</Empty.Description>
+          {:else}
+            <Empty.Title>No teachers assigned to others</Empty.Title>
+            <Empty.Description>Every current assignment is yours.</Empty.Description>
           {/if}
-          <div class="flex flex-col gap-3">
-            <div class="flex flex-wrap items-center gap-3">
-              <h2 class="text-base font-semibold">{teacher}</h2>
-              <Badge variant="secondary">{students.length} student(s)</Badge>
-              <span class="text-sm text-muted-foreground">{claimStatus(teacher)}</span>
+        </Empty.Header>
+      </Empty.Root>
+    {:else}
+      {#each viewTeachers as teacher (teacher)}
+        {@const students = studentsFor(teacher)}
+        {#if isCompleted(teacher)}
+          <section class="rounded-lg border">
+            <div class="flex items-center justify-between gap-3 px-4 py-2">
+              <div class="flex items-baseline gap-3">
+                <CheckIcon class="size-4 text-muted-foreground" />
+                <span class="text-sm font-medium">{teacher}</span>
+                <span class="text-sm text-muted-foreground">{students.length} student(s)</span>
+                <span class="text-xs text-muted-foreground">
+                  Completed by {claimFor(teacher)?.completed_by?.name}
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onclick={() => onUndoComplete(teacher)}>
+                Undo
+              </Button>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
-              {#if isMine(teacher)}
+          </section>
+        {:else}
+          {@const blocked = isBlocked(teacher)}
+          <section class="flex flex-col gap-2">
+            {#if blocked}
+              <Alert.Root
+                variant="destructive"
+                class="px-5 py-4">
+                <Alert.Title class="text-base font-semibold"
+                  >Assigned to {blockerName(teacher)}</Alert.Title>
+                <Alert.Description class="text-sm">
+                  {blockerName(teacher)} is emailing this teacher. Email or copy only if you have checked
+                  with them.
+                </Alert.Description>
+              </Alert.Root>
+            {/if}
+            <div class="flex flex-col gap-3">
+              <div class="flex flex-wrap items-center gap-3">
+                <h2 class="text-base font-semibold">{teacher}</h2>
+                <Badge variant="secondary">{students.length} student(s)</Badge>
+                <span class="text-sm text-muted-foreground">{claimStatus(teacher)}</span>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                {#if isMine(teacher)}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={blocked}
+                    onclick={() => onRelease(teacher)}>
+                    Unassign myself
+                  </Button>
+                {:else}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    class="border-green-600 bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
+                    disabled={blocked}
+                    onclick={() => onClaim(teacher)}>
+                    Assign to me
+                  </Button>
+                {/if}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onclick={() => copyEmailBody(teacher, emailableStudents(teacher))}>
+                  <span data-icon="inline-start"><ClipboardCheckIcon /></span>
+                  Copy email body
+                </Button>
+                <Button
+                  href={teacherMailtoHref(teacher, emailableStudents(teacher), emailTemplate)}
+                  target="_blank"
+                  variant="outline"
+                  size="sm">
+                  <span data-icon="inline-start"><Mail01Icon /></span>
+                  Email the teacher
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   disabled={blocked}
-                  onclick={() => onRelease(teacher)}>
-                  Unassign myself
+                  onclick={() => onComplete(teacher)}>
+                  <span data-icon="inline-start"><CheckIcon /></span>
+                  Mark as completed
                 </Button>
-              {:else}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  class="border-green-600 bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
-                  disabled={blocked}
-                  onclick={() => onClaim(teacher)}>
-                  Assign to me
-                </Button>
-              {/if}
-              <Button
-                variant="outline"
-                size="sm"
-                onclick={() => copyEmailBody(teacher, emailableStudents(teacher))}>
-                <span data-icon="inline-start"><ClipboardCheckIcon /></span>
-                Copy email body
-              </Button>
-              <Button
-                href={teacherMailtoHref(teacher, emailableStudents(teacher), emailTemplate)}
-                target="_blank"
-                variant="outline"
-                size="sm">
-                <span data-icon="inline-start"><Mail01Icon /></span>
-                Email the teacher
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={blocked}
-                onclick={() => onComplete(teacher)}>
-                <span data-icon="inline-start"><CheckIcon /></span>
-                Mark as completed
-              </Button>
+              </div>
             </div>
-          </div>
-          <StudentsTable
-            {students}
-            selected={selectedStudents[normalizeTeacherKey(teacher)] ?? []}
-            onselectedchange={(ids) => {
-              selectedStudents[normalizeTeacherKey(teacher)] = ids;
-            }} />
-        </section>
-      {/if}
-    {/each}
+            <StudentsTable
+              {students}
+              selected={selectedStudents[normalizeTeacherKey(teacher)] ?? []}
+              onselectedchange={(ids) => {
+                selectedStudents[normalizeTeacherKey(teacher)] = ids;
+              }} />
+          </section>
+        {/if}
+      {/each}
+    {/if}
   {/if}
 </div>

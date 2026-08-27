@@ -78,6 +78,8 @@ export { default as Search01Icon } from '$lib/components/icons/Search01Icon.svel
 export { default as Settings01Icon } from '$lib/components/icons/Settings01Icon.svelte';
 export { default as Share01Icon } from '$lib/components/icons/Share01Icon.svelte';
 export { default as SidebarLeftIcon } from '$lib/components/icons/SidebarLeftIcon.svelte';
+export { default as Sorting01Icon } from '$lib/components/icons/Sorting01Icon.svelte';
+export { default as Sorting02Icon } from '$lib/components/icons/Sorting02Icon.svelte';
 export { default as SparklesIcon } from '$lib/components/icons/SparklesIcon.svelte';
 export { default as Target03Icon } from '$lib/components/icons/Target03Icon.svelte';
 export { default as Tick02Icon } from '$lib/components/icons/Tick02Icon.svelte';
