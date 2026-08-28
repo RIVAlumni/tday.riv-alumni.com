@@ -440,6 +440,52 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore rules', () => {
     expect(snapshot.data()?.full_name).toBe('UPDATED VISITOR');
   });
 
+  it('allows a mediator to toggle a registration status with a matching audit entry', async () => {
+    const firestore = authenticatedFirestore('mediator');
+    const reference = doc(firestore, 'events', '2026', 'registrations', REGISTRATION_ID);
+
+    // Flag the registration for manual review
+    await assertSucceeds(
+      updateDoc(reference, {
+        status: 'CONFLICT',
+        updated_at: serverTimestamp(),
+        updates: [
+          {
+            action: 'CONFLICT',
+            by: { name: 'Test Mediator', email: 'mediator@example.com' },
+            at: Timestamp.now(),
+            details: '',
+          },
+        ],
+      }),
+    );
+
+    // Re-register the visitor (status returns to REGISTERED)
+    await assertSucceeds(
+      updateDoc(reference, {
+        status: 'REGISTERED',
+        updated_at: serverTimestamp(),
+        updates: [
+          {
+            action: 'CONFLICT',
+            by: { name: 'Test Mediator', email: 'mediator@example.com' },
+            at: Timestamp.now(),
+            details: '',
+          },
+          {
+            action: 'REGISTERED',
+            by: { name: 'Test Mediator', email: 'mediator@example.com' },
+            at: Timestamp.now(),
+            details: '',
+          },
+        ],
+      }),
+    );
+
+    const snapshot = await assertSucceeds(getDoc(reference));
+    expect(snapshot.data()?.status).toBe('REGISTERED');
+  });
+
   it('allows a mediator edit whose rebuilt n-grams equal the stored ones', async () => {
     const firestore = authenticatedFirestore('mediator');
     const reference = doc(firestore, 'events', '2026', 'registrations', REGISTRATION_ID);

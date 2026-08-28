@@ -22,7 +22,9 @@ export {
   checkInRegistration,
   refuseRegistration,
   flagConflict,
+  setRegistrationStatus,
   updateRegistrationFields,
+  fetchDuplicateRegistrations,
 } from './registrations';
 export type {
   RegistrationPageCursor,

@@ -219,7 +219,7 @@ service cloud.firestore {
 
     function isValidUpdateEntry(entry) {
       return entry is map
-        && entry.action in ['CHECKED_IN', 'REJECTED', 'CONFLICT', 'UPDATED']
+        && entry.action in ['REGISTERED', 'CHECKED_IN', 'REJECTED', 'CONFLICT', 'UPDATED']
         && entry.by is map
         && entry.by.name is string
         && entry.by.name.size() <= 120

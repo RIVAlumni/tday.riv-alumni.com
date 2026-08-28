@@ -455,6 +455,39 @@ export async function deleteRegistration(eventId: string, registrationId: string
   await deleteDoc(registrationRef(eventId, registrationId));
 }
 
+export async function fetchDuplicateRegistrations(
+  eventId: string,
+  registrationId: string,
+  email: string | null | undefined,
+  contactNumber: string | number | null | undefined,
+): Promise<Registration[]> {
+  const reference = registrationsCollection(eventId);
+  const queries: Promise<QueryDocumentSnapshot<DocumentData, DocumentData>[]>[] = [];
+
+  if (email) {
+    queries.push(getDocs(query(reference, where('email', '==', email))).then((s) => s.docs));
+  }
+  if (contactNumber !== null && contactNumber !== undefined && contactNumber !== '') {
+    queries.push(
+      getDocs(query(reference, where('contact_number', '==', contactNumber))).then((s) => s.docs),
+    );
+  }
+
+  if (queries.length === 0) return [];
+
+  const documents = new Map<string, QueryDocumentSnapshot<DocumentData, DocumentData>>();
+  for (const snapshots of await Promise.all(queries)) {
+    for (const document of snapshots) {
+      if (document.id !== registrationId) documents.set(document.id, document);
+    }
+  }
+
+  return [...documents.values()]
+    .map((document) => docToRegistration(document, eventId))
+    .filter((registration): registration is Registration => registration !== null)
+    .sort((a, b) => a.full_name.localeCompare(b.full_name));
+}
+
 export async function fetchEventStats(eventId: string): Promise<EventStats> {
   const registrations = registrationsCollection(eventId);
   const [totalResult, checkedInResult, refusedResult, conflictResult] = await Promise.all([
@@ -556,6 +589,14 @@ export async function flagConflict(
   reason: string,
 ): Promise<void> {
   await applyRegistrationAction(eventId, registrationId, 'CONFLICT', reason.trim());
+}
+
+export async function setRegistrationStatus(
+  eventId: string,
+  registrationId: string,
+  status: RegistrationStatus,
+): Promise<void> {
+  await applyRegistrationAction(eventId, registrationId, status, '');
 }
 
 function describeFieldChanges(

@@ -11,14 +11,17 @@
   import { statusMeta } from '$lib/data/reception';
   import {
     deleteRegistration,
+    fetchDuplicateRegistrations,
     fetchRegistration,
     resendRegistrationEmail,
+    setRegistrationStatus,
     updateRegistrationFields,
   } from '$lib/firebase';
   import {
     is2025,
     is2026,
     type Registration,
+    type RegistrationStatus,
     type RegistrationUpdate,
     type RegistrationUpdateAction,
   } from '$lib/models/registration';
@@ -38,6 +41,7 @@
   import * as Field from '$lib/components/ui/field/index.js';
   import * as Kbd from '$lib/components/ui/kbd/index.js';
   import * as Timeline from '$lib/components/ui/timeline/index.js';
+  import * as ToggleGroup from '$lib/components/ui/toggle-group/index.js';
   import { Checkbox } from '$lib/components/ui/checkbox/index.js';
   import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
   import { Input } from '$lib/components/ui/input/index.js';
@@ -49,6 +53,7 @@
     ArrowLeft01Icon,
     CheckIcon,
     Delete01Icon,
+    EyeIcon,
     HistoryIcon,
     Mail01Icon,
     PencilEdit01Icon,
@@ -127,6 +132,10 @@
   let contactNumber = $state('');
   let graduatingYear = $state('');
   let comments = $state('');
+  let statusValue = $state<string>('REGISTERED');
+  let statusUpdating = $state(false);
+  let duplicates = $state<Registration[]>([]);
+  let duplicatesLoading = $state(false);
 
   $effect(() => {
     if (record) {
@@ -135,7 +144,38 @@
       contactNumber = String(record.contact_number);
       graduatingYear = String(record.graduating_year);
       comments = record.comments;
+      statusValue = record.status;
     }
+  });
+
+  $effect(() => {
+    const reg = record;
+    const eventId = eventStore.activeEventId;
+    if (!browser || !reg) {
+      duplicates = [];
+      duplicatesLoading = false;
+      return;
+    }
+    let cancelled = false;
+    duplicatesLoading = true;
+    fetchDuplicateRegistrations(
+      eventId,
+      String(reg.registration_id),
+      is2026(reg) ? reg.email : undefined,
+      reg.contact_number,
+    )
+      .then((list) => {
+        if (!cancelled) duplicates = list;
+      })
+      .catch(() => {
+        if (!cancelled) duplicates = [];
+      })
+      .finally(() => {
+        if (!cancelled) duplicatesLoading = false;
+      });
+    return () => {
+      cancelled = true;
+    };
   });
 
   let dirty = $derived(
@@ -295,6 +335,46 @@
     }
   }
 
+  // Status is changed immediately (not via Save Changes) so the transition is
+  // recorded in the audit trail as its own entry.
+  async function updateStatus(next: string | undefined) {
+    if (!record || statusUpdating || saving) return;
+    if (!canEdit) {
+      toast.error('Insufficient permissions');
+      return;
+    }
+    const target = (next ?? '') as RegistrationStatus | '';
+    if (!target || target === record.status) {
+      // deselecting or re-selecting the current status: keep the toggle in sync
+      statusValue = record.status;
+      return;
+    }
+    statusUpdating = true;
+    // pull-only: revert until the server confirms the change
+    statusValue = record.status;
+    try {
+      await setRegistrationStatus(eventStore.activeEventId, String(record.registration_id), target);
+      await refreshFromServer();
+      toast.success(`Status updated to ${statusMeta[target].label}`);
+    } catch (err) {
+      await refreshFromServer();
+      toast.error('Status update failed', { description: (err as Error).message });
+    } finally {
+      statusUpdating = false;
+    }
+  }
+
+  const statusToggleClass: Record<RegistrationStatus, string> = {
+    REGISTERED:
+      'text-sky-600 dark:text-sky-400 data-[state=on]:bg-sky-600! data-[state=on]:text-white! data-[state=on]:border-sky-600!',
+    CHECKED_IN:
+      'text-emerald-600 dark:text-emerald-400 data-[state=on]:bg-emerald-600! data-[state=on]:text-white! data-[state=on]:border-emerald-600!',
+    CONFLICT:
+      'text-amber-600 dark:text-amber-400 data-[state=on]:bg-amber-500! data-[state=on]:text-white! data-[state=on]:border-amber-500!',
+    REJECTED:
+      'text-red-600 dark:text-red-400 data-[state=on]:bg-red-600! data-[state=on]:text-white! data-[state=on]:border-red-600!',
+  };
+
   function formatDate(iso: Timestamp | string | null): string {
     if (!iso) return '-';
     const d = iso instanceof Timestamp ? iso.toDate() : new Date(iso);
@@ -310,7 +390,7 @@
 
   const updateTone: Record<RegistrationUpdateAction, string> = {
     REGISTERED: 'bg-secondary text-secondary-foreground',
-    CHECKED_IN: 'bg-primary text-primary-foreground',
+    CHECKED_IN: 'bg-emerald-600 text-white',
     CONFLICT: 'bg-warning text-foreground',
     REJECTED: 'bg-destructive text-background',
     UPDATED: 'bg-muted text-muted-foreground',
@@ -475,6 +555,33 @@
                       bind:value={comments}
                       placeholder="Internal notes about this registrant..."
                       class="min-h-24" />
+                  </SkeletonControl>
+                </Field.Field>
+                <Field.Field>
+                  <Field.FieldLabel>Status</Field.FieldLabel>
+                  <SkeletonControl
+                    {loading}
+                    class="h-9 w-full">
+                    <ToggleGroup.Root
+                      type="single"
+                      bind:value={statusValue}
+                      onValueChange={updateStatus}
+                      variant="outline"
+                      disabled={statusUpdating || saving || !canEdit}
+                      class="w-full justify-start">
+                      <ToggleGroup.Item
+                        value="REJECTED"
+                        class={statusToggleClass.REJECTED}
+                        >{statusMeta.REJECTED.label}</ToggleGroup.Item>
+                      <ToggleGroup.Item
+                        value="CONFLICT"
+                        class={statusToggleClass.CONFLICT}
+                        >{statusMeta.CONFLICT.label}</ToggleGroup.Item>
+                      <ToggleGroup.Item
+                        value="CHECKED_IN"
+                        class={statusToggleClass.CHECKED_IN}
+                        >{statusMeta.CHECKED_IN.label}</ToggleGroup.Item>
+                    </ToggleGroup.Root>
                   </SkeletonControl>
                 </Field.Field>
               </Field.FieldGroup>
@@ -694,6 +801,54 @@
                   </SkeletonControl>
                 </Field.Field>
               </Field.FieldGroup>
+            </Card.Content>
+          </Card.Root>
+        </div>
+
+        <div class="w-full @xl/main:w-96 flex flex-col gap-4 shrink-0">
+          <Card.Root class="grow">
+            <Card.Header>
+              <Card.Title>Duplicate Registrations</Card.Title>
+            </Card.Header>
+
+            <Card.Content>
+              {#if duplicatesLoading}
+                <div class="flex flex-col gap-2">
+                  <SkeletonControl
+                    loading={true}
+                    class="h-12 w-full" />
+                  <SkeletonControl
+                    loading={true}
+                    class="h-12 w-full" />
+                </div>
+              {:else if duplicates.length === 0}
+                <p class="text-sm text-muted-foreground">No duplicate registrations found.</p>
+              {:else}
+                <Item.Group>
+                  {#each duplicates as dup, i (dup.registration_id)}
+                    <Item.Root class="cursor-pointer hover:bg-muted">
+                      {#snippet child({ props })}
+                        <button
+                          type="button"
+                          onclick={() => goto(`/workflow/records/${String(dup.registration_id)}`)}
+                          {...props}>
+                          <Item.Content class="gap-1">
+                            <Item.Title>{dup.full_name}</Item.Title>
+                            <Item.Description
+                              >{dup.registration_id} &bull; {dup.graduating_year}</Item.Description>
+                          </Item.Content>
+                          <Item.Actions>
+                            <EyeIcon class="size-4" />
+                          </Item.Actions>
+                        </button>
+                      {/snippet}
+                    </Item.Root>
+                    {#if i < duplicates.length - 1}
+                      <Item.Separator />
+                    {/if}
+                  {/each}
+                </Item.Group>
+              {/if}
             </Card.Content>
           </Card.Root>
         </div>
