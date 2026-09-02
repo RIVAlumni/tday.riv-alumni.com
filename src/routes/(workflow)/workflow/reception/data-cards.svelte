@@ -264,6 +264,20 @@
       {/if}
     </Card.Root>
 
+    <!-- Internal Comments -->
+    <Card.Root class="@container/card @xl/main:col-span-3 @4xl/main:col-span-6">
+      <Card.Header>
+        <Card.Description>Internal Comments</Card.Description>
+        <Card.Title
+          class={cn(
+            'text-2xl font-semibold whitespace-pre-wrap break-words @[250px]/card:text-3xl',
+            !hasSelection && 'text-muted-foreground',
+          )}>
+          {selected?.comments || '-'}
+        </Card.Title>
+      </Card.Header>
+    </Card.Root>
+
     <div class="flex gap-2 @xl/main:col-span-3 @4xl/main:col-span-6">
       <Button
         variant="destructive"
