@@ -5,11 +5,13 @@
     checked = $bindable(false),
     indeterminate = $bindable(false),
     ariaLabel = 'Toggle selection',
+    disabled = false,
     onCheckedChange = () => {},
   }: {
     checked?: boolean;
     indeterminate?: boolean;
     ariaLabel?: string;
+    disabled?: boolean;
     onCheckedChange?: (checked: boolean) => void;
   } = $props();
 
@@ -22,5 +24,6 @@
 <Checkbox
   bind:checked
   {indeterminate}
+  {disabled}
   aria-label={ariaLabel}
   onCheckedChange={handleChange} />

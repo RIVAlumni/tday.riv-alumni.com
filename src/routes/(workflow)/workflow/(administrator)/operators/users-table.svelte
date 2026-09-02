@@ -25,6 +25,7 @@
   import * as Table from '$lib/components/ui/table/index.js';
   import { ACCESS_LEVEL_NAMES } from '$lib/data/access';
   import {
+    AddCircleIcon,
     ArrowLeft01Icon,
     ArrowLeftDoubleIcon,
     ArrowRight01Icon,
@@ -44,12 +45,16 @@
     users,
     loading = false,
     now,
+    currentUserUid,
+    onCreatePlan,
     onUpdateDisplayName,
     onRevokeAccess,
   }: {
     users: User[];
     loading?: boolean;
     now: number;
+    currentUserUid?: string;
+    onCreatePlan: () => void;
     onUpdateDisplayName: (uid: string, displayName: string) => Promise<void>;
     onRevokeAccess: (uids: string[]) => Promise<void>;
   } = $props();
@@ -64,8 +69,9 @@
   let revoking = $state(false);
 
   function requestRevocation(targets: User[]): void {
-    if (targets.length === 0 || revoking) return;
-    revokeTargets = targets;
+    const revocableTargets = targets.filter((user) => user.uid !== currentUserUid);
+    if (revocableTargets.length === 0 || revoking) return;
+    revokeTargets = revocableTargets;
     revokeDialogOpen = true;
   }
 
@@ -101,12 +107,14 @@
           indeterminate: table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected(),
           onCheckedChange: (value: boolean) => table.toggleAllRowsSelected(!!value),
           ariaLabel: 'Select all users',
+          disabled: !table.getFilteredRowModel().flatRows.some((row) => row.getCanSelect()),
         }),
       cell: ({ row }) =>
         renderComponent(DataTableCheckbox, {
           checked: row.getIsSelected(),
           onCheckedChange: (value: boolean) => row.toggleSelected(!!value),
           ariaLabel: `Select ${row.original.display_name}`,
+          disabled: !row.getCanSelect(),
         }),
       enableSorting: false,
       enableHiding: false,
@@ -147,7 +155,7 @@
       cell: ({ row }) =>
         renderComponent(UserActions, {
           user: row.original,
-          disabled: revoking,
+          disabled: revoking || row.original.uid === currentUserUid,
           onRevoke: (user: User) => requestRevocation([user]),
         }),
       enableSorting: false,
@@ -172,7 +180,7 @@
       },
     },
     getRowId: (user) => user.uid,
-    enableRowSelection: true,
+    enableRowSelection: (row) => row.original.uid !== currentUserUid,
     autoResetPageIndex: false,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -189,7 +197,9 @@
     },
   });
 
-  const selectedUsers = $derived(users.filter((user) => rowSelection[user.uid]));
+  const selectedUsers = $derived(
+    users.filter((user) => user.uid !== currentUserUid && rowSelection[user.uid]),
+  );
   const pageCount = $derived(table.getPageCount() || 1);
   const revokeDescription = $derived(
     revokeTargets.length === 1
@@ -202,7 +212,14 @@
   };
 </script>
 
-<div class="flex justify-end">
+<div class="flex flex-wrap justify-end gap-2">
+  <Button
+    size="sm"
+    disabled={loading}
+    onclick={onCreatePlan}>
+    <AddCircleIcon />
+    New authorization plan
+  </Button>
   <Button
     variant="destructive"
     size="sm"

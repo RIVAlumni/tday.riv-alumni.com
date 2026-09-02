@@ -6,10 +6,9 @@
 
   import { goto } from '$app/navigation';
   import * as Alert from '$lib/components/ui/alert/index.js';
-  import { Button } from '$lib/components/ui/button/index.js';
   import { fetchUsers, revokeUsersAccess, updateUserDisplayName } from '$lib/firebase';
-  import { AddCircleIcon } from '$lib/icons';
   import { AccessLevel } from '$lib/models/user';
+  import { userStore } from '$lib/stores/user.svelte';
   import { hasRelevantAccess } from '$lib/util/access-time';
 
   import UsersTable from './users-table.svelte';
@@ -19,6 +18,7 @@
   let error = $state<Error | null>(null);
   let now = $state(Date.now());
 
+  const currentUserUid = $derived(userStore.authUser?.uid);
   const visibleUsers = $derived(
     [...users]
       .filter((user) => hasRelevantAccess(user, now))
@@ -59,9 +59,12 @@
   }
 
   async function revokeAccess(uids: string[]): Promise<void> {
+    const revocableUids = uids.filter((uid) => uid !== currentUserUid);
+    if (revocableUids.length === 0) return;
+
     try {
-      const accessExpires = await revokeUsersAccess(uids);
-      const revokedUids = new Set(uids);
+      const accessExpires = await revokeUsersAccess(revocableUids);
+      const revokedUids = new Set(revocableUids);
       users = users.map((user) =>
         revokedUids.has(user.uid)
           ? { ...user, access_level: AccessLevel.None, access_expires: accessExpires }
@@ -94,29 +97,23 @@
   {/if}
 
   <div class="flex flex-col gap-4">
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <div class="grid gap-0.5">
-        <h1 class="text-base font-semibold">Current Authorization Plan</h1>
-        <p class="text-sm text-muted-foreground">
-          {#if loading}
-            Loading users...
-          {:else}
-            {userSummary}
-          {/if}
-        </p>
-      </div>
-      <Button
-        disabled={loading}
-        onclick={() => void goto('/workflow/operators/plan')}>
-        <AddCircleIcon />
-        New authorization plan
-      </Button>
+    <div class="grid gap-0.5">
+      <h1 class="text-base font-semibold">Current Authorization Plan</h1>
+      <p class="text-sm text-muted-foreground">
+        {#if loading}
+          Loading users...
+        {:else}
+          {userSummary}
+        {/if}
+      </p>
     </div>
 
     <UsersTable
       users={visibleUsers}
       {loading}
       {now}
+      {currentUserUid}
+      onCreatePlan={() => void goto('/workflow/operators/plan')}
       onUpdateDisplayName={updateDisplayName}
       onRevokeAccess={revokeAccess} />
   </div>
