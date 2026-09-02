@@ -1,6 +1,5 @@
 <script lang="ts">
   import CheckIcon from '$lib/components/icons/CheckIcon.svelte';
-  import { getCountdownState } from '$lib/data/countdown';
   import { TEACHER_OPTIONS } from '$lib/data/teachers';
   import {
     ArrowDown01Icon,
@@ -47,7 +46,9 @@
   });
 
   let formElement = $state<HTMLFormElement | null>(null);
-  let countdown = $state(getCountdownState());
+  // form closes at the on-day last check-in; the earlier date in the UI copy is display-only
+  const REGISTRATION_CLOSE_MS = Date.parse('2026-09-03T12:00:00+08:00');
+  let now = $state(Date.now());
   let heroMotionReady = $state(false);
   let heroImageVisible = $state(false);
   let teacherMenuOpen = $state(false);
@@ -74,9 +75,7 @@
     ),
   );
 
-  const registrationOpen = $derived(
-    countdown.phase === 'pre-registration' || countdown.phase === 'vacate',
-  );
+  const registrationOpen = $derived(now < REGISTRATION_CLOSE_MS);
 
   // ---- Zod validation state ---------------------------------------------
   type FieldErrors = Partial<Record<string, string>>;
@@ -457,8 +456,8 @@
     }
 
     document.addEventListener('pointerdown', handleDocumentPointerDown);
-    const countdownInterval = window.setInterval(() => {
-      countdown = getCountdownState();
+    const registrationInterval = window.setInterval(() => {
+      now = Date.now();
     }, 1_000);
     heroMotionReady = true;
     const heroAnimationFrame = window.requestAnimationFrame(() => {
@@ -467,7 +466,7 @@
 
     return () => {
       document.removeEventListener('pointerdown', handleDocumentPointerDown);
-      window.clearInterval(countdownInterval);
+      window.clearInterval(registrationInterval);
       window.cancelAnimationFrame(heroAnimationFrame);
     };
   });
