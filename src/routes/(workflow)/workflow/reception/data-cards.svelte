@@ -282,7 +282,7 @@
         disabled={disabled ||
           pending !== null ||
           !hasSelection ||
-          selected?.status === statusForAction('CONFLICT')}
+          selected?.status !== 'REGISTERED'}
         onclick={() => act('CONFLICT')}
         class={cn(
           'min-h-20 min-w-0 flex-1 flex-col gap-1 whitespace-normal',
@@ -295,7 +295,10 @@
       </Button>
       <Button
         size="lg"
-        disabled={disabled || pending !== null || !hasSelection}
+        disabled={disabled ||
+          pending !== null ||
+          !hasSelection ||
+          selected?.status !== 'REGISTERED'}
         onclick={() => act('CHECKED_IN')}
         class={cn(
           'min-h-20 min-w-0 flex-1 flex-col gap-1 whitespace-normal',
