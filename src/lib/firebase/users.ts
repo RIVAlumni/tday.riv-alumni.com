@@ -8,9 +8,11 @@ import {
   serverTimestamp,
   Timestamp,
   updateDoc,
+  writeBatch,
 } from 'firebase/firestore';
 
 import { AccessLevel } from '$lib/models/user';
+import { immediateRevocationExpiry } from '$lib/util/access-time';
 
 import { getInternalFirestore } from './firestore';
 
@@ -48,6 +50,20 @@ export async function fetchUsers(): Promise<User[]> {
     );
 }
 
+export async function updateUserDisplayName(uid: string, displayName: string): Promise<string> {
+  const normalizedDisplayName = displayName.trim();
+  if (normalizedDisplayName.length === 0 || normalizedDisplayName.length > 120) {
+    throw new Error('Full name must be between 1 and 120 characters.');
+  }
+
+  await updateDoc(doc(getInternalFirestore(), 'users', uid), {
+    display_name: normalizedDisplayName,
+    updated_at: serverTimestamp(),
+  });
+
+  return normalizedDisplayName;
+}
+
 export async function updateUserAccessLevel(uid: string, accessLevel: AccessLevel): Promise<void> {
   if (!Object.values(AccessLevel).includes(accessLevel)) {
     throw new Error('Invalid access level.');
@@ -68,4 +84,25 @@ export async function updateUserAccessExpiry(uid: string, accessExpires: Timesta
     access_expires: accessExpires,
     updated_at: serverTimestamp(),
   });
+}
+
+export async function revokeUsersAccess(uids: string[]): Promise<Timestamp> {
+  const uniqueUids = [...new Set(uids)];
+  if (uniqueUids.length === 0) throw new Error('No users selected.');
+  if (uniqueUids.length > 500) throw new Error('Access can only be revoked for 500 users at once.');
+
+  const firestore = getInternalFirestore();
+  const accessExpires = immediateRevocationExpiry();
+  const batch = writeBatch(firestore);
+
+  for (const uid of uniqueUids) {
+    batch.update(doc(firestore, 'users', uid), {
+      access_level: AccessLevel.None,
+      access_expires: accessExpires,
+      updated_at: serverTimestamp(),
+    });
+  }
+
+  await batch.commit();
+  return accessExpires;
 }

@@ -17,6 +17,7 @@ import {
   setDoc,
   Timestamp,
   updateDoc,
+  writeBatch,
 } from 'firebase/firestore';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
@@ -177,7 +178,7 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore rules', () => {
     expect(snapshot.size).toBe(5);
   });
 
-  it('allows administrators to update only access fields with a server timestamp', async () => {
+  it('allows administrators to update only user management fields with a server timestamp', async () => {
     const firestore = authenticatedFirestore('administrator');
     const reference = doc(firestore, 'users', 'managed-user');
     const nextExpiry = Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
@@ -191,6 +192,36 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore rules', () => {
     await assertSucceeds(
       updateDoc(reference, {
         access_expires: nextExpiry,
+        updated_at: serverTimestamp(),
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(reference, {
+        display_name: 'Updated User',
+        updated_at: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        display_name: '',
+        updated_at: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        display_name: '   ',
+        updated_at: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        display_name: 'x'.repeat(121),
+        updated_at: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        display_name: 123,
         updated_at: serverTimestamp(),
       }),
     );
@@ -222,10 +253,31 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore rules', () => {
     const snapshot = await assertSucceeds(getDoc(reference));
     expect(snapshot.data()?.access_level).toBe(2);
     expect(snapshot.data()?.access_expires.toMillis()).toBe(nextExpiry.toMillis());
+    expect(snapshot.data()?.display_name).toBe('Updated User');
     expect(snapshot.data()?.email).toBe('managed-user@example.com');
   });
 
-  it('denies mediator updates to user access fields', async () => {
+  it('allows administrators to revoke user access in a batch', async () => {
+    const firestore = authenticatedFirestore('administrator');
+    const batch = writeBatch(firestore);
+    const accessExpires = Timestamp.fromMillis(Date.now() - 60 * 1000);
+
+    for (const uid of ['managed-user', 'administrator']) {
+      batch.update(doc(firestore, 'users', uid), {
+        access_level: 0,
+        access_expires: accessExpires,
+        updated_at: serverTimestamp(),
+      });
+    }
+
+    await assertSucceeds(batch.commit());
+
+    const snapshot = await assertSucceeds(getDoc(doc(firestore, 'users', 'administrator')));
+    expect(snapshot.data()?.access_level).toBe(0);
+    expect(snapshot.data()?.access_expires.toMillis()).toBe(accessExpires.toMillis());
+  });
+
+  it('denies mediator updates to user management fields', async () => {
     const firestore = authenticatedFirestore('mediator');
     const reference = doc(firestore, 'users', 'managed-user');
 
@@ -238,6 +290,12 @@ describe.skipIf(!RUN_RULES_TESTS)('Firestore rules', () => {
     await assertFails(
       updateDoc(reference, {
         access_expires: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000),
+        updated_at: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        display_name: 'Unauthorized Name',
         updated_at: serverTimestamp(),
       }),
     );

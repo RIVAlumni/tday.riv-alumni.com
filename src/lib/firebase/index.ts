@@ -5,7 +5,13 @@ export { visitorAuth } from './auth.svelte';
 export { getInternalFirestore } from './firestore';
 export { getEvent } from './events';
 export { getCallableFunctions } from './functions';
-export { fetchUsers, updateUserAccessExpiry, updateUserAccessLevel } from './users';
+export {
+  fetchUsers,
+  revokeUsersAccess,
+  updateUserAccessExpiry,
+  updateUserAccessLevel,
+  updateUserDisplayName,
+} from './users';
 export {
   createRegistrationRecord,
   RegistrationWriteError,

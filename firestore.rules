@@ -83,8 +83,9 @@ service cloud.firestore {
     function isAdministratorUserUpdate() {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       return changed.hasAll(['updated_at'])
-        && changed.hasAny(['access_level', 'access_expires'])
-        && changed.hasOnly(['access_level', 'access_expires', 'updated_at'])
+        && changed.hasAny(['display_name', 'access_level', 'access_expires'])
+        && changed.hasOnly(['display_name', 'access_level', 'access_expires', 'updated_at'])
+        && (!changed.hasAny(['display_name']) || isValidUserDisplayName(request.resource.data.display_name))
         && request.resource.data.access_level is int
         && request.resource.data.access_level >= 0
         && request.resource.data.access_level <= 3
@@ -166,6 +167,13 @@ service cloud.firestore {
     }
 
     // -- Field validators -----------------------------------------------------
+
+    function isValidUserDisplayName(value) {
+      return value is string
+        && value.size() > 0
+        && value.size() <= 120
+        && value.matches('.*\\S.*');
+    }
 
     function isValidName(value) {
       return value is string && value.size() > 0 && value.size() <= 120;

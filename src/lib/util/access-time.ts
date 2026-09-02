@@ -1,6 +1,32 @@
+import type { User } from '$lib/models/user';
+
 import { Timestamp } from 'firebase/firestore';
 
+import { AccessLevel } from '$lib/models/user';
+
 const SINGAPORE_OFFSET_MILLISECONDS = 8 * 60 * 60 * 1000;
+const REVOCATION_OFFSET_MILLISECONDS = 60 * 1000;
+
+export type AccessStatus = 'Active' | 'Expired' | 'No access';
+
+export function accessStatusFor(
+  user: Pick<User, 'access_level' | 'access_expires'>,
+  now = Date.now(),
+): AccessStatus {
+  if (user.access_level === AccessLevel.None) return 'No access';
+  return user.access_expires.toMillis() > now ? 'Active' : 'Expired';
+}
+
+export function hasRelevantAccess(
+  user: Pick<User, 'access_level' | 'access_expires'>,
+  now = Date.now(),
+): boolean {
+  return user.access_level !== AccessLevel.None || user.access_expires.toMillis() > now;
+}
+
+export function immediateRevocationExpiry(now = Date.now()): Timestamp {
+  return Timestamp.fromMillis(now - REVOCATION_OFFSET_MILLISECONDS);
+}
 
 // 'YYYY-MM-DD' of the timestamp in Singapore time, for date inputs.
 export function singaporeDate(timestamp: Timestamp): string {
